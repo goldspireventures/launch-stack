@@ -52,7 +52,24 @@ async function main() {
   console.log('✓ migrations complete');
 }
 
+function isConnectionRefused(err: unknown): boolean {
+  if (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'ECONNREFUSED') {
+    return true;
+  }
+  if (err instanceof AggregateError) {
+    return err.errors.some(
+      (e) => e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code === 'ECONNREFUSED',
+    );
+  }
+  return false;
+}
+
 main().catch((err) => {
   console.error('✗ migration failed:', err);
+  if (isConnectionRefused(err)) {
+    console.error(
+      '\nHint: Postgres refused the connection. Set DATABASE_URL / DIRECT_URL in `.env` to a reachable instance (e.g. Supabase), or start Postgres on the host and port in your URL.',
+    );
+  }
   process.exit(1);
 });

@@ -17,7 +17,8 @@
   "dependencies": {
     "@goldspire/config": "workspace:*",
     "@goldspire/db": "workspace:*",
-    "@goldspire/platform": "workspace:*"
+    "@goldspire/platform": "workspace:*",
+    "drizzle-orm": "^0.36.0"
   },
   "devDependencies": {
     "typescript": "^5.6.2",
