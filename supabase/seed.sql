@@ -1,0 +1,2 @@
+-- Optional SQL seed for `supabase db reset`.
+-- Demo data: use Drizzle seed instead — `pnpm db:seed` (packages/db).

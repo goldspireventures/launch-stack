@@ -1,0 +1,3 @@
+-- Goldspire Launch Stack — Supabase-managed migrations live here.
+-- Primary schema is maintained with Drizzle (`packages/db`); use this tree for
+-- Supabase-only DDL (extensions, auth hooks, etc.) or to mirror remote state.
