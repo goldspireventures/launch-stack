@@ -7,8 +7,8 @@ import { router, tenantAdminProcedure, protectedProcedure } from '../trpc';
 export const featureFlagsRouter = router({
   list: tenantAdminProcedure.query(async ({ ctx }) => {
     const [tenantFlags, globalFlags] = await Promise.all([
-      listFlags({ tenantId: ctx.user.tenantId }),
-      listFlags({ tenantId: null }),
+      listFlags({ tenantId: ctx.user.tenantId, db: ctx.db }),
+      listFlags({ tenantId: null, db: ctx.db }),
     ]);
     return { tenantFlags, globalFlags };
   }),
@@ -20,6 +20,7 @@ export const featureFlagsRouter = router({
         tenantId: ctx.user.tenantId,
         userId: ctx.user.id,
         role: ctx.user.role,
+        db: ctx.db,
       }),
     ),
 
@@ -32,6 +33,7 @@ export const featureFlagsRouter = router({
         enabled: input.enabled,
         rules: input.rules,
         description: input.description,
+        db: ctx.db,
       });
       await logAudit({
         tenantId: input.tenantId ?? ctx.user.tenantId,

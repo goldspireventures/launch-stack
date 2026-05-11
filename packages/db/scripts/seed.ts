@@ -3,7 +3,8 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
 import { ulid } from 'ulid';
-import { env, ENTITLEMENT_KEYS } from '@goldspire/config';
+import { ENTITLEMENT_KEYS } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 import * as schema from '../src/schema/index.js';
 
 const conn = postgres(env.DIRECT_URL ?? env.DATABASE_URL, { max: 1, prepare: false });
@@ -317,6 +318,8 @@ async function seed() {
   ]);
 
   // --- Feature flags ---
+  // Global (studio-wide) flags — visible to every tenant via the
+  // `feature_flag_global_read` policy. Only STUDIO_OWNER can mutate them.
   await db.insert(schema.featureFlag).values([
     {
       tenantId: null,
@@ -331,10 +334,79 @@ async function seed() {
       description: 'Re-rank discovery feed by AI-predicted match quality.',
     },
     {
+      tenantId: null,
+      key: 'ai.safety_classifier',
+      enabled: false,
+      description: 'Classify inbound messages and auto-report unsafe content.',
+    },
+    {
+      tenantId: null,
+      key: 'platform.maintenance_mode',
+      enabled: false,
+      description: 'Globally show a maintenance banner across every client app.',
+    },
+    {
+      tenantId: null,
+      key: 'platform.new_signups',
+      enabled: true,
+      description: 'Allow new tenant signups from the public marketing site.',
+    },
+  ]);
+
+  // Heartline-specific flags — these are what a tenant admin would normally toggle.
+  // Apps gate UI on `isEnabled('social.super_likes', { tenantId, userId, role })`.
+  await db.insert(schema.featureFlag).values([
+    {
       tenantId: heartlineTenantId,
       key: 'social.super_likes',
       enabled: true,
       description: 'Allow users to send 1 free super-like per day.',
+    },
+    {
+      tenantId: heartlineTenantId,
+      key: 'social.boost',
+      enabled: false,
+      description: 'Enable the paid Boost feature in the discover feed.',
+    },
+    {
+      tenantId: heartlineTenantId,
+      key: 'social.travel_mode',
+      enabled: false,
+      description: 'Let users browse profiles in another city (premium).',
+    },
+    {
+      tenantId: heartlineTenantId,
+      key: 'social.see_who_liked_you',
+      enabled: true,
+      description: 'Show the "Likes you" tab so users can review incoming likes.',
+    },
+    {
+      tenantId: heartlineTenantId,
+      key: 'social.video_intros',
+      enabled: false,
+      description: 'Beta: 15-second video intros on profiles.',
+    },
+    {
+      tenantId: heartlineTenantId,
+      key: 'monetization.paywall_v2',
+      enabled: false,
+      description: 'Rollout: new paywall design with annual plan default.',
+    },
+  ]);
+
+  // A couple of flags on the other tenants so the Studio Console gets interesting.
+  await db.insert(schema.featureFlag).values([
+    {
+      tenantId: acmeTenantId,
+      key: 'b2b.audit_log_export',
+      enabled: true,
+      description: 'Allow workspace admins to export audit logs as CSV.',
+    },
+    {
+      tenantId: acmeTenantId,
+      key: 'b2b.sso_required',
+      enabled: false,
+      description: 'Force SSO for the workspace (disables password login).',
     },
   ]);
 

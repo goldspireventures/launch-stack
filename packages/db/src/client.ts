@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 import * as schema from './schema';
 
 /**

@@ -1,5 +1,5 @@
 import { Inngest, EventSchemas } from 'inngest';
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 
 /**
  * Inngest is our durable jobs / webhooks runtime. We define a single client

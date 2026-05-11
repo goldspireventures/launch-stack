@@ -75,9 +75,17 @@ export const env = createEnv({
   emptyStringAsUndefined: true,
 });
 
-export const isProduction = env.NODE_ENV === 'production';
-export const isDevelopment = env.NODE_ENV === 'development';
-export const isTest = env.NODE_ENV === 'test';
+/**
+ * Read NODE_ENV directly off `process.env` so these helpers are safe to
+ * evaluate at module load. `env.NODE_ENV` is declared as a server var on
+ * the t3-env schema, and any client-side access throws. `process.env.NODE_ENV`
+ * is inlined at build time by every bundler we use (Next, Metro, tsx),
+ * so this is both safe and identical in behavior.
+ */
+const NODE_ENV = (typeof process !== 'undefined' ? process.env.NODE_ENV : undefined) ?? 'development';
+export const isProduction = NODE_ENV === 'production';
+export const isDevelopment = NODE_ENV === 'development';
+export const isTest = NODE_ENV === 'test';
 
 /**
  * Returns true when real (non-mock) credentials are present for the given

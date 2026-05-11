@@ -1,4 +1,4 @@
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 import type { AIProvider } from './provider';
 import { MockAIProvider } from './providers/mock';
 import { OpenAIProvider } from './providers/openai';

@@ -1,5 +1,5 @@
 import { defineConfig } from 'drizzle-kit';
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 
 export default defineConfig({
   schema: './src/schema/index.ts',

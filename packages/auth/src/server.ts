@@ -1,6 +1,7 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@goldspire/db';
-import { env, type Role, inRoles } from '@goldspire/config';
+import { type Role, inRoles } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 import { ForbiddenError, UnauthenticatedError, supabaseService } from '@goldspire/platform';
 
 /**
@@ -107,11 +108,25 @@ async function loadMockUser(tenantHint?: string): Promise<AuthedUser | null> {
   const tenantSlug = tenantHint ?? env.GOLDSPIRE_TENANT_ID;
   const t = await resolveTenant(tenantSlug);
   if (!t) return null;
-  const [u] = await db
+  // Prefer an admin user (TENANT_OWNER / TENANT_ADMIN / STUDIO_*) so mock
+  // sessions in the admin app can hit tenantAdminProcedure routes.
+  // The case-when ranking gives admin roles priority; ties fall back to insertion order.
+  const rows = await db
     .select()
     .from(schema.user)
     .where(eq(schema.user.tenantId, t.id))
+    .orderBy(
+      sql`case
+        when "role" = 'STUDIO_OWNER' then 0
+        when "role" = 'STUDIO_STAFF' then 1
+        when "role" = 'TENANT_OWNER' then 2
+        when "role" = 'TENANT_ADMIN' then 3
+        else 4
+      end`,
+      schema.user.createdAt,
+    )
     .limit(1);
+  const u = rows[0];
   if (!u) return null;
   return {
     id: u.id,

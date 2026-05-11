@@ -1,5 +1,5 @@
 import { PostHog } from 'posthog-node';
-import { env, hasRealProvider } from '@goldspire/config';
+import { env, hasRealProvider } from '@goldspire/config/env';
 import { logger } from './logger';
 
 let _posthog: PostHog | null = null;

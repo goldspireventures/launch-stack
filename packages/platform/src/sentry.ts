@@ -3,7 +3,7 @@
  * startup. This module no-ops when SENTRY_DSN is missing so local dev never
  * spams a real project.
  */
-import { env, hasRealProvider } from '@goldspire/config';
+import { env, hasRealProvider } from '@goldspire/config/env';
 import { logger } from './logger';
 
 let initialized = false;

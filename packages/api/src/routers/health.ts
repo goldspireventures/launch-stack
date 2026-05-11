@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
-import { hasRealProvider, env } from '@goldspire/config';
+import { hasRealProvider, env } from '@goldspire/config/env';
 
 export const healthRouter = router({
   ping: publicProcedure.query(() => ({ ok: true, time: new Date().toISOString() })),

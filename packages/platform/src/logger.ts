@@ -3,7 +3,7 @@
  * stays light for Edge runtimes; apps that want richer logging can swap this
  * for pino/winston/etc. behind the same surface.
  */
-import { isProduction } from '@goldspire/config';
+import { isProduction } from '@goldspire/config/env';
 
 type Level = 'debug' | 'info' | 'warn' | 'error';
 

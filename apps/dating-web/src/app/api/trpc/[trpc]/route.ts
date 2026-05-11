@@ -13,7 +13,8 @@ const handler = (req: Request) =>
       }),
     onError({ error, path }) {
       // eslint-disable-next-line no-console
-      console.error(`[trpc] ${path}: ${error.message}`);
+      const detail = error.cause instanceof Error ? error.cause.message : String(error.cause ?? '');
+      console.error(`[trpc] ${path}: ${error.message}${detail ? ` (${detail})` : ''}`);
     },
   });
 

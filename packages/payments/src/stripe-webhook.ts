@@ -1,7 +1,8 @@
 import type Stripe from 'stripe';
 import { and, eq } from 'drizzle-orm';
 import { db, schema } from '@goldspire/db';
-import { env, ENTITLEMENT_KEYS } from '@goldspire/config';
+import { ENTITLEMENT_KEYS } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 import { logger, stripe, IntegrationError } from '@goldspire/platform';
 import { grantEntitlement, revokeEntitlement } from './entitlements';
 

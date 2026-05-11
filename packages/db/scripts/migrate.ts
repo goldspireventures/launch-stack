@@ -4,7 +4,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import postgres from 'postgres';
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 
 const DRIZZLE_DIR = new URL('../drizzle/', import.meta.url).pathname;
 const url = env.DIRECT_URL ?? env.DATABASE_URL;
@@ -22,30 +22,36 @@ async function main() {
     }
   }
 
-  console.log('▸ applying RLS policies...');
+  console.log('▸ applying RLS / hand-written SQL migrations...');
   await sql.unsafe("select set_config('app.role', 'STUDIO_OWNER', true)");
-  const rlsFile = join(DRIZZLE_DIR, '0000_rls_policies.sql');
-  if (existsSync(rlsFile)) {
-    const policies = readFileSync(rlsFile, 'utf8');
-    // Split is naive; for production use a real SQL parser. Works for our migration.
-    try {
-      await sql.unsafe(policies);
-    } catch (err) {
-      // Idempotent re-runs will fail on "policy already exists" — that's ok.
-      const msg = err instanceof Error ? err.message : String(err);
-      if (!msg.includes('already exists')) {
+
+  // Apply every *.sql file in the drizzle/ dir in lexicographic order.
+  // The base `0000_rls_policies.sql` isn't idempotent on its own, so we
+  // catch "already exists" for it specifically. Subsequent files should
+  // use `drop ... if exists; create ...` and be safe to re-run.
+  if (existsSync(DRIZZLE_DIR)) {
+    const files = readdirSync(DRIZZLE_DIR)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
+    for (const file of files) {
+      const fullPath = join(DRIZZLE_DIR, file);
+      const body = readFileSync(fullPath, 'utf8');
+      try {
+        await sql.unsafe(body);
+        console.log(`  ✓ ${file}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('already exists')) {
+          console.warn(`  ↺ ${file} (already applied, skipping)`);
+          continue;
+        }
+        console.error(`  ✗ ${file}: ${msg}`);
         throw err;
       }
-      console.warn('  (RLS policies already in place, skipping)');
     }
+    console.log(`▸ applied ${files.length} SQL migration file(s)`);
   } else {
-    console.log('  (no RLS file found)');
-  }
-
-  // Print discovered migration files for debug
-  if (existsSync(DRIZZLE_DIR)) {
-    const files = readdirSync(DRIZZLE_DIR).filter((f) => f.endsWith('.sql'));
-    console.log(`▸ applied ${files.length} migration file(s)`);
+    console.log('  (no drizzle/ directory found)');
   }
 
   await sql.end();

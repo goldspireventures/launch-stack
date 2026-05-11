@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import postgres from 'postgres';
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 
 const url = env.DIRECT_URL ?? env.DATABASE_URL;
 

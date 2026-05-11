@@ -1,6 +1,6 @@
 import { getCurrentUser, type AuthedUser } from '@goldspire/auth';
 import { db } from '@goldspire/db';
-import { env } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
 
 export interface CreateContextOptions {
   /** Request headers — used to read auth cookies / bearer tokens / tenant hint. */

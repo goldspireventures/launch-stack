@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { env, hasRealProvider } from '@goldspire/config';
+import { env, hasRealProvider } from '@goldspire/config/env';
 
 /**
  * Supabase clients.

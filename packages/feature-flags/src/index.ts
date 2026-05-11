@@ -1,5 +1,5 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import { db, schema } from '@goldspire/db';
+import { db as defaultDb, schema, type Database } from '@goldspire/db';
 import { getFeatureFlag } from '@goldspire/platform';
 
 export interface FlagContext {
@@ -7,6 +7,12 @@ export interface FlagContext {
   userId?: string | null;
   role?: string;
   plan?: string;
+  /**
+   * Optional request-scoped db (a drizzle tx with `app.tenant_id` / `app.user_id`
+   * set by tenantRlsMiddleware). When omitted, falls back to the shared `db`
+   * client, which is only safe in studio contexts that bypass RLS.
+   */
+  db?: Database;
 }
 
 /**
@@ -21,9 +27,10 @@ export async function isEnabled(key: string, ctx: FlagContext): Promise<boolean>
     const ph = await getFeatureFlag(key, ctx.userId, ctx.tenantId ? { tenant: ctx.tenantId } : undefined);
     if (ph !== undefined) return Boolean(ph);
   }
+  const client = ctx.db ?? defaultDb;
 
   if (ctx.tenantId) {
-    const [tenantFlag] = await db
+    const [tenantFlag] = await client
       .select()
       .from(schema.featureFlag)
       .where(and(eq(schema.featureFlag.tenantId, ctx.tenantId), eq(schema.featureFlag.key, key)))
@@ -31,7 +38,7 @@ export async function isEnabled(key: string, ctx: FlagContext): Promise<boolean>
     if (tenantFlag) return evaluate(tenantFlag, ctx);
   }
 
-  const [globalFlag] = await db
+  const [globalFlag] = await client
     .select()
     .from(schema.featureFlag)
     .where(and(isNull(schema.featureFlag.tenantId), eq(schema.featureFlag.key, key)))
@@ -84,11 +91,12 @@ function hashToBucket(input: string): number {
   return Math.abs(h) % 100;
 }
 
-export async function listFlags(opts: { tenantId?: string | null }) {
+export async function listFlags(opts: { tenantId?: string | null; db?: Database }) {
+  const client = opts.db ?? defaultDb;
   if (opts.tenantId) {
-    return db.select().from(schema.featureFlag).where(eq(schema.featureFlag.tenantId, opts.tenantId));
+    return client.select().from(schema.featureFlag).where(eq(schema.featureFlag.tenantId, opts.tenantId));
   }
-  return db.select().from(schema.featureFlag).where(isNull(schema.featureFlag.tenantId));
+  return client.select().from(schema.featureFlag).where(isNull(schema.featureFlag.tenantId));
 }
 
 export async function upsertFlag(input: {
@@ -97,8 +105,10 @@ export async function upsertFlag(input: {
   enabled: boolean;
   rules?: Rule[];
   description?: string;
+  db?: Database;
 }) {
-  const [row] = await db
+  const client = input.db ?? defaultDb;
+  const [row] = await client
     .insert(schema.featureFlag)
     .values({
       tenantId: input.tenantId ?? null,

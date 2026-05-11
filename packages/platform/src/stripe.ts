@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { env, hasRealProvider } from '@goldspire/config';
+import { env, hasRealProvider } from '@goldspire/config/env';
 import { IntegrationError } from './errors';
 
 let _stripe: Stripe | null = null;

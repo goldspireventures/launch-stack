@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { env, hasRealProvider } from '@goldspire/config';
+import { env, hasRealProvider } from '@goldspire/config/env';
 import { logger } from './logger';
 
 let _resend: Resend | null = null;
