@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "jsx": "preserve",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@goldspire/api": ["../../packages/api/src/index.ts"],
+      "@goldspire/ui": ["../../packages/ui/src/index.ts"],
+      "@goldspire/ui/*": ["../../packages/ui/src/*"],
+      "@goldspire/config": ["../../packages/config/src/index.ts"],
+      "@goldspire/auth": ["../../packages/auth/src/index.ts"],
+      "@goldspire/blueprints": ["../../packages/blueprints/src/index.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

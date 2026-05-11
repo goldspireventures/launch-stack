@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Goldspire design tokens. Dark mode is default — a deliberate choice for
+   studio/admin tooling. Customer-facing apps can override via :root. */
+
+@layer base {
+  :root {
+    --background: 30 8% 5%;
+    --foreground: 36 33% 95%;
+    --card: 30 8% 7%;
+    --card-foreground: 36 33% 95%;
+    --popover: 30 8% 7%;
+    --popover-foreground: 36 33% 95%;
+    --primary: 44 67% 47%;
+    --primary-foreground: 30 10% 5%;
+    --secondary: 30 6% 14%;
+    --secondary-foreground: 36 33% 95%;
+    --muted: 30 6% 14%;
+    --muted-foreground: 30 6% 65%;
+    --accent: 44 67% 47%;
+    --accent-foreground: 30 10% 5%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 148 50% 50%;
+    --warning: 38 88% 60%;
+    --border: 30 6% 16%;
+    --ring: 44 67% 47%;
+    --radius: 0.75rem;
+  }
+
+  .theme-light {
+    --background: 36 30% 98%;
+    --foreground: 30 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 12%;
+    --primary: 44 67% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 8% 95%;
+    --secondary-foreground: 30 10% 12%;
+    --muted: 30 8% 92%;
+    --muted-foreground: 30 6% 40%;
+    --accent: 44 67% 47%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 8% 88%;
+    --ring: 44 67% 47%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 3px;
+  }
+}

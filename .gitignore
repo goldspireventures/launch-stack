@@ -1,0 +1,82 @@
+# dependencies
+node_modules/
+.pnpm-store/
+.yarn/
+
+# build output
+dist/
+build/
+.next/
+out/
+.turbo/
+.expo/
+.expo-shared/
+*.tsbuildinfo
+
+# env files - never commit
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE / editor
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# misc
+coverage/
+.cache/
+.tmp/
+.temp/
+
+# database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+local.db
+
+# generated files
+.contentlayer/
+.vercel/
+.netlify/
+
+# python (for any scripts)
+__pycache__/
+*.pyc
+.venv/
+
+# expo
+ios/
+android/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# secrets
+*.pem
+secrets/
+.secret

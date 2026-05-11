@@ -1,0 +1,26 @@
+{
+  "name": "@goldspire/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "lint": "echo 'no lint configured'",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo dist"
+  },
+  "dependencies": {
+    "@goldspire/config": "workspace:*",
+    "@goldspire/db": "workspace:*",
+    "@goldspire/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "rimraf": "^6.0.1"
+  }
+}

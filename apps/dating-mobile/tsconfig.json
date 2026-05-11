@@ -1,0 +1,15 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@goldspire/api": ["../../packages/api/src/index.ts"],
+      "@goldspire/config": ["../../packages/config/src/index.ts"],
+      "@goldspire/blueprints": ["../../packages/blueprints/src/index.ts"]
+    }
+  },
+  "include": ["src", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}

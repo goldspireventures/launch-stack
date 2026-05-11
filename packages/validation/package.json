@@ -1,0 +1,38 @@
+{
+  "name": "@goldspire/validation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./common": "./src/common.ts",
+    "./tenant": "./src/tenant.ts",
+    "./user": "./src/user.ts",
+    "./product": "./src/product.ts",
+    "./billing": "./src/billing.ts",
+    "./messaging": "./src/messaging.ts",
+    "./notifications": "./src/notifications.ts",
+    "./reports": "./src/reports.ts",
+    "./feature-flags": "./src/feature-flags.ts",
+    "./dating": "./src/dating.ts",
+    "./booking": "./src/booking.ts",
+    "./marketplace": "./src/marketplace.ts",
+    "./community": "./src/community.ts",
+    "./ai-agent": "./src/ai-agent.ts"
+  },
+  "scripts": {
+    "lint": "echo 'no lint configured'",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo dist"
+  },
+  "dependencies": {
+    "@goldspire/config": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "rimraf": "^6.0.1"
+  }
+}

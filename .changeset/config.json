@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@goldspire/admin",
+    "@goldspire/console",
+    "@goldspire/dating-web",
+    "@goldspire/dating-mobile",
+    "@goldspire/blueprint-booking",
+    "@goldspire/blueprint-community",
+    "@goldspire/blueprint-b2b-saas",
+    "@goldspire/blueprint-ai-agent",
+    "@goldspire/blueprint-marketplace"
+  ]
+}
