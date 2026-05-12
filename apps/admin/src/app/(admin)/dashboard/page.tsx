@@ -30,7 +30,7 @@ function formatMoney(cents: number, currency: string) {
   try {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
   } catch {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(cents / 100);
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(cents / 100);
   }
 }
 
@@ -86,8 +86,8 @@ export default function DashboardPage() {
   const tenantRow = tenant.data!;
   const currency =
     typeof tenantRow.metadata === 'object' && tenantRow.metadata && 'currency' in tenantRow.metadata
-      ? String((tenantRow.metadata as { currency?: string }).currency ?? 'USD')
-      : 'USD';
+      ? String((tenantRow.metadata as { currency?: string }).currency ?? 'EUR')
+      : 'EUR';
 
   const members = users.data?.length ?? 0;
   const activeSubs = subRows.filter((s) => s.status === 'active' || s.status === 'trialing').length;

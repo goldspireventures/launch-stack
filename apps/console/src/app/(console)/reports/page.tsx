@@ -31,9 +31,9 @@ import { trpc } from '@/lib/trpc';
  * we chart illustrative portfolio rows so the layout stays reviewable in dev.
  */
 const MOCK_MRR_BY_TENANT = [
-  { tenantId: 'mock-a', tenantName: 'Northwind Labs', mrrMinorUnits: 420_000, currency: 'USD' },
-  { tenantId: 'mock-b', tenantName: 'Contoso Health', mrrMinorUnits: 310_000, currency: 'USD' },
-  { tenantId: 'mock-c', tenantName: 'Fabrikam Media', mrrMinorUnits: 198_000, currency: 'USD' },
+  { tenantId: 'mock-a', tenantName: 'Northwind Labs', mrrMinorUnits: 420_000, currency: 'EUR' },
+  { tenantId: 'mock-b', tenantName: 'Contoso Health', mrrMinorUnits: 310_000, currency: 'EUR' },
+  { tenantId: 'mock-c', tenantName: 'Fabrikam Media', mrrMinorUnits: 198_000, currency: 'EUR' },
 ] as const;
 
 const tip = {
@@ -44,6 +44,19 @@ const tip = {
     color: 'hsl(var(--popover-foreground))',
   },
 } as const;
+
+/** Format minor-unit (cents) value as currency for chart tooltips. */
+function formatMinorAsCurrency(v: number, currency = 'EUR'): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(v / 100);
+  } catch {
+    return `${(v / 100).toFixed(0)} ${currency}`;
+  }
+}
 
 export default function StudioReportsPage() {
   const mrr = trpc.studioReports.mrrByTenant.useQuery();
@@ -83,13 +96,16 @@ export default function StudioReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.2)" vertical={false} />
                 <XAxis dataKey="tenantName" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis
-                  tickFormatter={(v) => `$${Math.round(v / 100)}`}
+                  tickFormatter={(v) => formatMinorAsCurrency(v)}
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
-                <Tooltip {...tip} />
-                <Bar dataKey="mrrMinorUnits" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="MRR (minor)" />
+                <Tooltip
+                  {...tip}
+                  formatter={(value: number) => [formatMinorAsCurrency(value), 'MRR']}
+                />
+                <Bar dataKey="mrrMinorUnits" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="MRR" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

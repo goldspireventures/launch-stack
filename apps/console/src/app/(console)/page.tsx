@@ -36,7 +36,7 @@ export default function StudioOverviewPage() {
 
   const kpis = overview.data?.kpis;
   const fmtMoney = (minor: number) =>
-    new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(minor / 100);
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(minor / 100);
 
   return (
     <div className="space-y-8">

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, lte, or, sql } from 'drizzle-orm';
 import { db, schema } from '@goldspire/db';
 import type { Role } from '@goldspire/config';
 import { logger } from '@goldspire/platform';
@@ -42,6 +42,8 @@ export interface AuditQuery {
   tenantId?: string;
   actorId?: string;
   action?: string;
+  /** Substring search across action / entityType (case-insensitive). */
+  q?: string;
   entityType?: string;
   entityId?: string;
   from?: Date;
@@ -49,20 +51,58 @@ export interface AuditQuery {
   limit?: number;
 }
 
-export async function queryAudit(q: AuditQuery) {
-  const conditions = [
-    q.tenantId ? eq(schema.auditLog.tenantId, q.tenantId) : undefined,
-    q.actorId ? eq(schema.auditLog.actorId, q.actorId) : undefined,
-    q.action ? eq(schema.auditLog.action, q.action) : undefined,
-    q.entityType ? eq(schema.auditLog.entityType, q.entityType) : undefined,
-    q.entityId ? eq(schema.auditLog.entityId, q.entityId) : undefined,
-    q.from ? gte(schema.auditLog.createdAt, q.from) : undefined,
-    q.to ? lte(schema.auditLog.createdAt, q.to) : undefined,
-  ].filter(Boolean) as ReturnType<typeof eq>[];
+/**
+ * Query the audit log. All filters are AND'd together except `q`, which OR's
+ * across action + entityType + entityId for a "search by anything" experience.
+ */
+export async function queryAudit(query: AuditQuery) {
+  const filters: ReturnType<typeof eq>[] = [];
+  if (query.tenantId) filters.push(eq(schema.auditLog.tenantId, query.tenantId));
+  if (query.actorId) filters.push(eq(schema.auditLog.actorId, query.actorId));
+  if (query.action) filters.push(eq(schema.auditLog.action, query.action));
+  if (query.entityType) filters.push(eq(schema.auditLog.entityType, query.entityType));
+  if (query.entityId) filters.push(eq(schema.auditLog.entityId, query.entityId));
+  if (query.from) filters.push(gte(schema.auditLog.createdAt, query.from));
+  if (query.to) filters.push(lte(schema.auditLog.createdAt, query.to));
+  if (query.q && query.q.trim()) {
+    const needle = `%${query.q.trim()}%`;
+    filters.push(
+      or(
+        ilike(schema.auditLog.action, needle),
+        ilike(schema.auditLog.entityType, needle),
+        ilike(sql`coalesce(${schema.auditLog.entityId}, '')`, needle),
+      ) as ReturnType<typeof eq>,
+    );
+  }
+
   return db
     .select()
     .from(schema.auditLog)
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(schema.auditLog.createdAt))
-    .limit(q.limit ?? 100);
+    .limit(query.limit ?? 100);
+}
+
+/**
+ * Distinct values for the action / entityType columns, scoped to a tenant
+ * (or global). Used to populate filter dropdowns on /audit pages.
+ */
+export async function auditFilterOptions(tenantId?: string) {
+  const whereTenant = tenantId ? eq(schema.auditLog.tenantId, tenantId) : undefined;
+  const [actions, entityTypes] = await Promise.all([
+    db
+      .selectDistinct({ value: schema.auditLog.action })
+      .from(schema.auditLog)
+      .where(whereTenant)
+      .orderBy(schema.auditLog.action),
+    db
+      .selectDistinct({ value: schema.auditLog.entityType })
+      .from(schema.auditLog)
+      .where(whereTenant)
+      .orderBy(schema.auditLog.entityType),
+  ]);
+  return {
+    actions: actions.map((r) => r.value).filter(Boolean) as string[],
+    entityTypes: entityTypes.map((r) => r.value).filter(Boolean) as string[],
+  };
 }

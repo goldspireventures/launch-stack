@@ -56,11 +56,20 @@ function NewStudioDealForm() {
   const [weeksMin, setWeeksMin] = useState('6');
   const [weeksMax, setWeeksMax] = useState('10');
   const [totalMajor, setTotalMajor] = useState('25000');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('EUR');
   const [preview, setPreview] = useState<CommercialPlanSnapshot | null>(null);
 
+  const tier = searchParams.get('tier');
+  const tierLabel =
+    tier === 'solo'
+      ? 'Solo MVP'
+      : tier === 'growth'
+        ? 'Growth'
+        : tier === 'enterprise'
+          ? 'Enterprise'
+          : null;
+
   useEffect(() => {
-    const tier = searchParams.get('tier');
     if (tier === 'solo') {
       setEngagementKind('mvp');
       setClientRisk('unknown');
@@ -68,6 +77,8 @@ function NewStudioDealForm() {
       setWeeksMin('6');
       setWeeksMax('10');
       setTotalMajor('25000');
+      setCurrency('EUR');
+      setTitle((prev) => (prev ? prev : 'New Solo MVP engagement'));
     } else if (tier === 'growth') {
       setEngagementKind('mvp_plus_prod_planned');
       setClientRisk('referred');
@@ -75,6 +86,8 @@ function NewStudioDealForm() {
       setWeeksMin('12');
       setWeeksMax('18');
       setTotalMajor('80000');
+      setCurrency('EUR');
+      setTitle((prev) => (prev ? prev : 'New Growth engagement'));
     } else if (tier === 'enterprise') {
       setEngagementKind('mvp_plus_prod_planned');
       setClientRisk('enterprise');
@@ -82,8 +95,11 @@ function NewStudioDealForm() {
       setWeeksMin('16');
       setWeeksMax('40');
       setTotalMajor('250000');
+      setCurrency('EUR');
+      setTitle((prev) => (prev ? prev : 'New Enterprise engagement'));
     }
-  }, [searchParams]);
+    // Re-run only when the URL ?tier= changes, never on every key-stroke.
+  }, [tier]);
 
   const previewMut = trpc.studioDeals.previewPlan.useMutation({
     onSuccess: (data) => setPreview(data),
@@ -137,13 +153,27 @@ function NewStudioDealForm() {
     <div className="space-y-6">
       <PageHeader
         title="New deal"
-        description="Enter engagement facts, preview milestones, then save to the deal desk."
+        description={
+          tierLabel
+            ? `Pre-filled from the ${tierLabel} plan. Adjust anything before saving.`
+            : 'Enter engagement facts, preview milestones, then save to the deal desk.'
+        }
         actions={
           <Button variant="outline" asChild>
             <Link href="/deals">Back to list</Link>
           </Button>
         }
       />
+
+      {tierLabel && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <p className="font-medium text-primary">From the {tierLabel} plan</p>
+          <p className="text-xs text-muted-foreground">
+            Engagement type, risk, subcontracting, timeline and price are pre-filled below.
+            Edit any field — they're independent now.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -217,7 +247,7 @@ function NewStudioDealForm() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Total fee (major units)" htmlFor="fee" description="e.g. 25000 = $25,000 when USD.">
+              <FormField label="Total fee (major units)" htmlFor="fee" description="e.g. 25000 = €25,000 when EUR.">
                 <Input id="fee" inputMode="decimal" value={totalMajor} onChange={(e) => setTotalMajor(e.target.value)} />
               </FormField>
               <FormField label="Currency" htmlFor="cur">

@@ -1,16 +1,36 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { PERSONA_COOKIE, getPersonaById } from '@goldspire/config';
 import { ACTIVE_TENANT_COOKIE } from '@/lib/active-tenant';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
+const COOKIE_BASE = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+};
+
 function setActiveTenantCookie(store: Awaited<ReturnType<typeof cookies>>, slug: string) {
-  store.set(ACTIVE_TENANT_COOKIE, slug, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  });
+  store.set(ACTIVE_TENANT_COOKIE, slug, COOKIE_BASE);
+}
+
+/**
+ * Persona cookies are origin-scoped (localhost:3001 vs :3002), so the persona
+ * the user picked in Console doesn't follow when they click "Open Admin".
+ * Console can pass `&persona=<id>` on the deep-link; we validate it against
+ * the catalog and set the persona cookie on this origin too. Failing
+ * validation is silent (the Admin layout's fallback persona logic kicks in).
+ */
+function maybeSetPersonaCookie(
+  store: Awaited<ReturnType<typeof cookies>>,
+  rawPersonaId: string | null | undefined,
+): void {
+  if (!rawPersonaId) return;
+  const persona = getPersonaById(rawPersonaId);
+  if (!persona) return;
+  store.set(PERSONA_COOKIE, persona.id, COOKIE_BASE);
 }
 
 function safeNextPath(raw: string | null | undefined): string {
@@ -28,13 +48,18 @@ function safeNextPath(raw: string | null | undefined): string {
  * Returns JSON so callers can read the result.
  */
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { slug?: string; next?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    slug?: string;
+    next?: string;
+    persona?: string;
+  };
   const slug = (body.slug ?? '').trim().toLowerCase();
   if (!SLUG_RE.test(slug)) {
     return NextResponse.json({ ok: false, error: 'invalid slug' }, { status: 400 });
   }
   const store = await cookies();
   setActiveTenantCookie(store, slug);
+  maybeSetPersonaCookie(store, body.persona);
   return NextResponse.json({ ok: true, slug, next: safeNextPath(body.next) });
 }
 
@@ -50,11 +75,13 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const slug = (url.searchParams.get('slug') ?? '').trim().toLowerCase();
   const next = safeNextPath(url.searchParams.get('next'));
+  const persona = url.searchParams.get('persona');
   if (!SLUG_RE.test(slug)) {
     return NextResponse.redirect(new URL('/select-tenant?notice=no-tenant-context', url));
   }
   const store = await cookies();
   setActiveTenantCookie(store, slug);
+  maybeSetPersonaCookie(store, persona);
   return NextResponse.redirect(new URL(next, url));
 }
 

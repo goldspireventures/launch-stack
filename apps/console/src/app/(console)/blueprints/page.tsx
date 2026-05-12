@@ -60,12 +60,12 @@ export default function BlueprintsPage() {
               <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
                 <div>
                   <p className="text-muted-foreground">Prototype</p>
-                  <p className="font-medium">${(b.prototypePriceCents / 100).toLocaleString()}</p>
+                  <p className="font-medium">€{(b.prototypePriceCents / 100).toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Retainer</p>
                   <p className="font-medium">
-                    ${(b.retainerPriceCents / 100).toLocaleString()}/mo
+                    €{(b.retainerPriceCents / 100).toLocaleString()}/mo
                   </p>
                 </div>
                 <div>
@@ -78,12 +78,21 @@ export default function BlueprintsPage() {
 
               {b.clientNotes.length > 0 && (
                 <details className="mt-3 text-xs text-muted-foreground">
-                  <summary className="cursor-pointer">Client notes ({b.clientNotes.length})</summary>
+                  <summary className="cursor-pointer">
+                    Sales talking points ({b.clientNotes.length})
+                  </summary>
                   <ul className="ml-4 mt-2 list-disc space-y-1">
                     {b.clientNotes.map((n) => (
                       <li key={n}>{n}</li>
                     ))}
                   </ul>
+                  <p className="ml-4 mt-2 text-[11px]">
+                    Static per-blueprint talking points (defined in code). For client-specific notes, use a{' '}
+                    <a href="/deals" className="text-primary underline-offset-2 hover:underline">
+                      Deal
+                    </a>{' '}
+                    record.
+                  </p>
                 </details>
               )}
 
@@ -198,8 +207,12 @@ function StampDialog({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            The CLI scaffolder is read-only from this page — running it from the browser would require a
-            background daemon, which we deliberately left out of v1.
+            This stamps a <strong>new app type</strong> (copies the reference blueprint folder, registers a new
+            package). To onboard a <strong>client</strong> using an existing blueprint, use{' '}
+            <a href="/onboard" className="text-primary underline-offset-2 hover:underline">
+              /onboard
+            </a>{' '}
+            instead — it works fully in-browser with no daemon required.
           </p>
         </div>
       </DialogContent>

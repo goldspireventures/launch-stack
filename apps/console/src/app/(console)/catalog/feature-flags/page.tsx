@@ -168,6 +168,9 @@ export default function CatalogFeatureFlagsPage() {
       {/* Drill-down */}
       <Dialog open={selectedKey != null} onOpenChange={(open) => !open && setSelectedKey(null)}>
         <DialogContent className="max-w-2xl">
+          <DialogTitle className="sr-only">
+            Feature flag details: {selectedKey ?? ''}
+          </DialogTitle>
           {selectedKey && <CatalogFlagDrawer flagKey={selectedKey} />}
         </DialogContent>
       </Dialog>

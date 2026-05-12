@@ -93,7 +93,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
       }
     >
       <NoticeBanner />
-      <ConsoleCommandPalette />
+      <ConsoleCommandPalette personaId={personaId ?? null} />
       {children}
     </AppShell>
   );

@@ -34,7 +34,13 @@ import { trpc } from '@/lib/trpc';
  * Provider queries are kicked off only after the palette opens (we don't
  * fetch everything on every page load).
  */
-export function ConsoleCommandPalette() {
+export interface ConsoleCommandPaletteProps {
+  /** Current persona id (from the cookie) so cross-origin Open Admin links
+   * can forward it. */
+  personaId?: string | null;
+}
+
+export function ConsoleCommandPalette({ personaId = null }: ConsoleCommandPaletteProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -83,7 +89,12 @@ export function ConsoleCommandPalette() {
         icon: Building2,
         keywords: [t.slug, t.plan],
         onSelect: () => {
-          window.location.href = `${env.NEXT_PUBLIC_ADMIN_URL}/api/active-tenant?slug=${encodeURIComponent(t.slug)}&next=/dashboard`;
+          const params = new URLSearchParams({
+            slug: t.slug,
+            next: '/dashboard',
+          });
+          if (personaId) params.set('persona', personaId);
+          window.location.href = `${env.NEXT_PUBLIC_ADMIN_URL}/api/active-tenant?${params.toString()}`;
         },
       });
     }
@@ -131,7 +142,7 @@ export function ConsoleCommandPalette() {
     }
 
     return out;
-  }, [tenantsQ.data, flagsQ.data, router, toast]);
+  }, [tenantsQ.data, flagsQ.data, router, toast, personaId]);
 
   return <CommandPalette items={items} />;
 }

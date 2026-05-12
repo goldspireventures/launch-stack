@@ -141,7 +141,7 @@ export function PremiumCheckoutModal({
             <div className="rounded-lg border bg-background/40 p-4 text-sm">
               <div className="flex justify-between font-medium">
                 <span>{planLabel}</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>€{subtotal.toFixed(2)}</span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {billingCycle === 'monthly' ? 'Billed monthly' : 'Billed yearly (20% off)'}
@@ -178,7 +178,7 @@ export function PremiumCheckoutModal({
             </div>
             <div className="flex justify-between border-t pt-3 text-sm font-semibold">
               <span>Total due today</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>€{subtotal.toFixed(2)}</span>
             </div>
           </div>
 

@@ -197,6 +197,7 @@ function FlagRow({ row, actorIsStudio, pending, onToggle, onLimitChange, onReset
   }
 
   const on = Boolean(row.effectiveValue);
+  const defaultOn = Boolean(row.defaultValue);
   return (
     <li className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1 space-y-1">
@@ -205,6 +206,11 @@ function FlagRow({ row, actorIsStudio, pending, onToggle, onLimitChange, onReset
           {showStudioBadge ? (
             <span className="rounded-md border border-dashed px-2 py-0.5 text-xs text-muted-foreground">Studio only</span>
           ) : null}
+          {row.isOverridden ? (
+            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+              Overridden
+            </span>
+          ) : null}
           {row.tags.map((t) => (
             <span key={t} className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               {t}
@@ -212,7 +218,17 @@ function FlagRow({ row, actorIsStudio, pending, onToggle, onLimitChange, onReset
           ))}
         </div>
         <p className="text-sm text-muted-foreground">{row.description}</p>
-        <p className="text-xs text-muted-foreground">Default {String(row.defaultValue)}</p>
+        <p className="text-xs text-muted-foreground">
+          Catalog default:{' '}
+          <span className="font-mono">{defaultOn ? 'on' : 'off'}</span>
+          {row.isOverridden ? (
+            <>
+              {' '}
+              · Effective:{' '}
+              <span className="font-mono">{on ? 'on' : 'off'}</span>
+            </>
+          ) : null}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex cursor-pointer items-center gap-2 text-sm">

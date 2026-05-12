@@ -208,10 +208,10 @@ export default function PremiumPage() {
                 </div>
                 <div className="mt-6">
                   {plan.priceMonthly === 0 ? (
-                    <p className="text-3xl font-bold">$0</p>
+                    <p className="text-3xl font-bold">€0</p>
                   ) : (
                     <p className="text-3xl font-bold">
-                      ${plan.priceMonthly.toFixed(2)}
+                      €{plan.priceMonthly.toFixed(2)}
                       <span className="text-base font-normal text-muted-foreground">/mo</span>
                     </p>
                   )}

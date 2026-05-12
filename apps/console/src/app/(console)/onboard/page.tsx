@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+import { PERSONA_COOKIE } from '@goldspire/config';
 import { FadeIn } from '@goldspire/ui';
 import { OnboardWizard } from './wizard';
 
@@ -5,7 +7,9 @@ export const metadata = {
   title: 'Stamp a new tenant · Goldspire Studio',
 };
 
-export default function OnboardPage() {
+export default async function OnboardPage() {
+  const store = await cookies();
+  const personaId = store.get(PERSONA_COOKIE)?.value ?? null;
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-6 py-10">
       <FadeIn>
@@ -21,7 +25,7 @@ export default function OnboardPage() {
           </p>
         </header>
       </FadeIn>
-      <OnboardWizard />
+      <OnboardWizard personaId={personaId} />
     </div>
   );
 }

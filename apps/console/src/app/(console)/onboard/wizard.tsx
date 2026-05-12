@@ -54,7 +54,12 @@ const INITIAL: WizardState = {
   primaryHex: '#7c3aed',
 };
 
-export function OnboardWizard() {
+export interface OnboardWizardProps {
+  /** Current persona id (HttpOnly cookie, read server-side and forwarded). */
+  personaId?: string | null;
+}
+
+export function OnboardWizard({ personaId = null }: OnboardWizardProps = {}) {
   const [step, setStep] = React.useState<Step>('blueprint');
   const [state, setState] = React.useState<WizardState>(INITIAL);
   const [stamped, setStamped] = React.useState<StampResult | null>(null);
@@ -102,7 +107,7 @@ export function OnboardWizard() {
             {step === 'review' && (
               <ReviewStep state={state} onStamped={(r) => { setStamped(r); setStep('done'); }} />
             )}
-            {step === 'done' && stamped && <DoneStep result={stamped} />}
+            {step === 'done' && stamped && <DoneStep result={stamped} personaId={personaId} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -595,8 +600,24 @@ function ReviewCard({ title, rows }: { title: string; rows: ReadonlyArray<readon
 
 /* ─── Step 6 — Done ──────────────────────────────────────────────────── */
 
-function DoneStep({ result }: { result: StampResult }) {
-  const adminDeepLink = `${env.NEXT_PUBLIC_ADMIN_URL}/api/active-tenant?slug=${result.tenant.slug}&next=/dashboard`;
+function DoneStep({
+  result,
+  personaId,
+}: {
+  result: StampResult;
+  personaId: string | null;
+}) {
+  // Cookies are origin-scoped (Console :3001 vs Admin :3002), so the
+  // server-side parent has read goldspire_persona out of HttpOnly cookies
+  // and forwarded it as a prop. We pass it on the deep-link query string;
+  // Admin's /api/active-tenant route sets the persona cookie on its own
+  // origin too.
+  const params = new URLSearchParams({
+    slug: result.tenant.slug,
+    next: '/dashboard',
+  });
+  if (personaId) params.set('persona', personaId);
+  const adminDeepLink = `${env.NEXT_PUBLIC_ADMIN_URL}/api/active-tenant?${params.toString()}`;
   return (
     <div className="space-y-6 text-center">
       <motion.div

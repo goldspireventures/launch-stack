@@ -83,14 +83,30 @@ export function AdminCommandPalette({ canSwitchTenants = false }: AdminCommandPa
       });
     }
 
-    for (const f of flagsQ.data ?? []) {
-      const flag = f as { key: string; kind?: string; enabled?: boolean };
+    // featureFlags.list returns { flags: [...], summary, actorIsStudio } —
+    // NOT a bare array. Iterating the wrapper object directly threw
+    // "object is not iterable" on every Admin page render.
+    for (const f of flagsQ.data?.flags ?? []) {
+      const flag = f as {
+        key: string;
+        kind?: string;
+        effectiveValue?: unknown;
+        isOverridden?: boolean;
+      };
+      const enabled = typeof flag.effectiveValue === 'boolean' ? flag.effectiveValue : undefined;
       out.push({
         id: `flag:${flag.key}`,
         label: flag.key,
         group: 'Flags',
         icon: Flag,
-        hint: flag.enabled ? 'enabled' : 'disabled',
+        hint:
+          enabled === undefined
+            ? flag.isOverridden
+              ? 'overridden'
+              : 'default'
+            : enabled
+              ? 'enabled'
+              : 'disabled',
         keywords: [flag.kind ?? ''],
         onSelect: () => router.push(`/feature-flags?selected=${encodeURIComponent(flag.key)}`),
       });

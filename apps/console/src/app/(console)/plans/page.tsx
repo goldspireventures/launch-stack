@@ -20,7 +20,7 @@ const tiers = [
   {
     id: 'solo' as const,
     name: 'Solo MVP',
-    priceLabel: '$25,000',
+    priceLabel: '€25,000',
     priceNote: 'fixed engagement',
     weeks: '6–10 weeks',
     blueprints: '1 blueprint',
@@ -33,13 +33,13 @@ const tiers = [
       weeksMin: 6,
       weeksMax: 10,
       totalFeeMinorUnits: 2_500_000,
-      currency: 'USD' as const,
+      currency: 'EUR' as const,
     },
   },
   {
     id: 'growth' as const,
     name: 'Growth',
-    priceLabel: '$80,000+',
+    priceLabel: '€80,000+',
     priceNote: 'scoped phases',
     weeks: '12–18 weeks',
     blueprints: 'Up to 3 blueprints',
@@ -52,7 +52,7 @@ const tiers = [
       weeksMin: 12,
       weeksMax: 18,
       totalFeeMinorUnits: 8_000_000,
-      currency: 'USD' as const,
+      currency: 'EUR' as const,
     },
   },
   {
@@ -71,7 +71,7 @@ const tiers = [
       weeksMin: 16,
       weeksMax: 40,
       totalFeeMinorUnits: 25_000_000,
-      currency: 'USD' as const,
+      currency: 'EUR' as const,
     },
   },
 ];
