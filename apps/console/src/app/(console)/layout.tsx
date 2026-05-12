@@ -1,14 +1,5 @@
 import Link from 'next/link';
-import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  Layers,
-  History,
-  Settings,
-  Rocket,
-} from 'lucide-react';
-import { AppShell, Sidebar, Topbar } from '@goldspire/ui';
+import { AppShell, Sidebar, Topbar, consoleNav } from '@goldspire/ui';
 
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,24 +14,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               Studio Console
             </Link>
           }
-          sections={[
-            {
-              items: [
-                { label: 'Overview', href: '/', icon: <LayoutDashboard className="h-4 w-4" /> },
-                { label: 'Apps', href: '/apps', icon: <Rocket className="h-4 w-4" /> },
-                { label: 'Tenants', href: '/tenants', icon: <Building2 className="h-4 w-4" /> },
-                { label: 'Blueprints', href: '/blueprints', icon: <Layers className="h-4 w-4" /> },
-                { label: 'Audit log', href: '/audit', icon: <History className="h-4 w-4" /> },
-              ],
-            },
-            {
-              label: 'Studio',
-              items: [
-                { label: 'Team', href: '/team', icon: <Users className="h-4 w-4" /> },
-                { label: 'Settings', href: '/settings', icon: <Settings className="h-4 w-4" /> },
-              ],
-            },
-          ]}
+          sections={consoleNav}
         />
       }
       topbar={<Topbar title="Goldspire · Studio Console" />}

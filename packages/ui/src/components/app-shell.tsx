@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, Search } from 'lucide-react';
 import { cn } from '../utils/cn';
+import type { NavItem, NavRegistry, NavSection } from '../registry/nav';
 import { Button } from './primitives';
 
 /* ─── AppShell ────────────────────────────────────────────────────────── */
@@ -72,21 +73,92 @@ export interface SidebarSection {
   }>;
 }
 
-export function Sidebar({
-  brand,
-  sections,
-  footer,
-}: {
+function isNavRegistry(sections: NavRegistry | SidebarSection[]): sections is NavRegistry {
+  if (!Array.isArray(sections) || sections.length === 0) return false;
+  const firstItem = sections[0]?.items?.[0];
+  if (!firstItem || !('icon' in firstItem) || firstItem.icon == null) return false;
+  // Legacy callers pass rendered icons (React elements). Registries pass component refs.
+  return !React.isValidElement(firstItem.icon);
+}
+
+function sectionRolesAllowed(section: Pick<NavSection, 'roles'>, userRole?: string): boolean {
+  if (userRole === undefined) return true;
+  if (!section.roles?.length) return true;
+  return section.roles.includes(userRole);
+}
+
+function itemNavAllowed(item: NavItem, userRole?: string, enabledModules?: Set<string>): boolean {
+  if (enabledModules !== undefined && item.moduleFlag !== undefined && !enabledModules.has(item.moduleFlag)) {
+    return false;
+  }
+  if (userRole !== undefined && item.roles?.length && !item.roles.includes(userRole)) {
+    return false;
+  }
+  return true;
+}
+
+function navBadgeToNode(badge: string | number | undefined): React.ReactNode {
+  if (badge === undefined) return undefined;
+  return (
+    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground tabular-nums">
+      {badge}
+    </span>
+  );
+}
+
+function registryToSidebarSections(
+  registry: NavRegistry,
+  userRole?: string,
+  enabledModules?: Set<string>,
+): SidebarSection[] {
+  const out: SidebarSection[] = [];
+  for (const section of registry) {
+    if (!sectionRolesAllowed(section, userRole)) continue;
+    const items = section.items.filter((item) => itemNavAllowed(item, userRole, enabledModules));
+    if (items.length === 0) continue;
+    out.push({
+      label: section.label.trim() ? section.label : undefined,
+      items: items.map((item) => {
+        const Icon = item.icon;
+        return {
+          label: item.label,
+          href: item.href,
+          icon: <Icon className="h-4 w-4" />,
+          badge: navBadgeToNode(item.badge),
+        };
+      }),
+    });
+  }
+  return out;
+}
+
+export interface SidebarProps {
   brand: React.ReactNode;
-  sections: SidebarSection[];
+  /**
+   * Either a typed `NavRegistry` (icon components + optional `roles` / `moduleFlag`)
+   * or legacy sections with pre-rendered icon nodes. Registry rows respect `userRole` /
+   * `enabledModules`; legacy rows do not.
+   */
+  sections: NavRegistry | SidebarSection[];
   footer?: React.ReactNode;
-}) {
+  userRole?: string;
+  enabledModules?: Set<string>;
+}
+
+export function Sidebar({ brand, sections, footer, userRole, enabledModules }: SidebarProps) {
   const pathname = usePathname();
+  const resolvedSections = React.useMemo(() => {
+    if (isNavRegistry(sections)) {
+      return registryToSidebarSections(sections, userRole, enabledModules);
+    }
+    return sections;
+  }, [sections, userRole, enabledModules]);
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-14 items-center border-b px-5">{brand}</div>
       <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
-        {sections.map((section, i) => (
+        {resolvedSections.map((section, i) => (
           <div key={i} className={cn('space-y-1', i > 0 && 'mt-6')}>
             {section.label && (
               <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">

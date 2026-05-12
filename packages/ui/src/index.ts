@@ -1,4 +1,5 @@
 export * from './utils/cn';
+export * from './registry';
 export * from './components/primitives';
 export * from './components/overlays';
 export * from './components/data';
