@@ -81,7 +81,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           title="Goldspire · Admin"
           right={
             <div className="flex items-center gap-3">
-              <ActiveTenantBadge />
+              <ActiveTenantBadge canSwitchTenants={inRoles(user.role, ['STUDIO_OWNER', 'STUDIO_STAFF'])} />
               <NotificationBell count={1} />
               <UserMenu persona={persona} />
             </div>
