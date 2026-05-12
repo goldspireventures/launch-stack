@@ -13,6 +13,7 @@ import { analyticsRouter } from './routers/analytics';
 import { auditRouter } from './routers/audit';
 import { catalogRouter } from './routers/catalog';
 import { datingRouter } from './routers/dating';
+import { billingRouter } from './routers/billing';
 import { onboardingRouter } from './routers/onboarding';
 import { bookingRouter } from './routers/booking';
 import { marketplaceRouter } from './routers/marketplace';
@@ -40,6 +41,7 @@ export const appRouter = router({
   audit: auditRouter,
   catalog: catalogRouter,
   dating: datingRouter,
+  billing: billingRouter,
   onboarding: onboardingRouter,
   booking: bookingRouter,
   marketplace: marketplaceRouter,

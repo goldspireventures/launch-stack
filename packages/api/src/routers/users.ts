@@ -11,6 +11,44 @@ import { NotFoundError } from '@goldspire/platform';
 export const usersRouter = router({
   me: protectedProcedure.query(({ ctx }) => ctx.user),
 
+  /** Full `user` row fields needed by account settings (metadata, etc.). */
+  accountDetails: protectedProcedure.query(async ({ ctx }) => {
+    const [row] = await ctx.db
+      .select({
+        email: schema.user.email,
+        metadata: schema.user.metadata,
+      })
+      .from(schema.user)
+      .where(and(eq(schema.user.id, ctx.user.id), eq(schema.user.tenantId, ctx.user.tenantId)))
+      .limit(1);
+    return {
+      email: row?.email ?? ctx.user.email,
+      metadata: (row?.metadata as Record<string, unknown> | undefined) ?? {},
+      personaId: ctx.persona?.id ?? null,
+      personaName: ctx.persona?.name ?? null,
+    };
+  }),
+
+  /** Shallow-merge keys into `user.metadata` for the current user. */
+  patchMyMetadata: protectedProcedure
+    .input(z.object({ patch: z.record(z.string(), z.unknown()) }))
+    .mutation(async ({ ctx, input }) => {
+      const [current] = await ctx.db
+        .select({ metadata: schema.user.metadata })
+        .from(schema.user)
+        .where(and(eq(schema.user.id, ctx.user.id), eq(schema.user.tenantId, ctx.user.tenantId)))
+        .limit(1);
+      const prev = (current?.metadata as Record<string, unknown> | undefined) ?? {};
+      const next = { ...prev, ...input.patch };
+      const [row] = await ctx.db
+        .update(schema.user)
+        .set({ metadata: next, updatedAt: new Date() })
+        .where(and(eq(schema.user.id, ctx.user.id), eq(schema.user.tenantId, ctx.user.tenantId)))
+        .returning();
+      if (!row) throw new NotFoundError('user', ctx.user.id);
+      return { ok: true as const, metadata: row.metadata };
+    }),
+
   list: tenantAdminProcedure
     .input(z.object({ status: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {

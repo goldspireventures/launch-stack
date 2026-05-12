@@ -28,6 +28,7 @@ export const adminNav = [
       { label: 'Messages', href: '/messages', icon: 'message-square' },
       { label: 'Analytics', href: '/analytics', icon: 'bar-chart-3' },
       { label: 'Audit log', href: '/audit', icon: 'history' },
+      { label: 'Notifications', href: '/notifications', icon: 'bell' },
     ],
   },
   {
