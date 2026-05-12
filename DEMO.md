@@ -169,6 +169,50 @@ Demonstrates the full feature-flag loop: catalog → tenant override → live UX
 
 ---
 
+## Tour 5 — Unified pricing + interactive deal calculator
+
+Demonstrates a single source of truth for pricing and how the studio quotes a new engagement live.
+
+1. Open Console → `/plans` as `studio.owner`. The three tier cards (Solo / Growth / Enterprise) read price, weeks, and milestone splits from `packages/commercial/src/catalog.ts`. Edit any number in `catalog.ts`, save, refresh — every consumer updates.
+2. Click **Open quote calculator** in the top-right (or **Open in Deal Desk** on any tier card). The calculator opens with the tier pre-selected.
+3. Toggle **blueprints** in scope. Watch the headline price, week range, and per-milestone amounts update live. The strongest blueprint anchors the price; additional blueprints contribute at half weight (a 5-blueprint deal doesn't 5× the cost).
+4. Toggle **add-ons** (Mobile app +20%, AI surface +15%, etc.). Each adds a multiplier on top.
+5. Drop the **client risk** to Enterprise. The milestone split rebalances (more weight at staging/UAT, less upfront).
+6. Hit **Save deal**. The row goes to the Deal Desk with the exact inputs you just chose.
+
+Where it lives: `packages/commercial/src/catalog.ts` (tiers + blueprint multipliers + add-ons) and `packages/commercial/src/quote.ts` (`computeQuote(...)`). Same `computeQuote` runs in Plans, the Deal Desk pre-fill, the interactive calculator, and the blueprint cards.
+
+---
+
+## Tour 6 — Moderate user messages
+
+Demonstrates moderator-side flag / hide / ban actions on tenant chat with a full audit trail.
+
+**Setup** (one-time, populates the demo queue with a flagged message):
+```sh
+pnpm --filter @goldspire/db fixup:moderation-demo
+```
+Idempotent — re-running re-applies the flag if it was cleared.
+
+**Walkthrough** as `heartline.owner` (Alex Stone):
+
+1. Go to Admin → `/messages`. The **Flagged** tab carries a badge (1). Click it.
+2. The queue shows Jamie's message "Add me on WhatsApp: +353 …" with the reason "Off-platform contact". Two actions appear: **Clear flag** (false positive) and **Hide** (take it down).
+3. Click **Hide**. The Hidden tab badge ticks up (1). Switch tabs — the row now shows the message struck through with a Restore button.
+4. Back in **Threads**, find the "Jamie & Sarah" thread and click in. Every message has hover actions: Flag, Hide, Ban sender. Click the **Ban sender** action under the hidden message and confirm with a reason ("Repeat off-platform contact"). Jamie's badge across `/users` and the queue rows flips to "Suspended".
+5. Open Admin → `/audit`. The full chain is logged: `message_flagged`, `message_hidden`, `user_suspended`, each with the actor, target ids, and reason. Filter by `action: user_suspended` to find every ban.
+6. To restore: in `/users`, find Jamie, set status back to Active. (Or use the API: `messages.reactivateUser`.)
+
+**Customer-side effect:** open Heartline as `heartline.customer.sarah` and visit her chat with Jamie. Hidden messages render as "Message removed by moderator" so the conversation flow stays legible.
+
+Where the wiring lives:
+- Schema — `packages/db/src/schema/messaging.ts` (`flaggedAt`, `flaggedById`, `flagReason`, `deletedAt`, `hiddenById`).
+- Server — `messages.{flag,unflag,hide,unhide,suspendSender,reactivateUser,moderationQueue}` in `packages/api/src/routers/messages.ts`.
+- Admin UI — `apps/admin/src/app/(admin)/messages/page.tsx` (tabs + per-row actions).
+- Customer-side filter — `apps/dating-web/src/app/(app)/messages/[threadId]/page.tsx` (renders the placeholder).
+
+---
+
 ## Resetting the demo
 
 The seed script truncates demo data and re-creates it from scratch. Idempotent — safe to run any time.

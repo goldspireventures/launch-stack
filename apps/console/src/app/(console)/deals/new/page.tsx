@@ -1,9 +1,20 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
+  BLUEPRINT_MODIFIERS,
+  buildCommercialPlan,
+  computeQuote,
+  getTier,
+  listAddOns,
+  listTiers,
+  type BlueprintQuoteKind,
+  type TierId,
+} from '@goldspire/commercial';
+import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -14,14 +25,10 @@ import {
   LoadingState,
   PageHeader,
   Textarea,
+  cn,
 } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
-import type { CommercialPlanSnapshot } from '@goldspire/commercial';
-
-const engagementOptions = [
-  { value: 'mvp', label: 'MVP only' },
-  { value: 'mvp_plus_prod_planned', label: 'MVP + planned production phase' },
-] as const;
+import { Calculator, Check, Sparkles } from 'lucide-react';
 
 const riskOptions = [
   { value: 'referred', label: 'Referred / known' },
@@ -35,6 +42,22 @@ const subOptions = [
   { value: 'heavy', label: 'Heavy subcontracting' },
 ] as const;
 
+type Risk = (typeof riskOptions)[number]['value'];
+type Sub = (typeof subOptions)[number]['value'];
+
+const BLUEPRINT_OPTIONS: { kind: BlueprintQuoteKind; label: string }[] = (
+  Object.values(BLUEPRINT_MODIFIERS) as readonly (typeof BLUEPRINT_MODIFIERS)[BlueprintQuoteKind][]
+).map((m) => ({ kind: m.kind, label: m.label }));
+
+function formatMinor(minor: number, currency: string): string {
+  const major = minor / 100;
+  return new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(major);
+}
+
 export default function NewStudioDealPage() {
   return (
     <Suspense fallback={<LoadingState />}>
@@ -47,63 +70,42 @@ function NewStudioDealForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const utils = trpc.useUtils();
+
+  const tierParam = (searchParams.get('tier') as TierId | null) ?? null;
+  const initialTier: TierId = tierParam && listTiers().some((t) => t.id === tierParam) ? tierParam : 'solo';
+  const isCalculator = searchParams.get('calculator') === '1' || !tierParam;
+
+  const [tierId, setTierId] = useState<TierId>(initialTier);
   const [title, setTitle] = useState('');
   const [clientName, setClientName] = useState('');
   const [notes, setNotes] = useState('');
-  const [engagementKind, setEngagementKind] = useState<(typeof engagementOptions)[number]['value']>('mvp');
-  const [clientRisk, setClientRisk] = useState<(typeof riskOptions)[number]['value']>('unknown');
-  const [subcontracting, setSubcontracting] = useState<(typeof subOptions)[number]['value']>('none');
-  const [weeksMin, setWeeksMin] = useState('6');
-  const [weeksMax, setWeeksMax] = useState('10');
-  const [totalMajor, setTotalMajor] = useState('25000');
-  const [currency, setCurrency] = useState('EUR');
-  const [preview, setPreview] = useState<CommercialPlanSnapshot | null>(null);
-
-  const tier = searchParams.get('tier');
-  const tierLabel =
-    tier === 'solo'
-      ? 'Solo MVP'
-      : tier === 'growth'
-        ? 'Growth'
-        : tier === 'enterprise'
-          ? 'Enterprise'
-          : null;
+  const [blueprintKinds, setBlueprintKinds] = useState<BlueprintQuoteKind[]>(['social_matching']);
+  const [addOnIds, setAddOnIds] = useState<string[]>([]);
+  const [clientRisk, setClientRisk] = useState<Risk>(getTier(initialTier).defaults.clientRisk);
+  const [subcontracting, setSubcontracting] = useState<Sub>(getTier(initialTier).defaults.subcontracting);
 
   useEffect(() => {
-    if (tier === 'solo') {
-      setEngagementKind('mvp');
-      setClientRisk('unknown');
-      setSubcontracting('none');
-      setWeeksMin('6');
-      setWeeksMax('10');
-      setTotalMajor('25000');
-      setCurrency('EUR');
-      setTitle((prev) => (prev ? prev : 'New Solo MVP engagement'));
-    } else if (tier === 'growth') {
-      setEngagementKind('mvp_plus_prod_planned');
-      setClientRisk('referred');
-      setSubcontracting('light');
-      setWeeksMin('12');
-      setWeeksMax('18');
-      setTotalMajor('80000');
-      setCurrency('EUR');
-      setTitle((prev) => (prev ? prev : 'New Growth engagement'));
-    } else if (tier === 'enterprise') {
-      setEngagementKind('mvp_plus_prod_planned');
-      setClientRisk('enterprise');
-      setSubcontracting('heavy');
-      setWeeksMin('16');
-      setWeeksMax('40');
-      setTotalMajor('250000');
-      setCurrency('EUR');
-      setTitle((prev) => (prev ? prev : 'New Enterprise engagement'));
-    }
-    // Re-run only when the URL ?tier= changes, never on every key-stroke.
-  }, [tier]);
+    if (!tierParam) return;
+    const tier = getTier(tierParam);
+    setTierId(tierParam);
+    setClientRisk(tier.defaults.clientRisk);
+    setSubcontracting(tier.defaults.subcontracting);
+    setTitle((prev) => (prev ? prev : `New ${tier.name} engagement`));
+  }, [tierParam]);
 
-  const previewMut = trpc.studioDeals.previewPlan.useMutation({
-    onSuccess: (data) => setPreview(data),
-  });
+  const quote = useMemo(
+    () =>
+      computeQuote({
+        tierId,
+        blueprintKinds,
+        addOnIds,
+        clientRisk,
+        subcontracting,
+      }),
+    [tierId, blueprintKinds, addOnIds, clientRisk, subcontracting],
+  );
+
+  const planPreview = useMemo(() => buildCommercialPlan(quote.planInput), [quote.planInput]);
 
   const createMut = trpc.studioDeals.create.useMutation({
     onSuccess: (row) => {
@@ -112,52 +114,42 @@ function NewStudioDealForm() {
     },
   });
 
-  function buildPlanInput() {
-    const wMin = Number.parseInt(weeksMin, 10);
-    const wMax = Number.parseInt(weeksMax, 10);
-    const major = Number.parseFloat(totalMajor);
-    const totalFeeMinorUnits = Math.round(major * 100);
-    return {
-      engagementKind,
-      clientRisk,
-      subcontracting,
-      weeksMin: wMin,
-      weeksMax: wMax,
-      totalFeeMinorUnits,
-      currency,
-    };
+  function toggleBlueprint(kind: BlueprintQuoteKind) {
+    setBlueprintKinds((prev) =>
+      prev.includes(kind) ? prev.filter((k) => k !== kind) : [...prev, kind],
+    );
   }
 
-  function handlePreview() {
-    const input = buildPlanInput();
-    previewMut.mutate(input);
+  function toggleAddOn(id: string) {
+    setAddOnIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function handleSave() {
-    const plan = buildPlanInput();
     createMut.mutate({
       title: title.trim(),
       clientName: clientName.trim(),
       notes: notes.trim() || undefined,
-      ...plan,
+      ...quote.planInput,
     });
   }
 
-  const previewDisabled =
+  const tier = getTier(tierId);
+  const saveDisabled =
     !title.trim() ||
     !clientName.trim() ||
-    Number.isNaN(Number.parseFloat(totalMajor)) ||
-    Number.parseFloat(totalMajor) <= 0;
+    blueprintKinds.length === 0 ||
+    createMut.isPending;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="New deal"
+        title={isCalculator ? 'Quote calculator' : 'New deal'}
         description={
-          tierLabel
-            ? `Pre-filled from the ${tierLabel} plan. Adjust anything before saving.`
-            : 'Enter engagement facts, preview milestones, then save to the deal desk.'
+          isCalculator
+            ? 'Pick a tier, choose blueprints + add-ons, and see the price + timeline update live. Save to file the deal.'
+            : `Pre-filled from the ${tier.name} plan. Adjust scope below; the quote updates as you change inputs.`
         }
+        eyebrow="Deal Desk"
         actions={
           <Button variant="outline" asChild>
             <Link href="/deals">Back to list</Link>
@@ -165,147 +157,241 @@ function NewStudioDealForm() {
         }
       />
 
-      {tierLabel && (
-        <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-          <p className="font-medium text-primary">From the {tierLabel} plan</p>
-          <p className="text-xs text-muted-foreground">
-            Engagement type, risk, subcontracting, timeline and price are pre-filled below.
-            Edit any field — they're independent now.
-          </p>
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        {/* ─── Left: inputs ──────────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Deal basics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField label="Deal title" htmlFor="title" required>
+                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Acme MVP build" />
+              </FormField>
+              <FormField label="Client name" htmlFor="client" required>
+                <Input id="client" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+              </FormField>
+              <FormField label="Internal notes" htmlFor="notes" description="Visible to studio operators only — included in the deal record.">
+                <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+              </FormField>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-primary" /> Scope
+                </CardTitle>
+                <Badge variant="outline">
+                  Effort ×{quote.effortMultiplier.toFixed(2)}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Tier</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {listTiers().map((t) => {
+                    const active = tierId === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          setTierId(t.id);
+                          setClientRisk(t.defaults.clientRisk);
+                          setSubcontracting(t.defaults.subcontracting);
+                        }}
+                        className={cn(
+                          'rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                          active
+                            ? 'border-primary bg-primary/10 text-foreground'
+                            : 'border-input hover:bg-muted/40',
+                        )}
+                      >
+                        <p className="font-medium">{t.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{t.weeksLabel}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Blueprints in scope <span className="text-muted-foreground/70">(choose one or more)</span>
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {BLUEPRINT_OPTIONS.map((opt) => {
+                    const active = blueprintKinds.includes(opt.kind);
+                    const mod = BLUEPRINT_MODIFIERS[opt.kind];
+                    return (
+                      <button
+                        key={opt.kind}
+                        type="button"
+                        onClick={() => toggleBlueprint(opt.kind)}
+                        className={cn(
+                          'flex items-start gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                          active
+                            ? 'border-primary bg-primary/5'
+                            : 'border-input hover:bg-muted/40',
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            'mt-0.5 h-4 w-4 shrink-0',
+                            active ? 'text-primary' : 'text-transparent',
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium">{opt.label}</p>
+                          <p className="text-[11px] text-muted-foreground">×{mod.effortMultiplier.toFixed(2)} effort</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {blueprintKinds.length === 0 && (
+                  <p className="mt-2 text-xs text-destructive">Select at least one blueprint to compute a quote.</p>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Add-ons</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {listAddOns().map((a) => {
+                    const active = addOnIds.includes(a.id);
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => toggleAddOn(a.id)}
+                        className={cn(
+                          'flex items-start gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                          active ? 'border-primary bg-primary/5' : 'border-input hover:bg-muted/40',
+                        )}
+                      >
+                        <Check className={cn('mt-0.5 h-4 w-4 shrink-0', active ? 'text-primary' : 'text-transparent')} />
+                        <div className="min-w-0">
+                          <p className="font-medium">{a.label}</p>
+                          <p className="text-[11px] text-muted-foreground">×{a.effortMultiplier.toFixed(2)} · {a.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="Client risk" htmlFor="risk">
+                  <select
+                    id="risk"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={clientRisk}
+                    onChange={(e) => setClientRisk(e.target.value as Risk)}
+                  >
+                    {riskOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Subcontracting" htmlFor="sub">
+                  <select
+                    id="sub"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={subcontracting}
+                    onChange={(e) => setSubcontracting(e.target.value as Sub)}
+                  >
+                    {subOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Engagement</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField label="Deal title" htmlFor="title" required>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Acme MVP build" />
-            </FormField>
-            <FormField label="Client name" htmlFor="client" required>
-              <Input id="client" value={clientName} onChange={(e) => setClientName(e.target.value)} />
-            </FormField>
-            <FormField label="Notes" htmlFor="notes" description="Internal only; included in Markdown export.">
-              <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-            </FormField>
+        {/* ─── Right: live quote ─────────────────────────────────────────── */}
+        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <Card className="border-primary/40 bg-primary/[0.04]">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" /> Live quote
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Total fee</p>
+                <p className="text-3xl font-semibold tracking-tight">
+                  {formatMinor(quote.totalFeeMinorUnits, quote.planInput.currency)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  baseline {formatMinor(tier.defaults.totalFeeMinorUnits, tier.defaults.currency)} × {quote.effortMultiplier.toFixed(2)}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Calendar</p>
+                  <p className="font-medium">{quote.weeksMin}–{quote.weeksMax} wks</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Implied burn</p>
+                  <p className="font-medium">
+                    {formatMinor(quote.monthlyBurnMinorUnits, quote.planInput.currency)}/mo
+                  </p>
+                </div>
+              </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Engagement type" htmlFor="kind">
-                <select
-                  id="kind"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={engagementKind}
-                  onChange={(e) => setEngagementKind(e.target.value as typeof engagementKind)}
-                >
-                  {engagementOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
+              <div className="space-y-2 border-t border-border/60 pt-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Breakdown</p>
+                <ul className="space-y-1.5 text-xs">
+                  {quote.lineItems.map((li) => (
+                    <li key={li.key} className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{li.label}</span>
+                      <span className="font-mono">×{li.multiplier.toFixed(2)}</span>
+                    </li>
                   ))}
-                </select>
-              </FormField>
-              <FormField label="Client risk" htmlFor="risk">
-                <select
-                  id="risk"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={clientRisk}
-                  onChange={(e) => setClientRisk(e.target.value as typeof clientRisk)}
-                >
-                  {riskOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
+                </ul>
+              </div>
+
+              <div className="space-y-2 border-t border-border/60 pt-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Milestones</p>
+                <ol className="space-y-2">
+                  {planPreview.milestones.map((m) => (
+                    <li key={m.key} className="border-l-2 border-primary/40 pl-3 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">
+                          {m.order}. {m.title}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {(m.percentBps / 100).toFixed(0)}% · {formatMinor(m.amountMinorUnits, quote.planInput.currency)}
+                        </span>
+                      </div>
+                    </li>
                   ))}
-                </select>
-              </FormField>
-            </div>
+                </ol>
+              </div>
 
-            <FormField label="Subcontracting" htmlFor="sub">
-              <select
-                id="sub"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={subcontracting}
-                onChange={(e) => setSubcontracting(e.target.value as typeof subcontracting)}
-              >
-                {subOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Weeks (min)" htmlFor="wmin">
-                <Input id="wmin" inputMode="numeric" value={weeksMin} onChange={(e) => setWeeksMin(e.target.value)} />
-              </FormField>
-              <FormField label="Weeks (max)" htmlFor="wmax">
-                <Input id="wmax" inputMode="numeric" value={weeksMax} onChange={(e) => setWeeksMax(e.target.value)} />
-              </FormField>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Total fee (major units)" htmlFor="fee" description="e.g. 25000 = €25,000 when EUR.">
-                <Input id="fee" inputMode="decimal" value={totalMajor} onChange={(e) => setTotalMajor(e.target.value)} />
-              </FormField>
-              <FormField label="Currency" htmlFor="cur">
-                <Input id="cur" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />
-              </FormField>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" onClick={handlePreview} disabled={previewMut.isPending}>
-                {previewMut.isPending ? 'Previewing…' : 'Preview milestones'}
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSave}
-                disabled={previewDisabled || createMut.isPending}
-              >
+              <Button type="button" className="w-full" onClick={handleSave} disabled={saveDisabled}>
                 {createMut.isPending ? 'Saving…' : 'Save deal'}
               </Button>
-            </div>
-            {previewMut.isError && (
-              <p className="text-sm text-destructive">{previewMut.error.message}</p>
-            )}
-            {createMut.isError && <p className="text-sm text-destructive">{createMut.error.message}</p>}
-          </CardContent>
-        </Card>
+              {createMut.isError && (
+                <p className="text-xs text-destructive">{createMut.error.message}</p>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Milestone preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!preview && !previewMut.isPending && (
-              <p className="text-sm text-muted-foreground">Run preview to see payment splits and acceptance hints.</p>
-            )}
-            {previewMut.isPending && <LoadingState />}
-            {preview && (
-              <ol className="space-y-4">
-                {preview.milestones.map((m) => (
-                  <li key={m.key} className="border-l-2 border-primary/40 pl-4">
-                    <p className="text-sm font-medium">
-                      {m.order}. {m.title}{' '}
-                      <span className="text-muted-foreground font-normal">
-                        ({(m.percentBps / 100).toFixed(2)}%)
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">{m.description}</p>
-                    <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground">
-                      {m.acceptance.slice(0, 4).map((a) => (
-                        <li key={a}>{a}</li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-                <li className="pt-2 text-xs text-muted-foreground">{preview.subcontractingNote}</li>
-              </ol>
-            )}
-          </CardContent>
-        </Card>
+          <p className="px-2 text-[11px] text-muted-foreground">
+            All numbers are computed from <code className="font-mono">@goldspire/commercial</code>. To change the catalog,
+            edit <code className="font-mono">packages/commercial/src/catalog.ts</code>.
+          </p>
+        </div>
       </div>
     </div>
   );

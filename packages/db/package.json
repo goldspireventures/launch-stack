@@ -20,6 +20,7 @@
     "studio": "drizzle-kit studio",
     "seed": "tsx ./scripts/seed.ts",
     "fixup:heartline": "tsx ./scripts/fixup-heartline.ts",
+    "fixup:moderation-demo": "tsx ./scripts/fixup-moderation-demo.ts",
     "reset": "tsx ./scripts/reset.ts",
     "clean": "rimraf .turbo dist"
   },

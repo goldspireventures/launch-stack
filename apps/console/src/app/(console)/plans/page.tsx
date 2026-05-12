@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { buildCommercialPlan } from '@goldspire/commercial';
+import { buildCommercialPlan, listTiers, tierHeadlinePrice } from '@goldspire/commercial';
 import {
   Badge,
   Button,
@@ -14,93 +14,43 @@ import {
   PageHeader,
   SlideUp,
 } from '@goldspire/ui';
-import { Check } from 'lucide-react';
-
-const tiers = [
-  {
-    id: 'solo' as const,
-    name: 'Solo MVP',
-    priceLabel: '€25,000',
-    priceNote: 'fixed engagement',
-    weeks: '6–10 weeks',
-    blueprints: '1 blueprint',
-    blurb: 'Ship a credible MVP on a fixed calendar with one blueprint family.',
-    features: ['Discovery + UX wireframes', 'Core flows + auth', 'Stripe test mode', 'Handoff runbook'],
-    planInput: {
-      engagementKind: 'mvp' as const,
-      clientRisk: 'unknown' as const,
-      subcontracting: 'none' as const,
-      weeksMin: 6,
-      weeksMax: 10,
-      totalFeeMinorUnits: 2_500_000,
-      currency: 'EUR' as const,
-    },
-  },
-  {
-    id: 'growth' as const,
-    name: 'Growth',
-    priceLabel: '€80,000+',
-    priceNote: 'scoped phases',
-    weeks: '12–18 weeks',
-    blueprints: 'Up to 3 blueprints',
-    blurb: 'Multi-surface launches with integrations, analytics, and ops polish.',
-    features: ['Multi-app coordination', 'Custom integrations', 'Observability pack', 'Launch playbooks'],
-    planInput: {
-      engagementKind: 'mvp_plus_prod_planned' as const,
-      clientRisk: 'referred' as const,
-      subcontracting: 'light' as const,
-      weeksMin: 12,
-      weeksMax: 18,
-      totalFeeMinorUnits: 8_000_000,
-      currency: 'EUR' as const,
-    },
-  },
-  {
-    id: 'enterprise' as const,
-    name: 'Enterprise',
-    priceLabel: 'Custom',
-    priceNote: 'retainer or T&M',
-    weeks: 'Dedicated team',
-    blueprints: 'Multi-product',
-    blurb: 'Portfolio programs with procurement-friendly milestones and SLAs.',
-    features: ['Dedicated squad', 'Multi-tenant governance', 'Security review lane', '24/7 paging option'],
-    planInput: {
-      engagementKind: 'mvp_plus_prod_planned' as const,
-      clientRisk: 'enterprise' as const,
-      subcontracting: 'heavy' as const,
-      weeksMin: 16,
-      weeksMax: 40,
-      totalFeeMinorUnits: 25_000_000,
-      currency: 'EUR' as const,
-    },
-  },
-];
+import { Check, Calculator } from 'lucide-react';
 
 export default function StudioPlansPage() {
+  const tiers = listTiers();
   return (
     <div className="space-y-6">
       <FadeIn>
         <PageHeader
           title="Commercial plans"
-          description="What we sell before ink hits paper — distinct from signed engagements on the Deal Desk."
+          description="What we sell before ink hits paper — every number here is computed from packages/commercial/src/catalog.ts, the same source the Deal Desk reads."
           eyebrow="Studio"
+          actions={
+            <Button asChild variant="outline" className="gap-1.5">
+              <Link href="/deals/new?calculator=1">
+                <Calculator className="h-3.5 w-3.5" />
+                Open quote calculator
+              </Link>
+            </Button>
+          }
         />
       </FadeIn>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {tiers.map((tier, i) => {
-          const preview = buildCommercialPlan(tier.planInput);
+          const preview = buildCommercialPlan(tier.defaults);
+          const headline = tierHeadlinePrice(tier.id);
           return (
             <SlideUp key={tier.id} delay={0.05 * i}>
               <Card className="flex h-full flex-col border-primary/15 shadow-sm shadow-primary/5">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="text-lg">{tier.name}</CardTitle>
-                    <Badge variant="outline">{tier.weeks}</Badge>
+                    <Badge variant="outline">{tier.weeksLabel}</Badge>
                   </div>
                   <CardDescription>{tier.blurb}</CardDescription>
                   <div className="pt-2">
-                    <p className="text-3xl font-semibold tracking-tight">{tier.priceLabel}</p>
+                    <p className="text-3xl font-semibold tracking-tight">{headline.label}</p>
                     <p className="text-xs text-muted-foreground">{tier.priceNote}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">

@@ -89,13 +89,28 @@ export const message = pgTable(
       .notNull(),
     metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
     editedAt: timestamp('edited_at', { withTimezone: true }),
+    /**
+     * Moderation state. `flaggedAt` marks "needs review"; `deletedAt` marks
+     * "hidden from end-user views". They are independent — a message can be
+     * flagged but still visible, or hidden without ever being flagged.
+     */
+    flaggedAt: timestamp('flagged_at', { withTimezone: true }),
+    flaggedById: varchar('flagged_by_id', { length: 26 }).references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    flagReason: text('flag_reason'),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    hiddenById: varchar('hidden_by_id', { length: 26 }).references(() => user.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
     threadCreatedIx: index('message_thread_created_ix').on(t.threadId, t.createdAt),
     senderIx: index('message_sender_ix').on(t.senderId),
     tenantCreatedIx: index('message_tenant_created_ix').on(t.tenantId, t.createdAt),
+    tenantFlaggedIx: index('message_tenant_flagged_ix').on(t.tenantId, t.flaggedAt),
+    tenantDeletedIx: index('message_tenant_deleted_ix').on(t.tenantId, t.deletedAt),
   }),
 );
 

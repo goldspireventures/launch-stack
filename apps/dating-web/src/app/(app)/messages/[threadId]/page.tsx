@@ -73,7 +73,21 @@ export default function ThreadPage() {
     void markRead.mutate({ threadId });
   }, [threadId, me.data?.id, markRead]);
 
-  const items = messagesQ.data?.items ?? [];
+  // Filter out messages a moderator hid (`deletedAt` set). Customers see a
+  // subtle "removed by moderator" placeholder instead of the original text,
+  // so the conversation flow stays intelligible without leaking content.
+  const items = React.useMemo(() => {
+    const raw = messagesQ.data?.items ?? [];
+    return raw.map((m) =>
+      m.deletedAt
+        ? {
+            ...m,
+            body: '',
+            removedByModerator: true as const,
+          }
+        : { ...m, removedByModerator: false as const },
+    );
+  }, [messagesQ.data?.items]);
 
   const timeline = React.useMemo(() => {
     type M = (typeof items)[number];
@@ -237,9 +251,10 @@ export default function ThreadPage() {
                   row.m.senderId === me.data.id
                     ? 'rounded-br-md bg-primary text-primary-foreground'
                     : 'rounded-bl-md bg-muted/80 text-foreground',
+                  row.m.removedByModerator && 'italic opacity-60',
                 )}
               >
-                {row.m.body}
+                {row.m.removedByModerator ? 'Message removed by moderator' : row.m.body}
               </div>
             </motion.div>
           ),

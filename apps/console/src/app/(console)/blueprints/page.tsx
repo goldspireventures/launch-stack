@@ -1,8 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Copy, ExternalLink, Sparkles } from 'lucide-react';
 import { listBlueprints, type BlueprintDefinition } from '@goldspire/blueprints';
+import {
+  BLUEPRINT_MODIFIERS,
+  type BlueprintQuoteKind,
+} from '@goldspire/commercial';
 import {
   Badge,
   Button,
@@ -34,6 +39,15 @@ export default function BlueprintsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {blueprints.map((b) => {
+          // Pricing lives in @goldspire/commercial/catalog (single source of truth).
+          // Falls back to the blueprint's own legacy price hint if the catalog
+          // doesn't have a modifier for this kind (e.g. brand-new blueprints).
+          const mod = BLUEPRINT_MODIFIERS[b.kind as BlueprintQuoteKind] as
+            | (typeof BLUEPRINT_MODIFIERS)[BlueprintQuoteKind]
+            | undefined;
+          const prototypeCents = mod?.prototypePriceCents ?? b.prototypePriceCents;
+          const retainerCents = mod?.retainerPriceCents ?? b.retainerPriceCents;
+          const effortLabel = mod ? `×${mod.effortMultiplier.toFixed(2)}` : null;
           return (
             <Card key={b.kind} className="p-6">
               <div className="flex items-start justify-between gap-4">
@@ -57,21 +71,29 @@ export default function BlueprintsPage() {
 
               <p className="mt-4 text-sm text-muted-foreground">{b.description}</p>
 
-              <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
+              <div className="mt-4 grid grid-cols-4 gap-3 text-xs">
                 <div>
                   <p className="text-muted-foreground">Prototype</p>
-                  <p className="font-medium">€{(b.prototypePriceCents / 100).toLocaleString()}</p>
+                  <p className="font-medium">€{(prototypeCents / 100).toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Retainer</p>
                   <p className="font-medium">
-                    €{(b.retainerPriceCents / 100).toLocaleString()}/mo
+                    €{(retainerCents / 100).toLocaleString()}/mo
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Build time</p>
                   <p className="font-medium">
                     {b.estimatedWeeks.min}–{b.estimatedWeeks.max} wks
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground" title="Effort multiplier vs baseline blueprint in the unified quote calculator.">
+                    Quote effort
+                  </p>
+                  <p className="font-medium">
+                    {effortLabel ?? <Link href="/plans" className="text-primary underline-offset-2 hover:underline">see /plans</Link>}
                   </p>
                 </div>
               </div>
