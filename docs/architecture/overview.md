@@ -42,8 +42,10 @@ We chose **row-level `tenant_id` + Postgres RLS**.
 - Every business table has a `tenant_id` column.
 - A SQL session variable `app.tenant_id` is set by `withTenantContext(...)` at the start of
   every authenticated request (see `packages/db/src/tenant-context.ts`).
-- RLS policies in `packages/db/drizzle/0000_rls_policies.sql` use `app_current_tenant()`,
-  `app_current_user()`, `app_is_studio()` to enforce per-tenant visibility.
+- RLS policies live in `packages/db/policies/*.sql` (hand-written, idempotent). They use
+  `app_current_tenant()`, `app_current_user()`, `app_is_studio()` to enforce per-tenant
+  visibility. Drizzle-managed schema migrations live in `packages/db/drizzle/` and are
+  tracked via `meta/_journal.json` — keep the two folders separate.
 - The studio role (`STUDIO_OWNER`) bypasses RLS for cross-tenant ops (admin console, seeds,
   migrations).
 
@@ -102,6 +104,27 @@ The Expo app goes through the same `appRouter` over HTTP — only the transport 
 - **Sentry** — server + client error tracking (mockable).
 - **PostHog** — product analytics + session replay + feature flags (mockable).
 - **AuditLog** — append-only DB table for compliance/forensics.
+
+## Studio Portal (apps grid + tenant switcher)
+
+The Studio Console at `apps/console` is the launcher across everything Goldspire runs. Its mental model has four nouns:
+
+| Noun | Lives in | Example |
+|---|---|---|
+| **Blueprint** | `@goldspire/blueprints` + a reference app in `apps/` | `social_matching` → `apps/dating-web` |
+| **Tenant** | `tenant` table | Heartline, Nova Care, Bazaar |
+| **Product** | `product` table | One instance of a blueprint for one tenant — Heartline is a `social_matching` product belonging to the Heartline tenant |
+| **Deployment** | `product_deployment` table | One launchable surface of a product — Heartline web @ production, Heartline iOS @ local, etc. |
+
+`product_deployment` is what the Studio Console's `/apps` page reads. Every row has a `kind` (`web` / `mobile_ios` / `mobile_android` / `admin` / `console` / `api`) and an `environment` (`local` / `staging` / `production`). Platform tools (the console and admin themselves) live under the goldspire studio tenant with `is_studio_tool = true` and `product_id IS NULL`. Health probes are client-driven from the Apps page and only fire on staging / production rows.
+
+The **admin app** (`apps/admin`) is now multi-tenant. The active tenant is tracked in an HTTP-only cookie (`goldspire_active_tenant`). `/select-tenant` is the picker — it runs in studio context (nested `TRPCProvider` pointed at the goldspire tenant) so it can hit the studio-only `tenants.list` query regardless of who you previously logged in as. After picking a tenant, the cookie is set via `POST /api/active-tenant` and the rest of the admin runs in that tenant's context with RLS enforcing the boundary.
+
+To deep-link straight into a specific tenant + page from anywhere (e.g. the Apps grid):
+
+```
+/select-tenant?tenant=heartline&next=/feature-flags
+```
 
 ## Trade-offs (read before you change anything)
 
