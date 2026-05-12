@@ -4,15 +4,19 @@ import Link from 'next/link';
 import { Lock, Sparkles } from 'lucide-react';
 import { Button, Card, LoadingState, PageHeader, PaywallCard } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
-import { useHeartlineProduct } from '@/lib/product';
+import { useDatingProduct } from '@/lib/product';
+import { appConfig } from '@/app.config';
 
 export default function LikesPage() {
-  const product = useHeartlineProduct();
+  const product = useDatingProduct();
   const productId = product.data?.id;
   const likesQ = trpc.dating.whoLikedMe.useQuery(
     { productId: productId ?? '' },
     { enabled: !!productId },
   );
+
+  const plusPlan = appConfig.plans.find((p) => p.tier === 'plus');
+  const plusName = plusPlan?.name ?? 'Premium';
 
   if (product.isLoading || likesQ.isLoading) return <LoadingState />;
 
@@ -29,7 +33,7 @@ export default function LikesPage() {
       {!data ? null : data.gated ? (
         <PaywallCard
           title={`${data.count} ${data.count === 1 ? 'person likes' : 'people like'} you`}
-          description="Upgrade to Heartline+ to see exactly who they are and like them back instantly."
+          description={`Upgrade to ${plusName} to see exactly who they are and like them back instantly.`}
           perks={[
             'See everyone who likes you',
             'Unlimited likes per day',
@@ -37,9 +41,11 @@ export default function LikesPage() {
             'Rewind your last swipe',
           ]}
           cta={
-            <Button asChild size="lg" className="w-full">
-              <Link href="/premium">Upgrade to Heartline+</Link>
-            </Button>
+            appConfig.features.showPremiumUpsell ? (
+              <Button asChild size="lg" className="w-full">
+                <Link href="/premium">Upgrade to {plusName}</Link>
+              </Button>
+            ) : null
           }
         />
       ) : (
@@ -67,8 +73,8 @@ export default function LikesPage() {
 
       {!data?.gated && data && data.users.length > 0 && (
         <p className="mt-4 text-xs text-muted-foreground">
-          <Lock className="mr-1 inline h-3 w-3" /> You're seeing this because you have an active
-          Heartline+ subscription.
+          <Lock className="mr-1 inline h-3 w-3" /> You're seeing this because you have an active{' '}
+          {plusName} subscription.
         </p>
       )}
     </div>

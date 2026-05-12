@@ -12,10 +12,10 @@ import {
   Textarea,
 } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
-import { useHeartlineProduct } from '@/lib/product';
+import { useDatingProduct } from '@/lib/product';
 
 export default function ProfilePage() {
-  const product = useHeartlineProduct();
+  const product = useDatingProduct();
   const productId = product.data?.id;
   const me = trpc.users.me.useQuery();
   const profileQ = trpc.dating.myProfile.useQuery(
@@ -86,14 +86,29 @@ export default function ProfilePage() {
               disabled={upsert.isPending || !productId || !profileQ.data}
               onClick={async () => {
                 if (!productId || !profileQ.data) return;
+                const d = profileQ.data;
+                const b = d.birthdate as string | Date;
+                const birthdate = typeof b === 'string' ? b.slice(0, 10) : b.toISOString().slice(0, 10);
                 await upsert.mutateAsync({
                   productId,
                   profile: {
-                    ...profileQ.data,
                     displayName,
                     bio,
-                    city,
-                    photos: profileQ.data.photos.map((p) => ({
+                    birthdate,
+                    gender: d.gender,
+                    interestedIn: d.interestedIn as never,
+                    seeking: d.seeking,
+                    prompts: d.prompts ?? [],
+                    city: city || undefined,
+                    countryCode: d.countryCode ?? undefined,
+                    lat: d.lat ?? undefined,
+                    lng: d.lng ?? undefined,
+                    heightCm: d.heightCm ?? undefined,
+                    jobTitle: d.jobTitle ?? undefined,
+                    company: d.company ?? undefined,
+                    school: d.school ?? undefined,
+                    metadata: d.metadata ?? {},
+                    photos: d.photos.map((p) => ({
                       url: p.url,
                       storagePath: p.storagePath,
                       position: p.position,
@@ -101,9 +116,6 @@ export default function ProfilePage() {
                       height: p.height ?? undefined,
                       blurhash: p.blurhash ?? undefined,
                     })),
-                    interestedIn: profileQ.data.interestedIn as never,
-                    prompts: profileQ.data.prompts ?? [],
-                    metadata: profileQ.data.metadata ?? {},
                   },
                 });
               }}

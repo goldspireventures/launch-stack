@@ -1,10 +1,13 @@
 import { Link } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { trpc } from '@/lib/trpc';
-import { useHeartlineProduct } from '@/lib/product';
+import { useDatingProduct } from '@/lib/product';
+import { appConfig } from '@/app.config';
+
+const { backgroundHex, primaryHex } = appConfig.theme;
 
 export default function DiscoverScreen() {
-  const product = useHeartlineProduct();
+  const product = useDatingProduct();
   const productId = product.data?.id;
   const discover = trpc.dating.discover.useQuery(
     { productId: productId ?? '', limit: 10 },
@@ -14,8 +17,8 @@ export default function DiscoverScreen() {
 
   if (product.isLoading || discover.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#0B0B0F]">
-        <ActivityIndicator color="#E15A82" />
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: backgroundHex }}>
+        <ActivityIndicator color={primaryHex} />
       </View>
     );
   }
@@ -23,7 +26,11 @@ export default function DiscoverScreen() {
   const profiles = discover.data ?? [];
 
   return (
-    <ScrollView className="flex-1 bg-[#0B0B0F]" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView
+      className="flex-1"
+      style={{ backgroundColor: backgroundHex }}
+      contentContainerStyle={{ padding: 16 }}
+    >
       <View className="mb-4 flex-row items-center justify-between">
         <Text className="text-2xl font-semibold text-white">Discover</Text>
         <View className="flex-row gap-3">
@@ -67,7 +74,8 @@ export default function DiscoverScreen() {
                   <Text className="text-center text-white">Pass</Text>
                 </Pressable>
                 <Pressable
-                  className="flex-1 rounded-md bg-[#E15A82] py-3"
+                  className="flex-1 rounded-md py-3"
+                  style={{ backgroundColor: primaryHex }}
                   onPress={() =>
                     productId &&
                     swipe.mutate({ productId, toUserId: p.userId, action: 'like' })

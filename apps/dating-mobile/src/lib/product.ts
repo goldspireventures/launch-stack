@@ -1,5 +1,6 @@
+import { appConfig } from '@/app.config';
 import { trpc } from './trpc';
 
-export function useHeartlineProduct() {
-  return trpc.products.bySlug.useQuery({ slug: 'heartline-dating' });
+export function useDatingProduct() {
+  return trpc.products.bySlug.useQuery({ slug: appConfig.productSlug });
 }

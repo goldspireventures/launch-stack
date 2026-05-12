@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { Card, EmptyState, LoadingState, PageHeader } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
-import { useHeartlineProduct } from '@/lib/product';
+import { useDatingProduct } from '@/lib/product';
 
 export default function MatchesPage() {
-  const productQ = useHeartlineProduct();
+  const productQ = useDatingProduct();
   const productId = productQ.data?.id;
   const matchesQ = trpc.dating.matches.useQuery(
     { productId: productId ?? '' },

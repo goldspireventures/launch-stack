@@ -1,9 +1,12 @@
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { trpc } from '@/lib/trpc';
-import { useHeartlineProduct } from '@/lib/product';
+import { useDatingProduct } from '@/lib/product';
+import { appConfig } from '@/app.config';
+
+const { backgroundHex, primaryHex } = appConfig.theme;
 
 export default function ProfileScreen() {
-  const product = useHeartlineProduct();
+  const product = useDatingProduct();
   const productId = product.data?.id;
   const profile = trpc.dating.myProfile.useQuery(
     { productId: productId ?? '' },
@@ -11,14 +14,14 @@ export default function ProfileScreen() {
   );
   if (product.isLoading || profile.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#0B0B0F]">
-        <ActivityIndicator color="#E15A82" />
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: backgroundHex }}>
+        <ActivityIndicator color={primaryHex} />
       </View>
     );
   }
   const p = profile.data;
   return (
-    <ScrollView className="flex-1 bg-[#0B0B0F] p-4">
+    <ScrollView className="flex-1 p-4" style={{ backgroundColor: backgroundHex }}>
       <View className="gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-5">
         <Text className="text-2xl font-semibold text-white">{p?.displayName ?? 'You'}</Text>
         <Text className="text-white/60">{p?.city ?? '—'}</Text>

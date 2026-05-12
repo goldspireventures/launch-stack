@@ -5,6 +5,7 @@ import { httpBatchLink } from '@trpc/client';
 import superjson from 'superjson';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppRouter } from '@goldspire/api';
+import { appConfig } from '@/app.config';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -26,7 +27,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: `${getApiBaseUrl()}/api/trpc`,
           transformer: superjson,
-          headers: () => ({ 'x-goldspire-tenant': 'heartline' }),
+          headers: () => ({ 'x-goldspire-tenant': appConfig.tenantSlug }),
         }),
       ],
     }),

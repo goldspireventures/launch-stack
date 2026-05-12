@@ -6,6 +6,7 @@ import superjson from 'superjson';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as React from 'react';
 import type { AppRouter } from '@goldspire/api';
+import { appConfig } from '@/app.config';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -30,7 +31,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           transformer: superjson,
           headers() {
             return {
-              'x-goldspire-tenant': 'heartline',
+              'x-goldspire-tenant': appConfig.tenantSlug,
             };
           },
         }),

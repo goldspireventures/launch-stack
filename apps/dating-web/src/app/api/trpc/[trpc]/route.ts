@@ -1,7 +1,8 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter, createTRPCContext } from '@goldspire/api';
+import { logger, withRequestLogging } from '@goldspire/logger/next';
 
-const handler = (req: Request) =>
+const innerHandler = (req: Request) =>
   fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
@@ -12,10 +13,16 @@ const handler = (req: Request) =>
         ipAddress: req.headers.get('x-forwarded-for') ?? undefined,
       }),
     onError({ error, path }) {
-      // eslint-disable-next-line no-console
-      const detail = error.cause instanceof Error ? error.cause.message : String(error.cause ?? '');
-      console.error(`[trpc] ${path}: ${error.message}${detail ? ` (${detail})` : ''}`);
+      logger.error(
+        {
+          path,
+          code: error.code,
+          cause: error.cause instanceof Error ? error.cause.message : String(error.cause ?? ''),
+        },
+        error.message,
+      );
     },
   });
 
-export { handler as GET, handler as POST };
+export const GET = withRequestLogging(innerHandler, { service: 'dating-web' });
+export const POST = withRequestLogging(innerHandler, { service: 'dating-web' });

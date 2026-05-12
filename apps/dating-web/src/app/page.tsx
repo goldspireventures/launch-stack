@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Flame, Heart, MessageCircle, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '@goldspire/ui';
+import { appConfig } from '@/app.config';
 
 export default function LandingPage() {
   return (
@@ -13,7 +14,7 @@ export default function LandingPage() {
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/20 text-primary">
             <Heart className="h-4 w-4 fill-current" />
           </span>
-          <span className="text-lg font-semibold tracking-tight">Heartline</span>
+          <span className="text-lg font-semibold tracking-tight">{appConfig.brand.name}</span>
           <span className="ml-2 hidden rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-block">
             on Goldspire
           </span>
@@ -39,7 +40,7 @@ export default function LandingPage() {
               Real conversations <br /> over real connections.
             </h1>
             <p className="max-w-md text-base text-muted-foreground md:text-lg">
-              Heartline is a reference Social Matching app — the kind of dating, mentorship, or
+              {appConfig.brand.name} is a reference Social Matching app — the kind of dating, mentorship, or
               community-pairing product Goldspire ships for clients in days, not months.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">

@@ -1,15 +1,8 @@
 @import '@goldspire/ui/styles.css';
 
-/* Heartline-specific tweaks. Inherits all design tokens from @goldspire/ui. */
-:root {
-  --primary: 339 78% 62%;
-  --primary-foreground: 0 0% 100%;
-  --accent: 339 78% 62%;
-  --accent-foreground: 0 0% 100%;
-  --ring: 339 78% 62%;
-}
+/* Shell theme: --primary / --ring etc. are set on <html> from app.config (see root layout). */
 
 .heart-gradient {
-  background: radial-gradient(ellipse at top, hsl(339 78% 22% / 0.35), transparent 60%),
+  background: radial-gradient(ellipse at top, hsl(var(--primary) / 0.35), transparent 60%),
     radial-gradient(ellipse at bottom right, hsl(20 80% 20% / 0.25), transparent 50%);
 }

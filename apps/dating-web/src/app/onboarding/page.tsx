@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { Button, Card, CardContent, FormField, Input } from '@goldspire/ui';
+import { appConfig } from '@/app.config';
 
 export default function OnboardingPage() {
   return (
@@ -10,7 +11,7 @@ export default function OnboardingPage() {
       <Link href="/" className="mb-8 text-sm text-muted-foreground">
         ← Back
       </Link>
-      <h1 className="text-2xl font-semibold">Create your Heartline profile</h1>
+      <h1 className="text-2xl font-semibold">Create your {appConfig.brand.name} profile</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         In mock mode, sign-in is automatic with the seeded demo user. With Supabase Auth configured,
         this becomes a real sign-up flow.
@@ -19,7 +20,7 @@ export default function OnboardingPage() {
       <Card className="mt-6">
         <CardContent className="space-y-4 p-6">
           <FormField label="Email" htmlFor="email">
-            <Input id="email" type="email" defaultValue="ava@heartline.demo" />
+            <Input id="email" type="email" defaultValue={appConfig.brand.demoEmail} />
           </FormField>
           <FormField label="Password" htmlFor="password">
             <Input id="password" type="password" defaultValue="••••••••" disabled />

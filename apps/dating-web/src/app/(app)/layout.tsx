@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Flame, Heart, MessageCircle, Sparkles, User } from 'lucide-react';
 import { AppShell, Sidebar, Topbar, NotificationBell } from '@goldspire/ui';
+import { appConfig } from '@/app.config';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const sections = [
@@ -27,17 +28,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="grid h-7 w-7 place-items-center rounded-md bg-primary/15 text-primary">
                 <Heart className="h-4 w-4 fill-current" />
               </span>
-              Heartline
+              {appConfig.brand.name}
             </Link>
           }
           sections={sections}
           footer={
-            <Link
-              href="/premium"
-              className="block rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-center text-xs font-medium text-primary hover:bg-primary/20"
-            >
-              Upgrade to Premium
-            </Link>
+            appConfig.features.showPremiumNavCta ? (
+              <Link
+                href="/premium"
+                className="block rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-center text-xs font-medium text-primary hover:bg-primary/20"
+              >
+                Upgrade to Premium
+              </Link>
+            ) : null
           }
         />
       }

@@ -1,38 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import { Heart, Check } from 'lucide-react';
 import { Button, Card, PageHeader, PricingCard } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
-
-const PLANS = [
-  {
-    name: 'Heartline+',
-    priceCents: 1499,
-    priceId: 'price_heartline_plus_monthly',
-    description: 'See who liked you, unlimited likes, one boost a week.',
-    features: [
-      'See who liked you',
-      'Unlimited likes',
-      '1 profile boost per week',
-      'Rewind last swipe',
-      'Ad-free',
-    ],
-    featured: true,
-  },
-  {
-    name: 'Heartline Gold',
-    priceCents: 2999,
-    priceId: 'price_heartline_gold_monthly',
-    description: 'Everything in +, plus priority likes and travel mode.',
-    features: [
-      'Everything in Heartline+',
-      'Priority delivery of your likes',
-      'Travel mode — match anywhere',
-      '5 boosts per week',
-    ],
-  },
-];
+import { appConfig } from '@/app.config';
 
 export default function PremiumPage() {
   const checkout = trpc.subscriptions.checkout.useMutation();
@@ -48,10 +19,18 @@ export default function PremiumPage() {
     if (res.url) window.location.href = res.url;
   }
 
+  if (!appConfig.features.premiumPageEnabled) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <PageHeader title="Premium" description="Premium is not enabled for this client." />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
-        title="Upgrade to Heartline Premium"
+        title={`Upgrade to ${appConfig.brand.name} Premium`}
         description="Get the full experience — see your admirers, never run out of likes."
         eyebrow={
           <span className="inline-flex items-center gap-1 text-primary">
@@ -61,19 +40,19 @@ export default function PremiumPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        {PLANS.map((plan) => (
+        {appConfig.plans.map((plan) => (
           <PricingCard
-            key={plan.priceId}
+            key={plan.id}
             name={plan.name}
-            priceCents={plan.priceCents}
+            priceCents={Math.round(plan.priceMonthly * 100)}
             description={plan.description}
-            features={plan.features}
+            features={[...plan.features]}
             featured={plan.featured}
             cta={
               <Button
                 className="w-full"
                 size="lg"
-                onClick={() => upgrade(plan.priceId)}
+                onClick={() => upgrade(plan.id)}
                 disabled={checkout.isPending}
               >
                 {checkout.isPending ? 'Working…' : 'Start trial'}

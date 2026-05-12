@@ -12,10 +12,10 @@ import {
   cn,
 } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
-import { useHeartlineProduct } from '@/lib/product';
+import { useDatingProduct } from '@/lib/product';
 
 export default function DiscoverPage() {
-  const productQ = useHeartlineProduct();
+  const productQ = useDatingProduct();
   const productId = productQ.data?.id;
 
   const discoverQ = trpc.dating.discover.useQuery(
