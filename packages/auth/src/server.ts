@@ -1,6 +1,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@goldspire/db';
-import { type Role, inRoles } from '@goldspire/config';
+import {
+  type Role,
+  inRoles,
+  getPersonaById,
+  type PersonaDefinition,
+} from '@goldspire/config';
 import { env } from '@goldspire/config/env';
 import { ForbiddenError, UnauthenticatedError, supabaseService } from '@goldspire/platform';
 
@@ -23,6 +28,8 @@ export interface AuthContext {
   accessToken?: string;
   /** Tenant slug or ID to scope to. Required for tRPC requests. */
   tenantHint?: string;
+  /** Active persona id (from the `goldspire_persona` cookie). Mock-mode only. */
+  personaId?: string;
   /** Forwarded for audit trail. */
   ipAddress?: string;
   userAgent?: string;
@@ -40,7 +47,7 @@ export interface AuthedUser {
 
 export async function getCurrentUser(ctx: AuthContext): Promise<AuthedUser | null> {
   if (env.AUTH_PROVIDER === 'mock') {
-    return loadMockUser(ctx.tenantHint);
+    return loadMockUser(ctx.tenantHint, ctx.personaId);
   }
   const supabase = supabaseService();
   if (!supabase || !ctx.accessToken) return null;
@@ -104,8 +111,23 @@ async function resolveTenant(hint: string) {
   return row;
 }
 
-async function loadMockUser(tenantHint?: string): Promise<AuthedUser | null> {
-  const tenantSlug = tenantHint ?? env.GOLDSPIRE_TENANT_ID;
+async function loadMockUser(
+  tenantHint?: string,
+  personaId?: string,
+): Promise<AuthedUser | null> {
+  // Persona route: caller passed an explicit persona cookie. Look the persona
+  // up in the catalog, then fetch the corresponding user row by email
+  // (personas declare a stable email that must match the seeded user).
+  const persona = getPersonaById(personaId);
+  if (persona) {
+    const user = await loadUserByPersona(persona);
+    if (user) return user;
+    // Fall through to legacy "highest role for tenant" if the seeded user
+    // hasn't been planted yet. This keeps the dev experience working between
+    // a persona update and a re-seed.
+  }
+
+  const tenantSlug = tenantHint ?? persona?.tenantSlug ?? env.GOLDSPIRE_TENANT_ID;
   const t = await resolveTenant(tenantSlug);
   if (!t) return null;
   // Prefer an admin user (TENANT_OWNER / TENANT_ADMIN / STUDIO_*) so mock
@@ -124,6 +146,29 @@ async function loadMockUser(tenantHint?: string): Promise<AuthedUser | null> {
         else 4
       end`,
       schema.user.createdAt,
+    )
+    .limit(1);
+  const u = rows[0];
+  if (!u) return null;
+  return {
+    id: u.id,
+    tenantId: u.tenantId,
+    email: u.email,
+    name: u.name,
+    role: u.role,
+    status: u.status,
+    avatarUrl: u.avatarUrl,
+  };
+}
+
+async function loadUserByPersona(p: PersonaDefinition): Promise<AuthedUser | null> {
+  const t = await resolveTenant(p.tenantSlug);
+  if (!t) return null;
+  const rows = await db
+    .select()
+    .from(schema.user)
+    .where(
+      and(eq(schema.user.tenantId, t.id), eq(schema.user.email, p.email)),
     )
     .limit(1);
   const u = rows[0];

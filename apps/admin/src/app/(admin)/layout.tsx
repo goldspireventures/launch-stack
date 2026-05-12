@@ -3,8 +3,21 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@goldspire/auth';
 import { env } from '@goldspire/config/env';
-import { inRoles, TENANT_ADMIN_ROLES } from '@goldspire/config';
-import { AppShell, NoticeBanner, Sidebar, Topbar, NotificationBell, adminNav } from '@goldspire/ui';
+import {
+  PERSONA_COOKIE,
+  getPersonaById,
+  inRoles,
+  TENANT_ADMIN_ROLES,
+} from '@goldspire/config';
+import {
+  AppShell,
+  NoticeBanner,
+  Sidebar,
+  Topbar,
+  NotificationBell,
+  UserMenu,
+  adminNav,
+} from '@goldspire/ui';
 import { ActiveTenantBadge } from '@/components/active-tenant-badge';
 import { ACTIVE_TENANT_COOKIE } from '@/lib/active-tenant';
 
@@ -25,13 +38,16 @@ import { ACTIVE_TENANT_COOKIE } from '@/lib/active-tenant';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('sb-access-token')?.value;
-  const tenantHint = cookieStore.get(ACTIVE_TENANT_COOKIE)?.value;
+  const personaId = cookieStore.get(PERSONA_COOKIE)?.value;
+  const persona = getPersonaById(personaId);
+  const tenantHint =
+    cookieStore.get(ACTIVE_TENANT_COOKIE)?.value ?? persona?.tenantSlug;
 
   if (!tenantHint) {
     redirect('/select-tenant?notice=no-tenant-context');
   }
 
-  const user = await getCurrentUser({ accessToken, tenantHint });
+  const user = await getCurrentUser({ accessToken, personaId, tenantHint });
 
   if (!user) {
     // Cookie set but no user — usually the cookie points at a tenant this
@@ -67,6 +83,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="flex items-center gap-3">
               <ActiveTenantBadge />
               <NotificationBell count={1} />
+              <UserMenu persona={persona} />
             </div>
           }
         />

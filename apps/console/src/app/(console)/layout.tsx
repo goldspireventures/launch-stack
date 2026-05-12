@@ -3,8 +3,21 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getCurrentUser } from '@goldspire/auth';
 import { env } from '@goldspire/config/env';
-import { inRoles, STUDIO_CONSOLE_ROLES, TENANT_ADMIN_ROLES } from '@goldspire/config';
-import { AppShell, NoticeBanner, Sidebar, Topbar, consoleNav } from '@goldspire/ui';
+import {
+  PERSONA_COOKIE,
+  getPersonaById,
+  inRoles,
+  STUDIO_CONSOLE_ROLES,
+  TENANT_ADMIN_ROLES,
+} from '@goldspire/config';
+import {
+  AppShell,
+  NoticeBanner,
+  Sidebar,
+  Topbar,
+  UserMenu,
+  consoleNav,
+} from '@goldspire/ui';
 
 /**
  * Slug of the studio's own tenant. Every studio operator (STUDIO_OWNER /
@@ -30,9 +43,12 @@ const STUDIO_TENANT_SLUG = 'goldspire';
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('sb-access-token')?.value;
+  const personaId = cookieStore.get(PERSONA_COOKIE)?.value;
+  const persona = getPersonaById(personaId);
   const user = await getCurrentUser({
     accessToken,
-    tenantHint: STUDIO_TENANT_SLUG,
+    personaId,
+    tenantHint: persona?.tenantSlug ?? STUDIO_TENANT_SLUG,
   });
 
   if (!user) {
@@ -68,7 +84,12 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
           userRole={user.role}
         />
       }
-      topbar={<Topbar title="Goldspire · Studio Console" />}
+      topbar={
+        <Topbar
+          title="Goldspire · Studio Console"
+          right={<UserMenu persona={persona} />}
+        />
+      }
     >
       <NoticeBanner />
       {children}
