@@ -90,6 +90,28 @@ export function resolveDatabaseUrls(): DatabaseUrlChoice {
   const directUrl = env.DIRECT_URL;
 
   if (directUrl && directUrl !== dbUrl) {
+    // Edge case: developer set DIRECT_URL to the `db.*.supabase.co` direct
+    // host (IPv4-only on the free tier) while DATABASE_URL points at the
+    // pooler. On Windows / IPv4-only networks the direct host doesn't
+    // resolve at all, breaking every migration / seed.
+    //
+    // The Supabase session pooler (port 5432 on `*.pooler.supabase.com`)
+    // can run DDL just as well as the direct connection, and it's
+    // reachable on every network. Prefer it.
+    const directParsed = safeParse(directUrl);
+    const dbParsed = safeParse(dbUrl);
+    if (directParsed && dbParsed && isSupabaseDirect(directParsed.hostname) && isSupabasePooler(dbParsed.hostname)) {
+      const sessionPooler =
+        dbParsed.port === SUPABASE_SESSION_PORT
+          ? dbUrl
+          : (deriveSessionFromTransaction(dbUrl) ?? dbUrl);
+      return {
+        runtime: dbUrl,
+        migration: sessionPooler,
+        rationale:
+          'DIRECT_URL points at the IPv4-only direct host; preferring DATABASE_URL pooler (session port) for migrations',
+      };
+    }
     return {
       runtime: dbUrl,
       migration: directUrl,
