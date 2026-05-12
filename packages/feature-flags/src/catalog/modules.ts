@@ -9,6 +9,7 @@ export const MODULE_FLAGS = [
     defaultEnabled: false,
     tags: [] as string[],
     studioOnly: true,
+    lifecycle: 'stable',
   },
   {
     key: 'module.live_video',
@@ -18,6 +19,7 @@ export const MODULE_FLAGS = [
     defaultEnabled: false,
     tags: [] as string[],
     studioOnly: false,
+    lifecycle: 'experimental',
   },
   {
     key: 'module.referrals',
@@ -27,6 +29,7 @@ export const MODULE_FLAGS = [
     defaultEnabled: false,
     tags: [] as string[],
     studioOnly: false,
+    lifecycle: 'stable',
   },
   {
     key: 'module.crm_export',
@@ -36,6 +39,7 @@ export const MODULE_FLAGS = [
     defaultEnabled: false,
     tags: [] as string[],
     studioOnly: false,
+    lifecycle: 'stable',
   },
   {
     key: 'module.ai_features',
@@ -45,6 +49,7 @@ export const MODULE_FLAGS = [
     defaultEnabled: false,
     tags: ['ai'],
     studioOnly: false,
+    lifecycle: 'stable',
   },
 ] as const satisfies readonly ModuleFlagDefinition[];
 

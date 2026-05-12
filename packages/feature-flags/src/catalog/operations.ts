@@ -9,6 +9,7 @@ export const OPS_FLAGS = [
     defaultEnabled: false,
     tags: [] as string[],
     studioOnly: true,
+    lifecycle: 'stable',
   },
   {
     key: 'ops.signup_paused',
@@ -18,6 +19,7 @@ export const OPS_FLAGS = [
     defaultEnabled: false,
     tags: [] as string[],
     studioOnly: true,
+    lifecycle: 'stable',
   },
   {
     key: 'ops.read_only',
@@ -27,5 +29,6 @@ export const OPS_FLAGS = [
     defaultEnabled: false,
     tags: ['security'],
     studioOnly: true,
+    lifecycle: 'stable',
   },
 ] as const satisfies readonly OperationFlagDefinition[];

@@ -9,6 +9,8 @@ export const FEATURE_FLAGS = [
     defaultEnabled: false,
     tags: ['experiment'],
     studioOnly: false,
+    lifecycle: 'experimental',
+    blueprintKinds: ['social_matching'],
   },
   {
     key: 'ai.profile_assist',
@@ -18,6 +20,7 @@ export const FEATURE_FLAGS = [
     defaultEnabled: false,
     tags: ['ai'],
     studioOnly: false,
+    lifecycle: 'experimental',
     blueprintKinds: ['social_matching'],
   },
   {
@@ -28,6 +31,7 @@ export const FEATURE_FLAGS = [
     defaultEnabled: false,
     tags: ['ai'],
     studioOnly: false,
+    lifecycle: 'experimental',
     blueprintKinds: ['social_matching'],
   },
   {
@@ -38,6 +42,7 @@ export const FEATURE_FLAGS = [
     defaultEnabled: false,
     tags: ['ai'],
     studioOnly: false,
+    lifecycle: 'experimental',
     blueprintKinds: ['social_matching'],
   },
   {
@@ -48,6 +53,7 @@ export const FEATURE_FLAGS = [
     defaultEnabled: false,
     tags: ['compliance'],
     studioOnly: false,
+    lifecycle: 'stable',
   },
   {
     key: 'feature.dark_mode',
@@ -57,6 +63,7 @@ export const FEATURE_FLAGS = [
     defaultEnabled: true,
     tags: ['brand'],
     studioOnly: false,
+    lifecycle: 'stable',
   },
   {
     key: 'feature.export_csv',
@@ -66,5 +73,6 @@ export const FEATURE_FLAGS = [
     defaultEnabled: true,
     tags: [] as string[],
     studioOnly: false,
+    lifecycle: 'stable',
   },
 ] as const satisfies readonly FeatureFlagDefinition[];
