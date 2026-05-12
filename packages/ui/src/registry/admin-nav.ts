@@ -1,11 +1,14 @@
 import type { NavRegistry } from './nav';
 
 /**
- * Admin sidebar. Icons are string keys (lucide-react names) so the registry
- * survives the RSC server→client serialization boundary.
+ * Admin sidebar — purely tenant-scoped.
  *
- * Deal desk is studio-internal. Includes STUDIO_STAFF (used in DB) and
- * STUDIO_DEVELOPER (reserved for future role alignment / Workstream C catalog).
+ * Studio-only surfaces (Deal Desk, cross-tenant audit, catalog management,
+ * etc.) live in the Console (`apps/console`) under Model A of the split.
+ * Anything in here MUST make sense viewed through the lens of one tenant.
+ *
+ * Icons are string keys (lucide-react names) so the registry survives the
+ * RSC server→client serialization boundary.
  */
 export const adminNav = [
   {
@@ -15,17 +18,6 @@ export const adminNav = [
       { label: 'Users', href: '/users', icon: 'users' },
       { label: 'Products', href: '/products', icon: 'package' },
       { label: 'Subscriptions', href: '/subscriptions', icon: 'credit-card' },
-    ],
-  },
-  {
-    label: 'Studio',
-    items: [
-      {
-        label: 'Deal desk',
-        href: '/studio/deals',
-        icon: 'handshake',
-        roles: ['STUDIO_OWNER', 'STUDIO_DEVELOPER', 'STUDIO_STAFF'],
-      },
     ],
   },
   {

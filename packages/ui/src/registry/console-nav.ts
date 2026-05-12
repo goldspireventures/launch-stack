@@ -1,11 +1,14 @@
 import type { NavRegistry } from './nav';
 
 /**
- * Studio Console sidebar. Icons are string keys (lucide-react names) so the
- * registry survives the RSC server→client serialization boundary.
+ * Studio Console sidebar — cross-tenant studio surface.
  *
- * `/team` and `/settings` were removed — those routes do not exist under
- * apps/console (dead nav). Re-add here once pages ship.
+ * Everything here ignores any per-tenant context: it lists, compares, or
+ * operates across the whole portfolio. Tenant-scoped operations live in the
+ * Admin app (`apps/admin`) under Model A of the split.
+ *
+ * Icons are string keys (lucide-react names) so the registry survives the
+ * RSC server→client serialization boundary.
  */
 export const consoleNav = [
   {
@@ -15,7 +18,20 @@ export const consoleNav = [
       { label: 'Apps', href: '/apps', icon: 'rocket' },
       { label: 'Tenants', href: '/tenants', icon: 'building-2' },
       { label: 'Blueprints', href: '/blueprints', icon: 'layers' },
-      { label: 'Audit log', href: '/audit', icon: 'history' },
+    ],
+  },
+  {
+    label: 'Studio',
+    items: [
+      { label: 'Deals', href: '/deals', icon: 'handshake' },
+      { label: 'Catalog', href: '/catalog/feature-flags', icon: 'flag' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Audit', href: '/audit', icon: 'history' },
+      { label: 'Settings', href: '/settings', icon: 'settings' },
     ],
   },
 ] as const satisfies NavRegistry;
