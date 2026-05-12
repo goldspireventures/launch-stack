@@ -2,42 +2,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
-import { getBlueprint, listBlueprints, type BlueprintKind } from '@goldspire/blueprints';
+import { getBlueprintByKind, listBlueprints } from '@goldspire/blueprints';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
-
-/**
- * Map each blueprint kind to the canonical reference app the CLI copies from
- * when scaffolding a new client product.
- */
-const BLUEPRINT_TO_REFERENCE_APP: Record<BlueprintKind, string> = {
-  social_matching: 'dating-web',
-  multi_staff_booking: 'booking-web',
-  marketplace: 'marketplace-web',
-  community: 'community-web',
-  vertical_ai_agent: 'ai-agent-web',
-  b2b_saas_shell: 'b2b-saas-web',
-};
-
-const REFERENCE_TENANTS: Record<BlueprintKind, string> = {
-  social_matching: 'heartline',
-  multi_staff_booking: 'nova',
-  marketplace: 'bazaar',
-  community: 'signal',
-  vertical_ai_agent: 'lumen',
-  b2b_saas_shell: 'acme',
-};
-
-const REFERENCE_PORTS: Record<BlueprintKind, number> = {
-  social_matching: 3000,
-  multi_staff_booking: 3010,
-  marketplace: 3011,
-  community: 3012,
-  vertical_ai_agent: 3013,
-  b2b_saas_shell: 3014,
-};
 
 export async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
@@ -64,7 +33,7 @@ function runHelp() {
 ${pc.bold('goldspire')} — scaffold a new client product from a blueprint
 
 ${pc.bold('Usage')}
-  goldspire new <name> --blueprint=<kind> [--tenant=<slug>] [--port=<n>]
+  goldspire new <name> --blueprint=<kind> [--tenant=<slug>] [--port=<n>] [--name=<display>]
   goldspire list
 
 ${pc.bold('Available blueprints')}`);
@@ -73,7 +42,7 @@ ${pc.bold('Available blueprints')}`);
   }
   console.log(`
 ${pc.bold('Example')}
-  goldspire new sparrow-dating --blueprint=social_matching --tenant=sparrow --port=3050
+  goldspire new sparrow-dating --blueprint=social_matching --tenant=sparrow --port=3050 --name="Sparrow"
 `);
 }
 
@@ -90,19 +59,20 @@ async function runNew(args: string[]) {
   const blueprintArg = parseFlag(args, 'blueprint');
   const tenant = parseFlag(args, 'tenant');
   const portStr = parseFlag(args, 'port');
+  const productDisplayName = parseFlag(args, 'name');
 
   if (!name) throw new Error('Missing <name>. Run `goldspire new my-app --blueprint=...`.');
   if (!blueprintArg) throw new Error('Missing --blueprint. Run `goldspire list` to see options.');
 
-  const blueprint = getBlueprint(blueprintArg as BlueprintKind);
+  const blueprint = getBlueprintByKind(blueprintArg);
   if (!blueprint) {
     throw new Error(
       `Unknown blueprint "${blueprintArg}". Run \`goldspire list\` to see options.`,
     );
   }
-  const referenceApp = BLUEPRINT_TO_REFERENCE_APP[blueprint.kind];
-  const refTenant = REFERENCE_TENANTS[blueprint.kind];
-  const port = portStr ? Number(portStr) : REFERENCE_PORTS[blueprint.kind] + 50;
+  const referenceApp = blueprint.referenceAppFolder;
+  const refTenant = blueprint.defaultTenantSlug;
+  const port = portStr ? Number(portStr) : blueprint.defaultPort + 50;
   const tenantSlug = tenant ?? slugify(name);
 
   const sourceDir = path.join(REPO_ROOT, 'apps', referenceApp);
@@ -123,14 +93,17 @@ async function runNew(args: string[]) {
     [new RegExp(`@goldspire/${referenceApp}`, 'g'), `@goldspire/${name}`],
     [new RegExp(`'x-goldspire-tenant': '${refTenant}'`, 'g'), `'x-goldspire-tenant': '${tenantSlug}'`],
     [new RegExp(`tenantHint: '${refTenant}'`, 'g'), `tenantHint: '${tenantSlug}'`],
-    [new RegExp(`port ${REFERENCE_PORTS[blueprint.kind]}`, 'g'), `port ${port}`],
-    [new RegExp(String(REFERENCE_PORTS[blueprint.kind]), 'g'), String(port)],
+    [new RegExp(`port ${blueprint.defaultPort}`, 'g'), `port ${port}`],
+    [new RegExp(String(blueprint.defaultPort), 'g'), String(port)],
   ];
 
   await walkAndReplace(targetDir, replacements);
 
   console.log();
   console.log(pc.green(`✓ Created apps/${name}`));
+  if (productDisplayName) {
+    console.log(pc.dim(`  Product display name: ${productDisplayName}`));
+  }
   console.log();
   console.log('Next steps:');
   console.log(`  1. pnpm install`);
@@ -142,7 +115,24 @@ async function runNew(args: string[]) {
 function parseFlag(args: string[], name: string): string | undefined {
   const prefix = `--${name}=`;
   const found = args.find((a) => a.startsWith(prefix));
-  return found ? found.slice(prefix.length) : undefined;
+  if (found !== undefined) return unquoteFlagValue(found.slice(prefix.length));
+
+  const flag = `--${name}`;
+  const idx = args.findIndex((a) => a === flag);
+  if (idx !== -1) {
+    const next = args[idx + 1];
+    if (next && !next.startsWith('--')) return unquoteFlagValue(next);
+  }
+  return undefined;
+}
+
+function unquoteFlagValue(value: string): string {
+  const v = value.trim();
+  if (v.length >= 2) {
+    if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1);
+    if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1);
+  }
+  return v;
 }
 
 function slugify(input: string): string {

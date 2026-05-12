@@ -25,6 +25,24 @@ export interface BlueprintDefinition {
   maturity: Maturity;
   /** Hex color used for blueprint badges. */
   accent: string;
+  /** Path under `apps/` for the canonical reference web app the CLI clones. */
+  referenceAppFolder: string;
+  /** Optional mobile reference app under `apps/` (not cloned by CLI v1). */
+  referenceMobileFolder?: string;
+  /** Seed / demo tenant slug embedded in the reference app (CLI rewrites to the new tenant). */
+  defaultTenantSlug: string;
+  /** Dev server port baked into the reference web app. */
+  defaultPort: number;
+  /** Command to run the reference app locally (shown in Console, copied by users). */
+  localDevCommand: string;
+  /** Local URL for the reference app dev server (Console “Open local demo”). */
+  demoUrl: string;
+  /** Hex for ProductTypeBadge background tint (often matches `accent`). */
+  badgeAccent: string;
+  /** Short label for product-type badges in Console / Admin. */
+  badgeLabel: string;
+  /** Values of `tenant.metadata.industry` (case-insensitive) that map to this blueprint. */
+  industryAliases: string[];
   /** Default app slug template; used by the CLI scaffolder. */
   defaultSlugPrefix: string;
   /** Entitlement keys that gate premium features. */

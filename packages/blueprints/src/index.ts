@@ -29,6 +29,30 @@ export function getBlueprint(kind: BlueprintKind): BlueprintDefinition {
   return BLUEPRINTS[kind];
 }
 
+/** Resolve a blueprint from a runtime `kind` string (e.g. CLI flags). Returns null if unknown. */
+export function getBlueprintByKind(kind: string): BlueprintDefinition | null {
+  if (Object.prototype.hasOwnProperty.call(BLUEPRINTS, kind)) {
+    return BLUEPRINTS[kind as BlueprintKind];
+  }
+  return null;
+}
+
+/**
+ * Map `tenant.metadata.industry` to a blueprint using each definition’s `industryAliases`.
+ * Case-insensitive; returns null when absent or unmatched (callers often fall back to a default kind).
+ */
+export function getBlueprintByIndustry(industry?: string | null): BlueprintDefinition | null {
+  const raw = industry?.trim();
+  if (!raw) return null;
+  const norm = raw.toLowerCase();
+  for (const bp of Object.values(BLUEPRINTS)) {
+    for (const alias of bp.industryAliases) {
+      if (alias.toLowerCase() === norm) return bp;
+    }
+  }
+  return null;
+}
+
 export function listBlueprints(): BlueprintDefinition[] {
   return Object.values(BLUEPRINTS);
 }

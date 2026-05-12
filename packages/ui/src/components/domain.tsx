@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Bell, Check, Lock, MessageCircle } from 'lucide-react';
+import { getBlueprintByKind } from '@goldspire/blueprints';
 import { cn } from '../utils/cn';
 import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Card, CardContent, Input, Label, Switch } from './primitives';
 
@@ -140,27 +141,25 @@ export function PaywallCard({
 
 /* ─── ProductTypeBadge ────────────────────────────────────────────────── */
 
-const PRODUCT_BADGE_STYLES: Record<string, { label: string; accent: string }> = {
-  social_matching: { label: 'Social Matching', accent: '#E15A82' },
-  multi_staff_booking: { label: 'Booking', accent: '#7C5CFF' },
-  community: { label: 'Community', accent: '#3DBE76' },
-  b2b_saas_shell: { label: 'B2B SaaS', accent: '#0EA5E9' },
-  vertical_ai_agent: { label: 'AI Agent', accent: '#C9A227' },
-  marketplace: { label: 'Marketplace', accent: '#F4B740' },
-};
+/** Compile-time fallback when `kind` is not a registered blueprint (gray pill). */
+const PRODUCT_BADGE_STYLES = {
+  _unknown: { label: '', accent: '#888888' },
+} as const;
 
 export function ProductTypeBadge({ kind, className }: { kind: string; className?: string }) {
-  const info = PRODUCT_BADGE_STYLES[kind] ?? { label: kind, accent: '#888888' };
+  const bp = getBlueprintByKind(kind);
+  const accent = bp?.badgeAccent ?? PRODUCT_BADGE_STYLES._unknown.accent;
+  const label = bp?.badgeLabel ?? kind;
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
         className,
       )}
-      style={{ backgroundColor: `${info.accent}22`, color: info.accent }}
+      style={{ backgroundColor: `${accent}22`, color: accent }}
     >
-      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: info.accent }} />
-      {info.label}
+      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent }} />
+      {label}
     </span>
   );
 }

@@ -20,49 +20,6 @@ import {
   StatusBadge,
 } from '@goldspire/ui';
 
-/**
- * Reference apps that demonstrate each blueprint in the monorepo.
- * Mirrored from `seed.ts` so the Blueprints page can link to them
- * without a DB hit. When CLI scaffolding registers a real client
- * product, that surface shows up on the Apps page; these stay as
- * the read-only blueprint demos.
- */
-const BLUEPRINT_DEMOS: Record<
-  string,
-  { localDevUrl: string; localDevCommand: string; repoPath: string }
-> = {
-  social_matching: {
-    localDevUrl: 'http://localhost:3000',
-    localDevCommand: 'pnpm --filter @goldspire/dating-web dev',
-    repoPath: 'apps/dating-web',
-  },
-  multi_staff_booking: {
-    localDevUrl: 'http://localhost:3010',
-    localDevCommand: 'pnpm --filter @goldspire/booking-web dev',
-    repoPath: 'apps/booking-web',
-  },
-  marketplace: {
-    localDevUrl: 'http://localhost:3011',
-    localDevCommand: 'pnpm --filter @goldspire/marketplace-web dev',
-    repoPath: 'apps/marketplace-web',
-  },
-  community: {
-    localDevUrl: 'http://localhost:3012',
-    localDevCommand: 'pnpm --filter @goldspire/community-web dev',
-    repoPath: 'apps/community-web',
-  },
-  vertical_ai_agent: {
-    localDevUrl: 'http://localhost:3013',
-    localDevCommand: 'pnpm --filter @goldspire/ai-agent-web dev',
-    repoPath: 'apps/ai-agent-web',
-  },
-  b2b_saas_shell: {
-    localDevUrl: 'http://localhost:3014',
-    localDevCommand: 'pnpm --filter @goldspire/b2b-saas-web dev',
-    repoPath: 'apps/b2b-saas-web',
-  },
-};
-
 export default function BlueprintsPage() {
   const blueprints = listBlueprints();
   const [stampOpen, setStampOpen] = React.useState<BlueprintDefinition | null>(null);
@@ -77,7 +34,6 @@ export default function BlueprintsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {blueprints.map((b) => {
-          const demo = BLUEPRINT_DEMOS[b.kind];
           return (
             <Card key={b.kind} className="p-6">
               <div className="flex items-start justify-between gap-4">
@@ -136,22 +92,13 @@ export default function BlueprintsPage() {
                   <Sparkles className="h-3.5 w-3.5" />
                   Stamp new product
                 </Button>
-                {demo && (
-                  <Button asChild size="sm" variant="secondary" className="gap-1.5">
-                    <a href={demo.localDevUrl} target="_blank" rel="noreferrer">
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Open local demo
-                    </a>
-                  </Button>
-                )}
-                {demo && (
-                  <CopyButton
-                    text={demo.localDevCommand}
-                    label="Copy dev command"
-                    size="sm"
-                    variant="ghost"
-                  />
-                )}
+                <Button asChild size="sm" variant="secondary" className="gap-1.5">
+                  <a href={b.demoUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Open local demo
+                  </a>
+                </Button>
+                <CopyButton text={b.localDevCommand} label="Copy dev command" size="sm" variant="ghost" />
               </div>
             </Card>
           );
@@ -205,7 +152,7 @@ function StampDialog({
 
   const safeSlug = tenantSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-') || 'newco';
   const safeName = productName.trim() || blueprint.name;
-  const command = `pnpm goldspire new ${safeSlug} --blueprint=${blueprint.kind} --name="${safeName}"`;
+  const command = `pnpm goldspire new ${safeSlug} --blueprint=${blueprint.kind} --name=${shellQuote(safeName)}`;
 
   return (
     <Dialog open={!!blueprint} onOpenChange={(o) => !o && onClose()}>
@@ -258,6 +205,11 @@ function StampDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function shellQuote(value: string): string {
+  if (!/[\s'"=]/.test(value)) return value;
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
 function CopyButton({

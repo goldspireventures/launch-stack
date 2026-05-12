@@ -13,6 +13,7 @@ import {
   ProductTypeBadge,
   StatusBadge,
 } from '@goldspire/ui';
+import { getBlueprintByIndustry } from '@goldspire/blueprints';
 import { trpc } from '@/lib/trpc';
 
 export default function SelectTenantPage() {
@@ -73,18 +74,8 @@ export default function SelectTenantPage() {
       <div className="grid gap-3">
         {rows.map((t) => {
           const industry = (t.metadata as { industry?: string } | null)?.industry;
-          const kind =
-            industry === 'dating'
-              ? 'social_matching'
-              : industry === 'wellness'
-                ? 'multi_staff_booking'
-                : industry === 'marketplace'
-                  ? 'marketplace'
-                  : industry === 'community'
-                    ? 'community'
-                    : industry === 'ai'
-                      ? 'vertical_ai_agent'
-                      : 'b2b_saas_shell';
+          const bp = getBlueprintByIndustry(industry);
+          const kind = bp?.kind ?? 'b2b_saas_shell';
           const isLoading = pending === t.slug;
           const isStudio = t.slug === 'goldspire';
           return (
