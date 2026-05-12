@@ -18,6 +18,7 @@ import {
   UserMenu,
   consoleNav,
 } from '@goldspire/ui';
+import { ConsoleCommandPalette } from '@/components/console-command-palette';
 
 /**
  * Slug of the studio's own tenant. Every studio operator (STUDIO_OWNER /
@@ -92,6 +93,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
       }
     >
       <NoticeBanner />
+      <ConsoleCommandPalette />
       {children}
     </AppShell>
   );

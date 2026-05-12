@@ -10,3 +10,4 @@ export * from './components/motion';
 export * from './components/toast';
 export * from './components/persona-picker';
 export * from './components/user-menu';
+export * from './components/command-palette';

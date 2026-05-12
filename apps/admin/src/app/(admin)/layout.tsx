@@ -18,6 +18,7 @@ import {
   UserMenu,
   adminNav,
 } from '@goldspire/ui';
+import { AdminCommandPalette } from '@/components/admin-command-palette';
 import { ActiveTenantBadge } from '@/components/active-tenant-badge';
 import { ACTIVE_TENANT_COOKIE } from '@/lib/active-tenant';
 
@@ -90,6 +91,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       }
     >
       <NoticeBanner />
+      <AdminCommandPalette canSwitchTenants={inRoles(user.role, ['STUDIO_OWNER', 'STUDIO_STAFF'])} />
       {children}
     </AppShell>
   );

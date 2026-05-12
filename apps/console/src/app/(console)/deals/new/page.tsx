@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Button,
@@ -36,7 +36,16 @@ const subOptions = [
 ] as const;
 
 export default function NewStudioDealPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <NewStudioDealForm />
+    </Suspense>
+  );
+}
+
+function NewStudioDealForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const utils = trpc.useUtils();
   const [title, setTitle] = useState('');
   const [clientName, setClientName] = useState('');
@@ -49,6 +58,32 @@ export default function NewStudioDealPage() {
   const [totalMajor, setTotalMajor] = useState('25000');
   const [currency, setCurrency] = useState('USD');
   const [preview, setPreview] = useState<CommercialPlanSnapshot | null>(null);
+
+  useEffect(() => {
+    const tier = searchParams.get('tier');
+    if (tier === 'solo') {
+      setEngagementKind('mvp');
+      setClientRisk('unknown');
+      setSubcontracting('none');
+      setWeeksMin('6');
+      setWeeksMax('10');
+      setTotalMajor('25000');
+    } else if (tier === 'growth') {
+      setEngagementKind('mvp_plus_prod_planned');
+      setClientRisk('referred');
+      setSubcontracting('light');
+      setWeeksMin('12');
+      setWeeksMax('18');
+      setTotalMajor('80000');
+    } else if (tier === 'enterprise') {
+      setEngagementKind('mvp_plus_prod_planned');
+      setClientRisk('enterprise');
+      setSubcontracting('heavy');
+      setWeeksMin('16');
+      setWeeksMax('40');
+      setTotalMajor('250000');
+    }
+  }, [searchParams]);
 
   const previewMut = trpc.studioDeals.previewPlan.useMutation({
     onSuccess: (data) => setPreview(data),
