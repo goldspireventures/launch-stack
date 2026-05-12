@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.28.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.1",

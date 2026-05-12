@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import './_load-env';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';

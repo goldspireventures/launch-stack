@@ -1,8 +1,10 @@
 /* eslint-disable no-console */
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import './_load-env';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { env } from '@goldspire/config/env';
 
@@ -19,8 +21,10 @@ import { env } from '@goldspire/config/env';
  *     written to be idempotent (drop ... if exists; create ...) so they're
  *     safe to re-run on every `pnpm db:migrate`.
  */
-const DRIZZLE_DIR = new URL('../drizzle/', import.meta.url).pathname;
-const POLICIES_DIR = new URL('../policies/', import.meta.url).pathname;
+// `import.meta.url` is a file:// URL; .pathname returns `/C:/...` on Windows
+// which existsSync can't open. fileURLToPath gives us a real native path.
+const DRIZZLE_DIR = fileURLToPath(new URL('../drizzle/', import.meta.url));
+const POLICIES_DIR = fileURLToPath(new URL('../policies/', import.meta.url));
 const url = env.DIRECT_URL ?? env.DATABASE_URL;
 
 async function main() {
