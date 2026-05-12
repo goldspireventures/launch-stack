@@ -16,7 +16,10 @@
       "@goldspire/db": ["../../packages/db/src/index.ts"],
       "@goldspire/validation": ["../../packages/validation/src/index.ts"],
       "@goldspire/platform": ["../../packages/platform/src/index.ts"],
-      "@goldspire/payments": ["../../packages/payments/src/index.ts"]
+      "@goldspire/payments": ["../../packages/payments/src/index.ts"],
+      "@goldspire/logger": ["../../packages/logger/src/index.ts"],
+      "@goldspire/logger/trpc": ["../../packages/logger/src/trpc.ts"],
+      "@goldspire/logger/next": ["../../packages/logger/src/next.ts"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],

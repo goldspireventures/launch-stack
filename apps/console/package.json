@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@goldspire/api": "workspace:*",
+    "@goldspire/logger": "workspace:*",
     "@goldspire/auth": "workspace:*",
     "@goldspire/blueprints": "workspace:*",
     "@goldspire/config": "workspace:*",

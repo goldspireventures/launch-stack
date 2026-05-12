@@ -10,7 +10,10 @@
       "@goldspire/ui/*": ["../../packages/ui/src/*"],
       "@goldspire/config": ["../../packages/config/src/index.ts"],
       "@goldspire/auth": ["../../packages/auth/src/index.ts"],
-      "@goldspire/blueprints": ["../../packages/blueprints/src/index.ts"]
+      "@goldspire/blueprints": ["../../packages/blueprints/src/index.ts"],
+      "@goldspire/logger": ["../../packages/logger/src/index.ts"],
+      "@goldspire/logger/trpc": ["../../packages/logger/src/trpc.ts"],
+      "@goldspire/logger/next": ["../../packages/logger/src/next.ts"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],

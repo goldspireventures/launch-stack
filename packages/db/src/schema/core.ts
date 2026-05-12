@@ -18,6 +18,7 @@ import {
   deploymentHealthStatusEnum,
   deploymentKindEnum,
   entitlementSourceEnum,
+  featureFlagKindEnum,
   notificationStatusEnum,
   notificationTypeEnum,
   productStatusEnum,
@@ -247,9 +248,9 @@ export const entitlement = pgTable(
 
 /**
  * ─── FeatureFlag ──────────────────────────────────────────────────────────
- * Local flags (small set, simple targeting). For complex rollouts use PostHog
- * directly — this table is the local source of truth for studio-controlled flags.
- * tenant_id = null means a global (studio-wide) flag.
+ * Tenant or global **overrides** only. Defaults and metadata live in the
+ * code catalog (`@goldspire/feature-flags`). `tenant_id = null` = studio-wide
+ * override row. See `kind`, `tags`, and `numeric_value` (limits).
  */
 export const featureFlag = pgTable(
   'feature_flag',
@@ -259,6 +260,9 @@ export const featureFlag = pgTable(
       onDelete: 'cascade',
     }),
     key: varchar('key', { length: 120 }).notNull(),
+    kind: featureFlagKindEnum('kind').notNull().default('feature'),
+    tags: text('tags').array().notNull().default(sql`'{}'::text[]`),
+    numericValue: integer('numeric_value'),
     enabled: boolean('enabled').notNull().default(false),
     rules: jsonb('rules').$type<unknown[]>().default([]).notNull(),
     description: text('description'),
@@ -270,6 +274,7 @@ export const featureFlag = pgTable(
   },
   (t) => ({
     tenantKeyUq: uniqueIndex('feature_flag_tenant_key_uq').on(t.tenantId, t.key),
+    tenantKindIx: index('feature_flag_tenant_kind_ix').on(t.tenantId, t.kind),
   }),
 );
 

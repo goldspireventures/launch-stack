@@ -14,6 +14,7 @@
   },
   "scripts": { "typecheck": "tsc --noEmit", "clean": "rimraf .turbo dist" },
   "dependencies": {
+    "@goldspire/logger": "workspace:*",
     "@goldspire/commercial": "workspace:*",
     "@goldspire/config": "workspace:*",
     "@goldspire/validation": "workspace:*",

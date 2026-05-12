@@ -8,20 +8,22 @@ import {
   studioDealPlanInputSchema,
   updateStudioDealInputSchema,
 } from '@goldspire/commercial';
-import { router, studioProcedure } from '../trpc';
+import { router, studioProcedure, requireModule } from '../trpc';
 import { NotFoundError } from '@goldspire/platform';
+
+const studioDealsProcedure = studioProcedure.use(requireModule('module.studio_deals'));
 
 export const studioDealsRouter = router({
   /** Preview milestone splits without persisting. */
-  previewPlan: studioProcedure.input(studioDealPlanInputSchema).mutation(({ input }) => {
+  previewPlan: studioDealsProcedure.input(studioDealPlanInputSchema).mutation(({ input }) => {
     return buildCommercialPlan(input);
   }),
 
-  list: studioProcedure.query(async ({ ctx }) => {
+  list: studioDealsProcedure.query(async ({ ctx }) => {
     return ctx.db.select().from(schema.studioDeal).orderBy(desc(schema.studioDeal.createdAt));
   }),
 
-  byId: studioProcedure.input(z.object({ id: z.string().length(26) })).query(async ({ ctx, input }) => {
+  byId: studioDealsProcedure.input(z.object({ id: z.string().length(26) })).query(async ({ ctx, input }) => {
     const [row] = await ctx.db
       .select()
       .from(schema.studioDeal)
@@ -31,7 +33,7 @@ export const studioDealsRouter = router({
     return row;
   }),
 
-  create: studioProcedure.input(createStudioDealInputSchema).mutation(async ({ ctx, input }) => {
+  create: studioDealsProcedure.input(createStudioDealInputSchema).mutation(async ({ ctx, input }) => {
     const { title, clientName, notes, linkedTenantId, ...planInput } = input;
     const planSnapshot = buildCommercialPlan(planInput);
     const [row] = await ctx.db
@@ -57,7 +59,7 @@ export const studioDealsRouter = router({
     return row;
   }),
 
-  update: studioProcedure.input(updateStudioDealInputSchema).mutation(async ({ ctx, input }) => {
+  update: studioDealsProcedure.input(updateStudioDealInputSchema).mutation(async ({ ctx, input }) => {
     const { id, ...patch } = input;
     const [existing] = await ctx.db
       .select({ id: schema.studioDeal.id })
@@ -84,7 +86,7 @@ export const studioDealsRouter = router({
     return row;
   }),
 
-  markdown: studioProcedure.input(z.object({ id: z.string().length(26) })).query(async ({ ctx, input }) => {
+  markdown: studioDealsProcedure.input(z.object({ id: z.string().length(26) })).query(async ({ ctx, input }) => {
     const [row] = await ctx.db
       .select()
       .from(schema.studioDeal)

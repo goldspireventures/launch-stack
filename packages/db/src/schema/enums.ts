@@ -229,3 +229,11 @@ export const studioDealStatusEnum = pgEnum('studio_deal_status', [
   'lost',
   'archived',
 ]);
+
+/** Feature / module / limit / ops catalog row classification (see @goldspire/feature-flags). */
+export const featureFlagKindEnum = pgEnum('feature_flag_kind', [
+  'module',
+  'feature',
+  'limit',
+  'operation',
+]);

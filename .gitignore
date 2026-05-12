@@ -23,6 +23,7 @@ out/
 !.env.example
 
 # logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -80,3 +81,6 @@ android/
 *.pem
 secrets/
 .secret
+
+# Stray editor workspace files
+*.code-workspace
