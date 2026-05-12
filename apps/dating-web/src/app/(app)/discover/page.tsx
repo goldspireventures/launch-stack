@@ -12,12 +12,14 @@ import {
 } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
 import { useDatingProduct } from '@/lib/product';
+import { useFlag } from '@/lib/use-flag';
 import { useUserPlan } from '@/lib/use-user-plan';
 import { DiscoverSwipeDeck, type SwipeMutationResult } from '@/components/discover-swipe-deck';
 import { UpgradePrompt } from '@/components/upgrade-prompt';
 
 export default function DiscoverPage() {
   const { tier } = useUserPlan();
+  const showDistance = useFlag('feature.discover_show_distance', true);
   const productQ = useDatingProduct();
   const productId = productQ.data?.id;
 
@@ -124,6 +126,7 @@ export default function DiscoverPage() {
           selfDisplayName={my?.displayName ?? 'You'}
           selfPhotoUrl={my?.photos?.[0]?.url ?? null}
           swipePending={swipe.isPending}
+          showDistance={showDistance}
           onSwipe={handleSwipe}
           onAfterSwipe={afterSwipe}
           onDailyLimit={() => setShowPaywall(true)}

@@ -61,6 +61,7 @@ interface DiscoverSwipeDeckProps {
   selfDisplayName: string;
   selfPhotoUrl: string | null;
   swipePending: boolean;
+  showDistance?: boolean;
   onSwipe: (
     toUserId: string,
     action: 'like' | 'pass' | 'super_like',
@@ -76,6 +77,7 @@ export function DiscoverSwipeDeck({
   selfDisplayName,
   selfPhotoUrl,
   swipePending,
+  showDistance = true,
   onSwipe,
   onAfterSwipe,
   onDailyLimit,
@@ -194,6 +196,7 @@ export function DiscoverSwipeDeck({
                     profile={p}
                     myLat={myLat}
                     myLng={myLng}
+                    showDistance={showDistance}
                     carouselIdx={isTop ? carouselIdx : 0}
                     onPrev={() => isTop && setCarouselIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
@@ -350,6 +353,7 @@ function ProfileStackCard({
   onPrev,
   onNext,
   dimTapZones,
+  showDistance,
 }: {
   profile: DiscoverCardProfile;
   myLat: number | null;
@@ -358,11 +362,14 @@ function ProfileStackCard({
   onPrev: () => void;
   onNext: () => void;
   dimTapZones: boolean;
+  showDistance: boolean;
 }) {
   const urls = profilePhotoCarouselUrls(profile.userId, profile.primaryPhotoUrl);
   const url = urls[Math.min(carouselIdx, urls.length - 1)]!;
   const age = computeAge(profile.birthdate);
-  const dist = distanceKm({ lat: myLat, lng: myLng }, { lat: profile.lat, lng: profile.lng });
+  const dist = showDistance
+    ? distanceKm({ lat: myLat, lng: myLng }, { lat: profile.lat, lng: profile.lng })
+    : null;
   const prompts = (profile.prompts ?? []).slice(0, 2);
 
   return (

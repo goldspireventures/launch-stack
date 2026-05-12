@@ -3,19 +3,36 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'rea
 import { trpc } from '@/lib/trpc';
 import { useDatingProduct } from '@/lib/product';
 import { appConfig } from '@/app.config';
+import { useTenantPublicSurface } from '@/lib/tenant-surface';
+import { DiscoverSkeleton } from '@/components/discover-skeleton';
+import { ScaledPressable } from '@/components/scaled-pressable';
 
 const { backgroundHex, primaryHex } = appConfig.theme;
 
 export default function DiscoverScreen() {
+  const surface = useTenantPublicSurface();
   const product = useDatingProduct();
   const productId = product.data?.id;
+  const pageSize =
+    surface.data?.limits['limit.mobile_discover_page_size'] ??
+    /** Catalog default when the surface query has not resolved yet */
+    10;
+  const useSkeleton =
+    (surface.data?.flags['feature.mobile_skeleton_loading'] ?? false) === true;
+  const pressMotion =
+    (surface.data?.flags['feature.mobile_press_animations'] ?? true) !== false;
+
   const discover = trpc.dating.discover.useQuery(
-    { productId: productId ?? '', limit: 10 },
+    { productId: productId ?? '', limit: pageSize },
     { enabled: !!productId },
   );
   const swipe = trpc.dating.swipe.useMutation({ onSuccess: () => discover.refetch() });
 
-  if (product.isLoading || discover.isLoading) {
+  const loadingDiscover = product.isLoading || discover.isLoading;
+  if (loadingDiscover) {
+    if (useSkeleton && !product.isLoading) {
+      return <DiscoverSkeleton />;
+    }
     return (
       <View className="flex-1 items-center justify-center" style={{ backgroundColor: backgroundHex }}>
         <ActivityIndicator color={primaryHex} />
@@ -64,7 +81,8 @@ export default function DiscoverScreen() {
               {p.city && <Text className="text-white/60">{p.city}</Text>}
               {p.bio && <Text className="text-white/80">{p.bio}</Text>}
               <View className="mt-3 flex-row gap-3">
-                <Pressable
+                <ScaledPressable
+                  motionEnabled={pressMotion}
                   className="flex-1 rounded-md border border-white/10 py-3"
                   onPress={() =>
                     productId &&
@@ -72,8 +90,9 @@ export default function DiscoverScreen() {
                   }
                 >
                   <Text className="text-center text-white">Pass</Text>
-                </Pressable>
-                <Pressable
+                </ScaledPressable>
+                <ScaledPressable
+                  motionEnabled={pressMotion}
                   className="flex-1 rounded-md py-3"
                   style={{ backgroundColor: primaryHex }}
                   onPress={() =>
@@ -82,7 +101,7 @@ export default function DiscoverScreen() {
                   }
                 >
                   <Text className="text-center font-semibold text-white">Like</Text>
-                </Pressable>
+                </ScaledPressable>
               </View>
             </View>
           </View>

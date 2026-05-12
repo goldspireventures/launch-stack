@@ -6,6 +6,7 @@ import { Flame, Heart, MessageCircle, Sparkles, User } from 'lucide-react';
 import type { PersonaDefinition } from '@goldspire/config';
 import { AppShell, Sidebar, Topbar, NotificationBell, UserMenu, cn } from '@goldspire/ui';
 import { appConfig } from '@/app.config';
+import { useFlag } from '@/lib/use-flag';
 import { useUserPlan } from '@/lib/use-user-plan';
 
 const NAV: { label: string; href: string; icon: React.ReactNode }[] = [
@@ -51,6 +52,9 @@ export function HeartlineAppShell({
 }) {
   const sections = [{ items: NAV }];
   const { tier } = useUserPlan();
+  // Tenant-scoped flag toggled in Admin /feature-flags. Default to the
+  // catalog default (true) so first-paint matches the eventual state.
+  const showPremiumUpsell = useFlag('feature.premium_upsell', true);
 
   return (
     <AppShell
@@ -69,12 +73,19 @@ export function HeartlineAppShell({
           }
           sections={sections}
           footer={
-            appConfig.features.showPremiumNavCta ? (
+            !showPremiumUpsell ? null : appConfig.features.showPremiumNavCta && tier === 'free' ? (
               <Link
                 href="/premium"
                 className="block rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-center text-xs font-medium text-primary hover:bg-primary/20"
               >
                 Upgrade to Plus
+              </Link>
+            ) : tier === 'plus' ? (
+              <Link
+                href="/premium"
+                className="block rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs font-medium text-amber-200 hover:bg-amber-500/20"
+              >
+                Go Premium
               </Link>
             ) : null
           }

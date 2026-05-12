@@ -282,7 +282,11 @@ async function seed() {
     gsConsole: stableUlid('product:gs-console'),
     gsInsights: stableUlid('product:gs-insights'),
     gsClientHub: stableUlid('product:gs-client-hub'),
-    // Heartline
+    // Heartline — "heartline-dating" is the canonical app product (every
+    // match / thread / dating profile points at this). The three tier-
+    // specific products below exist purely as billing SKUs (subscription FK
+    // targets), they are NOT separate apps.
+    hlDating: stableUlid('product:hl-dating'),
     hlFree: stableUlid('product:hl-free'),
     hlPlus: stableUlid('product:hl-plus'),
     hlPremium: stableUlid('product:hl-premium'),
@@ -333,6 +337,17 @@ async function seed() {
       config: {},
       metadata: { surface: 'crm_light' },
       launchedAt: null,
+    },
+    {
+      id: productIds.hlDating,
+      tenantId: tenantId.heartline,
+      name: 'Heartline Dating',
+      slug: 'heartline-dating',
+      blueprint: 'social_matching',
+      status: 'live',
+      config: { dailyLikesFree: 25, defaultDistanceKm: 50 },
+      metadata: { tier: 'app', surface: 'dating' },
+      launchedAt: NOW,
     },
     {
       id: productIds.hlFree,
@@ -794,6 +809,16 @@ async function seed() {
     return 'active';
   }
 
+  /**
+   * Demo personas must have predictable subscription tiers so DEMO.md stays
+   * accurate ("Jamie = Plus", "Sarah = Free"). Anything in this map is forced
+   * before the randomized fill below.
+   */
+  const PINNED_SUBS: Record<string, { product: string; plan: string } | 'none'> = {
+    'jamie@example.com': { product: productIds.hlPlus, plan: 'heartline_plus_monthly' },
+    'sarah@example.com': 'none',
+  };
+
   function addSubsForCustomers(
     slug: Exclude<SeedTenantSlug, 'goldspire'>,
     customers: CustomerRow[],
@@ -803,6 +828,32 @@ async function seed() {
     let i = 0;
     for (const c of customers) {
       i += 1;
+      const pinned = PINNED_SUBS[c.email.toLowerCase()];
+      if (pinned === 'none') continue;
+
+      if (pinned) {
+        const subId = stableUlid(`sub:${slug}:${c.id}:${pinned.product}`);
+        const periodStart = daysAgo(rng, 30);
+        const periodEnd = new Date(periodStart.getTime() + 32 * 86_400_000);
+        subscriptionRows.push({
+          id: subId,
+          tenantId: tenantId[slug],
+          userId: c.id,
+          productId: pinned.product,
+          provider: 'mock',
+          providerSubscriptionId: stableUlid(`provsub:${subId}`),
+          plan: pinned.plan,
+          status: 'active',
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd,
+          trialEndsAt: null,
+          canceledAt: null,
+          cancelAtPeriodEnd: false,
+          metadata: { seeded: true, pinned: true },
+        });
+        continue;
+      }
+
       const gate = (i * 7919 + slug.length * 97) % 100;
       if (gate >= 65) continue;
       const st = subStatus(rng);

@@ -39,4 +39,17 @@ export const LIMIT_FLAGS = [
     minNumeric: 10,
     maxNumeric: 6000,
   },
+  {
+    key: 'limit.mobile_discover_page_size',
+    kind: 'limit',
+    description: 'Profiles requested per discover fetch on Goldspire mobile dating clients.',
+    scope: 'tenant',
+    defaultNumeric: 10,
+    tags: ['public', 'experience'],
+    studioOnly: false,
+    blueprintKinds: ['social_matching'],
+    lifecycle: 'stable',
+    minNumeric: 3,
+    maxNumeric: 50,
+  },
 ] as const satisfies readonly LimitFlagDefinition[];

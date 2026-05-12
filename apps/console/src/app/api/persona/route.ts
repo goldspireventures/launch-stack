@@ -1,4 +1,4 @@
-import { clearPersona, pickPersona } from '@goldspire/auth';
+import { clearPersona, pickPersona } from '@goldspire/auth/persona-server';
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { id?: string; next?: string | null };

@@ -3,6 +3,7 @@ import { FEATURE_FLAGS } from './features';
 import { LIMIT_FLAGS } from './limits';
 import { MODULE_FLAGS } from './modules';
 import { OPS_FLAGS } from './operations';
+import { isLimitDef } from './types';
 
 export * from './types';
 export { MODULE_FLAGS, type ModuleFlagKey } from './modules';
@@ -31,4 +32,18 @@ export function listFlagsByKind(kind: FlagKind): readonly FlagDefinition[] {
 
 export function allFlags(): readonly FlagDefinition[] {
   return FLAG_CATALOG;
+}
+
+function hasPublicTag(def: FlagDefinition): boolean {
+  return (def.tags as readonly string[]).includes('public');
+}
+
+/** Boolean / module / operation catalog keys safe to expose to signed-in end-user clients. */
+export function listPublicBooleanFlagKeys(): readonly string[] {
+  return FLAG_CATALOG.filter((d) => d.kind !== 'limit' && hasPublicTag(d)).map((d) => d.key);
+}
+
+/** Limit catalog keys safe to expose to signed-in end-user clients (e.g. page sizes, caps). */
+export function listPublicLimitFlagKeys(): readonly string[] {
+  return FLAG_CATALOG.filter((d) => isLimitDef(d) && hasPublicTag(d)).map((d) => d.key);
 }

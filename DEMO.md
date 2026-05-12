@@ -143,6 +143,32 @@ The full-page `/select-tenant` route still exists for the first-time path.
 
 ---
 
+## Tour 4 — Owner toggles a flag, customer sees it
+
+Demonstrates the full feature-flag loop: catalog → tenant override → live UX in the end-user app. Open two browser windows side-by-side.
+
+**Window A — Admin (owner):** switch to persona `heartline.owner` (Alex Stone). Go to `http://localhost:3002/feature-flags`.
+
+**Window B — Heartline (customer):** switch to persona `heartline.customer.jamie` (Jamie Reyes — pinned to Plus by the seed). Go to `http://localhost:3000/discover`. You should see profile cards with **city + distance** (e.g. "12 km · Berlin") and, in the sidebar footer, a **"Go Premium"** chip (Plus users get the upsell to Premium).
+
+1. In Window A, find `feature.discover_show_distance` (tagged `privacy`, default on). Toggle it **off**. The flag list shows "Catalog default: on · Effective: off".
+2. In Window B, hard-refresh `/discover`. The distance disappears from cards; only the city remains. Tenant operators just shipped a privacy improvement to every Heartline user without a code deploy.
+3. Still in Window A, find `feature.premium_upsell` (tagged `monetization`, default on). Toggle it **off**.
+4. In Window B, refresh any page. The sidebar upgrade chip disappears entirely. The tenant decided they want to run their dating app without paid upsells.
+5. In Window A, flip both flags back **on**. Window B returns to the baseline UX.
+
+**Verify the audit trail:** in Admin → `/audit`, the four toggles are logged as `feature_flag_updated` events with the actor (Alex Stone), the flag key, and the new value. Studio operators in Console → `/audit` see the same events cross-tenant.
+
+**Where the wiring lives** (so you can extend it):
+- Catalog entry — `packages/feature-flags/src/catalog/features.ts` (tag a flag `public` so it's exposed to end-user clients).
+- Server query — `featureFlags.publicForCurrentTenant` in `packages/api/src/routers/feature-flags.ts` only returns flags tagged `public`.
+- Client hook — `apps/dating-web/src/lib/use-flag.ts` (`useFlag('feature.foo')`). Same pattern for mobile.
+- Override UI — Admin `/feature-flags` toggles write a `feature_flag` row scoped to the current tenant. The owner can't toggle `studioOnly` flags (the row is read-only with a clear hint).
+
+**Studio-only flags:** open Console → `/catalog/feature-flags` as a studio operator and you'll see studio-only flags like `module.studio_deals`. Tenant owners never see those keys in their Admin view, even via the tRPC API.
+
+---
+
 ## Resetting the demo
 
 The seed script truncates demo data and re-creates it from scratch. Idempotent — safe to run any time.

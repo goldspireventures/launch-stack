@@ -3,13 +3,25 @@ import { z } from 'zod';
 import {
   clearFlag,
   getFlagDefinition,
+  getLimit,
   isEnabled,
   listFlagsForAdmin,
+  listPublicBooleanFlagKeys,
+  listPublicLimitFlagKeys,
   setFlag,
   type FlagKey,
 } from '@goldspire/feature-flags';
 import { logAudit } from '@goldspire/audit';
 import { router, tenantAdminProcedure, protectedProcedure } from '../trpc';
+
+/**
+ * Catalog entries tagged `public` are safe to ship to end-user clients
+ * (Heartline web/mobile). They drive visible UX so any role can read them.
+ * Everything not tagged `public` stays admin-only — those leak internal
+ * implementation hints.
+ */
+const PUBLIC_BOOLEAN_KEYS = listPublicBooleanFlagKeys();
+const PUBLIC_LIMIT_KEYS = listPublicLimitFlagKeys();
 
 const setFlagInput = z
   .object({
@@ -72,6 +84,39 @@ export const featureFlagsRouter = router({
         db: ctx.db,
       }),
     ),
+
+  /**
+   * Full public tenant surface for end-user apps: every `public`-tagged
+   * boolean flag plus every `public`-tagged numeric limit, evaluated for
+   * the current user's tenant. One round-trip so web + mobile shells can
+   * read flags synchronously after the initial fetch and no studio-only
+   * keys ever leak.
+   */
+  publicSurfaceForCurrentTenant: protectedProcedure.query(async ({ ctx }) => {
+    const flagCtx = {
+      tenantId: ctx.user.tenantId,
+      userId: ctx.user.id,
+      role: ctx.user.role,
+      db: ctx.db,
+    };
+    const flags = Object.fromEntries(
+      await Promise.all(
+        PUBLIC_BOOLEAN_KEYS.map(async (key) => {
+          const enabled = await isEnabled(key, flagCtx);
+          return [key, enabled] as const;
+        }),
+      ),
+    ) as Record<string, boolean>;
+    const limits = Object.fromEntries(
+      await Promise.all(
+        PUBLIC_LIMIT_KEYS.map(async (key) => {
+          const n = await getLimit(key, flagCtx);
+          return [key, n] as const;
+        }),
+      ),
+    ) as Record<string, number>;
+    return { flags, limits };
+  }),
 
   set: tenantAdminProcedure.input(setFlagInput).mutation(async ({ ctx, input }) => {
     try {
