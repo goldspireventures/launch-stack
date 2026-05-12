@@ -39,16 +39,20 @@ export const catalogRouter = router({
     return FLAG_CATALOG.map((def) => {
       const summary = byKey.get(def.key);
       const defaultValue = def.kind === 'limit' ? def.defaultNumeric : def.defaultEnabled;
+      const ext = def as typeof def & {
+        blueprintKinds?: readonly string[];
+        removeAfter?: string | null;
+      };
       return {
         key: def.key,
         kind: def.kind,
         description: def.description,
         scope: def.scope,
         tags: [...def.tags],
-        blueprintKinds: def.blueprintKinds ? [...def.blueprintKinds] : null,
+        blueprintKinds: ext.blueprintKinds ? [...ext.blueprintKinds] : null,
         studioOnly: def.studioOnly,
         lifecycle: def.lifecycle ?? 'stable',
-        removeAfter: def.removeAfter ?? null,
+        removeAfter: ext.removeAfter ?? null,
         defaultValue,
         tenantOverrideCount: summary?.tenantOverrideCount ?? 0,
         hasGlobalOverride: summary?.hasGlobalOverride ?? false,

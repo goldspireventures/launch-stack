@@ -41,5 +41,12 @@ export const revokeEntitlement = z.object({
   key: entitlementKey,
 });
 
+/** Mock-only Heartline checkout (no Stripe). Validates `productId` server-side. */
+export const mockStartCheckoutInput = z.object({
+  productId: z.string().min(1),
+  billingCycle: z.enum(['monthly', 'yearly']),
+});
+
 export type CheckoutInput = z.infer<typeof checkoutInput>;
 export type GrantEntitlementInput = z.infer<typeof grantEntitlement>;
+export type MockStartCheckoutInput = z.infer<typeof mockStartCheckoutInput>;

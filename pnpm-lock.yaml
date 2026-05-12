@@ -597,6 +597,9 @@ importers:
       '@trpc/server':
         specifier: ^11.0.0-rc.593
         version: 11.17.0(typescript@5.9.3)
+      framer-motion:
+        specifier: ^12.38.0
+        version: 12.38.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       lucide-react:
         specifier: ^0.454.0
         version: 0.454.0(react@19.2.6)

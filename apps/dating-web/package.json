@@ -25,6 +25,7 @@
     "@trpc/client": "^11.0.0-rc.593",
     "@trpc/react-query": "^11.0.0-rc.593",
     "@trpc/server": "^11.0.0-rc.593",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.454.0",
     "next": "^15.0.0",
     "react": "^19.0.0",

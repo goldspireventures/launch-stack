@@ -107,12 +107,13 @@ export const onboardingRouter = router({
     const flagOverrides = defaultFlagOverrides(blueprint.kind);
 
     const result = await ctx.db.transaction(async (tx) => {
+      const tenantPlan = input.plan === 'enterprise' ? ('enterprise' as const) : ('studio' as const);
       const [newTenant] = await tx
         .insert(schema.tenant)
         .values({
           name: input.name,
           slug: input.slug,
-          plan: input.plan,
+          plan: tenantPlan,
           status: 'trial',
           theme: { primaryHex: input.primaryHex },
           metadata: {
@@ -147,7 +148,7 @@ export const onboardingRouter = router({
             name: p.name,
             slug: p.slug,
             blueprint: blueprint.kind,
-            status: 'launched' as const,
+            status: 'live' as const,
             config: p.config,
             metadata: { stampedAt: new Date().toISOString() },
             launchedAt: new Date(),

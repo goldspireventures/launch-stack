@@ -19,7 +19,8 @@
       "@goldspire/payments": ["../../packages/payments/src/index.ts"],
       "@goldspire/logger": ["../../packages/logger/src/index.ts"],
       "@goldspire/logger/trpc": ["../../packages/logger/src/trpc.ts"],
-      "@goldspire/logger/next": ["../../packages/logger/src/next.ts"]
+      "@goldspire/logger/next": ["../../packages/logger/src/next.ts"],
+      "next/server": ["./node_modules/next/server"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],

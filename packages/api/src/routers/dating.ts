@@ -40,11 +40,18 @@ export const datingRouter = router({
     }),
 
   upsertProfile: protectedProcedure
-    .input(z.object({ productId: z.string(), profile: datingSchemas.datingProfile }))
+    .input(
+      z.object({
+        productId: z.string(),
+        profile: datingSchemas.datingProfile,
+        /** Discovery / preference filters stored on `dating_profile.filters`. */
+        filters: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const { profile, productId } = input;
+      const { profile, productId, filters: inputFilters } = input;
       const existing = await ctx.db
-        .select({ id: schema.datingProfile.id })
+        .select({ id: schema.datingProfile.id, filters: schema.datingProfile.filters })
         .from(schema.datingProfile)
         .where(
           and(
@@ -53,6 +60,11 @@ export const datingRouter = router({
           ),
         )
         .limit(1);
+
+      const resolvedFilters =
+        inputFilters !== undefined
+          ? inputFilters
+          : ((existing[0]?.filters as Record<string, unknown> | undefined) ?? {});
 
       const baseValues = {
         tenantId: ctx.user.tenantId,
@@ -73,7 +85,7 @@ export const datingRouter = router({
         jobTitle: profile.jobTitle,
         company: profile.company,
         school: profile.school,
-        filters: {},
+        filters: resolvedFilters,
         metadata: profile.metadata,
       };
 
@@ -350,6 +362,7 @@ export const datingRouter = router({
           userId: schema.datingProfile.userId,
           displayName: schema.datingProfile.displayName,
           bio: schema.datingProfile.bio,
+          birthdate: schema.datingProfile.birthdate,
         })
         .from(schema.datingProfile)
         .where(
@@ -374,21 +387,84 @@ export const datingRouter = router({
           ),
         );
 
+      const users = await ctx.db
+        .select({ id: schema.user.id, lastSeenAt: schema.user.lastSeenAt })
+        .from(schema.user)
+        .where(inArray(schema.user.id, otherIds));
+
       const profileByUser = new Map(profiles.map((p) => [p.userId, p]));
       const photoByUser = new Map(photos.map((p) => [p.userId, p.url]));
+      const lastSeenByUser = new Map(users.map((u) => [u.id, u.lastSeenAt]));
+
+      const threadIds = rows.map((r) => r.threadId).filter((id): id is string => Boolean(id));
+      const lastMessageByThread = new Map<
+        string,
+        { body: string; createdAt: Date; senderId: string }
+      >();
+      const lastReadByThread = new Map<string, Date | null>();
+
+      if (threadIds.length > 0) {
+        const myReads = await ctx.db
+          .select({
+            threadId: schema.threadParticipant.threadId,
+            lastReadAt: schema.threadParticipant.lastReadAt,
+          })
+          .from(schema.threadParticipant)
+          .where(
+            and(
+              inArray(schema.threadParticipant.threadId, threadIds),
+              eq(schema.threadParticipant.userId, ctx.user.id),
+            ),
+          );
+        for (const r of myReads) lastReadByThread.set(r.threadId, r.lastReadAt);
+
+        const recentMessages = await ctx.db
+          .select({
+            threadId: schema.message.threadId,
+            body: schema.message.body,
+            createdAt: schema.message.createdAt,
+            senderId: schema.message.senderId,
+          })
+          .from(schema.message)
+          .where(inArray(schema.message.threadId, threadIds))
+          .orderBy(desc(schema.message.createdAt));
+
+        for (const msg of recentMessages) {
+          if (!lastMessageByThread.has(msg.threadId)) {
+            lastMessageByThread.set(msg.threadId, {
+              body: msg.body,
+              createdAt: msg.createdAt,
+              senderId: msg.senderId,
+            });
+          }
+        }
+      }
 
       return rows.map((m) => {
         const otherId = m.userAId === ctx.user.id ? m.userBId : m.userAId;
         const other = profileByUser.get(otherId);
+        const tid = m.threadId;
+        const tip = tid ? lastMessageByThread.get(tid) : undefined;
+        const lastReadAt = tid ? lastReadByThread.get(tid) : undefined;
+        const unread =
+          Boolean(tip) &&
+          tip!.senderId !== ctx.user.id &&
+          (!lastReadAt || new Date(lastReadAt).getTime() < new Date(tip!.createdAt).getTime());
+        const snippet =
+          tip && tip.body.length > 72 ? `${tip.body.slice(0, 69)}…` : (tip?.body ?? '');
         return {
           matchId: m.id,
           threadId: m.threadId,
           otherUserId: otherId,
           otherDisplayName: other?.displayName ?? 'Someone',
           otherBio: other?.bio ?? '',
+          otherBirthdate: other?.birthdate ?? null,
           otherPhotoUrl: photoByUser.get(otherId) ?? null,
+          otherLastSeenAt: lastSeenByUser.get(otherId) ?? null,
           createdAt: m.createdAt,
           unmatched: m.unmatchedAt !== null,
+          lastMessageSnippet: snippet,
+          unreadCount: unread ? 1 : 0,
         };
       });
     }),
@@ -453,6 +529,7 @@ export const datingRouter = router({
           fromUserId: schema.datingSwipe.fromUserId,
           createdAt: schema.datingSwipe.createdAt,
           displayName: schema.datingProfile.displayName,
+          primaryPhotoUrl: schema.datingPhoto.url,
         })
         .from(schema.datingSwipe)
         .innerJoin(
@@ -460,6 +537,13 @@ export const datingRouter = router({
           and(
             eq(schema.datingProfile.userId, schema.datingSwipe.fromUserId),
             eq(schema.datingProfile.productId, input.productId),
+          ),
+        )
+        .leftJoin(
+          schema.datingPhoto,
+          and(
+            eq(schema.datingPhoto.profileId, schema.datingProfile.id),
+            eq(schema.datingPhoto.position, 0),
           ),
         )
         .where(
@@ -478,6 +562,132 @@ export const datingRouter = router({
 
       return { gated: false as const, count: likes.length, users: likes };
     }),
+
+  /**
+   * Outbound likes (like / super_like) from the current user — powers the
+   * "You liked" tab in the Heartline likes inbox. Read-only; no schema changes.
+   */
+  outboundLikes: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        limit: z.number().int().min(1).max(100).default(50),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const swipes = await ctx.db
+        .select({
+          toUserId: schema.datingSwipe.toUserId,
+          action: schema.datingSwipe.action,
+          createdAt: schema.datingSwipe.createdAt,
+        })
+        .from(schema.datingSwipe)
+        .where(
+          and(
+            eq(schema.datingSwipe.tenantId, ctx.user.tenantId),
+            eq(schema.datingSwipe.productId, input.productId),
+            eq(schema.datingSwipe.fromUserId, ctx.user.id),
+            or(eq(schema.datingSwipe.action, 'like'), eq(schema.datingSwipe.action, 'super_like'))!,
+          ),
+        )
+        .orderBy(desc(schema.datingSwipe.createdAt))
+        .limit(input.limit);
+
+      const toIds = [...new Set(swipes.map((s) => s.toUserId))];
+      if (toIds.length === 0) return [];
+
+      const profiles = await ctx.db
+        .select({
+          userId: schema.datingProfile.userId,
+          displayName: schema.datingProfile.displayName,
+        })
+        .from(schema.datingProfile)
+        .where(
+          and(
+            eq(schema.datingProfile.productId, input.productId),
+            inArray(schema.datingProfile.userId, toIds),
+          ),
+        );
+
+      const photos = await ctx.db
+        .select({ userId: schema.datingProfile.userId, url: schema.datingPhoto.url })
+        .from(schema.datingPhoto)
+        .innerJoin(schema.datingProfile, eq(schema.datingProfile.id, schema.datingPhoto.profileId))
+        .where(
+          and(inArray(schema.datingProfile.userId, toIds), eq(schema.datingPhoto.position, 0)),
+        );
+
+      const nameByUser = new Map(profiles.map((p) => [p.userId, p.displayName]));
+      const photoByUser = new Map(photos.map((p) => [p.userId, p.url]));
+
+      return swipes.map((s) => ({
+        toUserId: s.toUserId,
+        action: s.action,
+        createdAt: s.createdAt,
+        displayName: nameByUser.get(s.toUserId) ?? 'Someone',
+        primaryPhotoUrl: photoByUser.get(s.toUserId) ?? null,
+      }));
+    }),
+
+  /** Effective Heartline tier from active / trialing subscriptions (seed products). */
+  currentSubscription: protectedProcedure.query(async ({ ctx }) => {
+    type Tier = 'free' | 'plus' | 'premium';
+    const rank = (t: Tier) => (t === 'premium' ? 3 : t === 'plus' ? 2 : 1);
+
+    function readProductTier(metadata: unknown): string | null {
+      if (!metadata || typeof metadata !== 'object') return null;
+      const t = (metadata as { tier?: unknown }).tier;
+      return typeof t === 'string' ? t : null;
+    }
+
+    function inferTier(plan: string, metaTier: string | null): Tier {
+      if (metaTier === 'premium') return 'premium';
+      if (metaTier === 'plus') return 'plus';
+      if (metaTier === 'free') return 'free';
+      const p = plan.toLowerCase();
+      if (p.includes('premium')) return 'premium';
+      if (p.includes('plus')) return 'plus';
+      return 'free';
+    }
+
+    const rows = await ctx.db
+      .select({
+        subscription: schema.subscription,
+        product: schema.product,
+      })
+      .from(schema.subscription)
+      .leftJoin(schema.product, eq(schema.subscription.productId, schema.product.id))
+      .where(
+        and(
+          eq(schema.subscription.tenantId, ctx.user.tenantId),
+          eq(schema.subscription.userId, ctx.user.id),
+          inArray(schema.subscription.status, ['active', 'trialing']),
+        ),
+      );
+
+    const scored = rows.map((r) => ({
+      sub: r.subscription,
+      tier: inferTier(r.subscription.plan, readProductTier(r.product?.metadata)),
+      ts: r.subscription.updatedAt?.getTime() ?? 0,
+    }));
+
+    let best: Tier = 'free';
+    let bestSub: (typeof schema.subscription.$inferSelect) | null = null;
+    for (const x of scored) {
+      if (rank(x.tier) > rank(best)) {
+        best = x.tier;
+        bestSub = x.sub;
+      } else if (rank(x.tier) === rank(best) && rank(x.tier) > 1 && bestSub) {
+        const prevTs = bestSub.updatedAt?.getTime() ?? 0;
+        if (x.ts > prevTs) bestSub = x.sub;
+      }
+    }
+
+    return {
+      plan: best,
+      subscription: best === 'free' ? null : bestSub,
+    };
+  }),
 
   // silence unused-import warning
   __unused: protectedProcedure.query(() => {
