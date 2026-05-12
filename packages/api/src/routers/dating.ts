@@ -249,7 +249,9 @@ export const datingRouter = router({
           .limit(1);
 
         if (mutual) {
-          const [userA, userB] = [ctx.user.id, input.toUserId].sort();
+          const sortedIds = [ctx.user.id, input.toUserId].sort();
+          const userA = sortedIds[0]!;
+          const userB = sortedIds[1]!;
           const [match] = await ctx.db
             .insert(schema.datingMatch)
             .values({

@@ -16,12 +16,14 @@ import { bookingRouter } from './routers/booking';
 import { marketplaceRouter } from './routers/marketplace';
 import { communityRouter } from './routers/community';
 import { aiAgentRouter } from './routers/ai-agent';
+import { deploymentsRouter } from './routers/deployments';
 
 export const appRouter = router({
   health: healthRouter,
   tenants: tenantsRouter,
   users: usersRouter,
   products: productsRouter,
+  deployments: deploymentsRouter,
   subscriptions: subscriptionsRouter,
   entitlements: entitlementsRouter,
   featureFlags: featureFlagsRouter,

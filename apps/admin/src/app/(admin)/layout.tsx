@@ -12,6 +12,7 @@ import {
   History,
 } from 'lucide-react';
 import { AppShell, Sidebar, Topbar, NotificationBell } from '@goldspire/ui';
+import { ActiveTenantBadge } from '@/components/active-tenant-badge';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -52,7 +53,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ]}
         />
       }
-      topbar={<Topbar title="Heartline · Admin" right={<NotificationBell count={1} />} />}
+      topbar={
+        <Topbar
+          title="Goldspire · Admin"
+          right={
+            <div className="flex items-center gap-3">
+              <ActiveTenantBadge />
+              <NotificationBell count={1} />
+            </div>
+          }
+        />
+      }
     >
       {children}
     </AppShell>

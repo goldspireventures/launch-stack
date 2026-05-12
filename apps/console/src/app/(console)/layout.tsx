@@ -6,6 +6,7 @@ import {
   Layers,
   History,
   Settings,
+  Rocket,
 } from 'lucide-react';
 import { AppShell, Sidebar, Topbar } from '@goldspire/ui';
 
@@ -26,6 +27,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
             {
               items: [
                 { label: 'Overview', href: '/', icon: <LayoutDashboard className="h-4 w-4" /> },
+                { label: 'Apps', href: '/apps', icon: <Rocket className="h-4 w-4" /> },
                 { label: 'Tenants', href: '/tenants', icon: <Building2 className="h-4 w-4" /> },
                 { label: 'Blueprints', href: '/blueprints', icon: <Layers className="h-4 w-4" /> },
                 { label: 'Audit log', href: '/audit', icon: <History className="h-4 w-4" /> },

@@ -6,7 +6,7 @@
 export class GoldspireError extends Error {
   readonly code: string;
   readonly status: number;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
   constructor(message: string, opts: { code: string; status: number; cause?: unknown }) {
     super(message);
     this.name = this.constructor.name;

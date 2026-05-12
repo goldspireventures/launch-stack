@@ -6,41 +6,57 @@ import { join } from 'node:path';
 import postgres from 'postgres';
 import { env } from '@goldspire/config/env';
 
+/**
+ * Migration strategy:
+ *
+ *  1. `packages/db/drizzle/` — owned by drizzle-kit. Contains the auto-generated
+ *     schema migrations (CREATE TABLE / ALTER TABLE) and the `meta/_journal.json`
+ *     used to track which have been applied. We apply these via Drizzle's
+ *     migrator so it manages its own state table.
+ *
+ *  2. `packages/db/policies/` — owned by hand. Contains RLS policies and any
+ *     other hand-written DDL that doesn't fit Drizzle's diff model. These are
+ *     written to be idempotent (drop ... if exists; create ...) so they're
+ *     safe to re-run on every `pnpm db:migrate`.
+ */
 const DRIZZLE_DIR = new URL('../drizzle/', import.meta.url).pathname;
+const POLICIES_DIR = new URL('../policies/', import.meta.url).pathname;
 const url = env.DIRECT_URL ?? env.DATABASE_URL;
 
 async function main() {
   const sql = postgres(url, { max: 1, prepare: false });
   const db = drizzle(sql);
 
-  console.log('▸ running drizzle migrations...');
+  console.log('▸ running drizzle schema migrations...');
   if (existsSync(DRIZZLE_DIR)) {
     try {
       await migrate(db, { migrationsFolder: DRIZZLE_DIR });
+      console.log('  ✓ schema up to date');
     } catch (err) {
-      console.warn('  (no generated migrations found, skipping)', err instanceof Error ? err.message : err);
+      console.error('  ✗ drizzle migrate failed:', err instanceof Error ? err.message : err);
+      throw err;
     }
+  } else {
+    console.log('  (no drizzle/ directory found)');
   }
 
-  console.log('▸ applying RLS / hand-written SQL migrations...');
+  console.log('▸ applying hand-written policies...');
   await sql.unsafe("select set_config('app.role', 'STUDIO_OWNER', true)");
 
-  // Apply every *.sql file in the drizzle/ dir in lexicographic order.
-  // The base `0000_rls_policies.sql` isn't idempotent on its own, so we
-  // catch "already exists" for it specifically. Subsequent files should
-  // use `drop ... if exists; create ...` and be safe to re-run.
-  if (existsSync(DRIZZLE_DIR)) {
-    const files = readdirSync(DRIZZLE_DIR)
+  if (existsSync(POLICIES_DIR)) {
+    const files = readdirSync(POLICIES_DIR)
       .filter((f) => f.endsWith('.sql'))
       .sort();
     for (const file of files) {
-      const fullPath = join(DRIZZLE_DIR, file);
+      const fullPath = join(POLICIES_DIR, file);
       const body = readFileSync(fullPath, 'utf8');
       try {
         await sql.unsafe(body);
         console.log(`  ✓ ${file}`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
+        // `0000_rls_policies.sql` is not idempotent (uses plain CREATE POLICY).
+        // On re-run it errors with "already exists"; that's expected and safe.
         if (msg.includes('already exists')) {
           console.warn(`  ↺ ${file} (already applied, skipping)`);
           continue;
@@ -49,9 +65,9 @@ async function main() {
         throw err;
       }
     }
-    console.log(`▸ applied ${files.length} SQL migration file(s)`);
+    console.log(`▸ applied ${files.length} policy file(s)`);
   } else {
-    console.log('  (no drizzle/ directory found)');
+    console.log('  (no policies/ directory found)');
   }
 
   await sql.end();

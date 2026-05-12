@@ -106,7 +106,7 @@ export async function upsertFlag(input: {
   rules?: Rule[];
   description?: string;
   db?: Database;
-}) {
+}): Promise<schema.FeatureFlag> {
   const client = input.db ?? defaultDb;
   const [row] = await client
     .insert(schema.featureFlag)
@@ -127,5 +127,8 @@ export async function upsertFlag(input: {
       },
     })
     .returning();
+  if (!row) {
+    throw new Error(`feature-flag upsert returned no rows (key=${input.key})`);
+  }
   return row;
 }

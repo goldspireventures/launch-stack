@@ -421,8 +421,11 @@ async function seed() {
     status: 'active',
   });
 
+  const acmeWorkspaceProductId = ulid();
+  const acmeBookingsProductId = ulid();
   await db.insert(schema.product).values([
     {
+      id: acmeWorkspaceProductId,
       tenantId: acmeTenantId,
       name: 'Acme Workspace',
       slug: 'acme-workspace',
@@ -430,6 +433,7 @@ async function seed() {
       status: 'live',
     },
     {
+      id: acmeBookingsProductId,
       tenantId: acmeTenantId,
       name: 'Acme Bookings',
       slug: 'acme-bookings',
@@ -805,6 +809,182 @@ async function seed() {
       status: 'active' as const,
     })),
   );
+
+  // ─── Studio Portal: deployment catalog ───────────────────────────────
+  // One row per launchable surface across every tenant. The Portal's Apps
+  // grid renders these. `is_studio_tool=true` rows are the Goldspire platform
+  // itself (console + admin); the rest are client products. Health pinging
+  // is restricted to `environment in ('staging','production')` so local-only
+  // rows just show "Open" / "Copy command" buttons.
+  await db.insert(schema.productDeployment).values([
+    // Studio platform — multi-tenant, no product link
+    {
+      tenantId: studioTenantId,
+      productId: null,
+      kind: 'console',
+      environment: 'local',
+      name: 'Goldspire Studio Console',
+      tagline: 'The control plane across every tenant and blueprint.',
+      accent: '#0F172A',
+      localDevUrl: 'http://localhost:3001',
+      localDevCommand: 'pnpm --filter @goldspire/console dev',
+      repoPath: 'apps/console',
+      healthCheckPath: '/api/health',
+      isStudioTool: true,
+    },
+    {
+      tenantId: studioTenantId,
+      productId: null,
+      kind: 'admin',
+      environment: 'local',
+      name: 'Goldspire Admin',
+      tagline: 'Per-tenant admin — pick a tenant on entry, manage users / flags / billing.',
+      accent: '#475569',
+      localDevUrl: 'http://localhost:3002',
+      localDevCommand: 'pnpm --filter @goldspire/admin dev',
+      repoPath: 'apps/admin',
+      healthCheckPath: '/api/health',
+      isStudioTool: true,
+    },
+
+    // Heartline (social_matching) — web + mobile, both with a production row
+    {
+      tenantId: heartlineTenantId,
+      productId: heartlineProductId,
+      blueprint: 'social_matching',
+      kind: 'web',
+      environment: 'local',
+      name: 'Heartline Web',
+      tagline: 'Discovery → like → match → chat. The flagship dating product.',
+      accent: '#E15A82',
+      localDevUrl: 'http://localhost:3000',
+      localDevCommand: 'pnpm --filter @goldspire/dating-web dev',
+      repoPath: 'apps/dating-web',
+      healthCheckPath: '/api/health',
+    },
+    {
+      tenantId: heartlineTenantId,
+      productId: heartlineProductId,
+      blueprint: 'social_matching',
+      kind: 'web',
+      environment: 'production',
+      name: 'Heartline Web (prod)',
+      tagline: 'Live for paying users.',
+      accent: '#E15A82',
+      url: 'https://heartline.com',
+      healthCheckPath: '/api/health',
+      healthStatus: 'ok',
+      lastHealthCheckAt: NOW,
+      lastDeploySha: 'a1b2c3d4',
+      lastDeployAt: NOW,
+    },
+    {
+      tenantId: heartlineTenantId,
+      productId: heartlineProductId,
+      blueprint: 'social_matching',
+      kind: 'mobile_ios',
+      environment: 'local',
+      name: 'Heartline iOS',
+      tagline: 'Expo app — talks to the same Heartline API.',
+      accent: '#E15A82',
+      localDevCommand: 'pnpm --filter @goldspire/dating-mobile dev',
+      repoPath: 'apps/dating-mobile',
+      mobileScheme: 'heartline://',
+    },
+    {
+      tenantId: heartlineTenantId,
+      productId: heartlineProductId,
+      blueprint: 'social_matching',
+      kind: 'mobile_android',
+      environment: 'local',
+      name: 'Heartline Android',
+      tagline: 'Same Expo binary, Android build.',
+      accent: '#E15A82',
+      localDevCommand: 'pnpm --filter @goldspire/dating-mobile dev',
+      repoPath: 'apps/dating-mobile',
+      mobileScheme: 'heartline://',
+    },
+
+    // Nova Care (booking)
+    {
+      tenantId: novaTenantId,
+      productId: novaProductId,
+      blueprint: 'multi_staff_booking',
+      kind: 'web',
+      environment: 'local',
+      name: 'Nova Care Web',
+      tagline: 'Multi-staff booking flow for a boutique wellness studio.',
+      accent: '#7C5CFF',
+      localDevUrl: 'http://localhost:3010',
+      localDevCommand: 'pnpm --filter @goldspire/booking-web dev',
+      repoPath: 'apps/booking-web',
+      healthCheckPath: '/api/health',
+    },
+
+    // Bazaar (marketplace)
+    {
+      tenantId: bazaarTenantId,
+      productId: bazaarProductId,
+      blueprint: 'marketplace',
+      kind: 'web',
+      environment: 'local',
+      name: 'Bazaar Web',
+      tagline: 'Maker-driven marketplace with listings, orders, and seller payouts.',
+      accent: '#F4B740',
+      localDevUrl: 'http://localhost:3011',
+      localDevCommand: 'pnpm --filter @goldspire/marketplace-web dev',
+      repoPath: 'apps/marketplace-web',
+      healthCheckPath: '/api/health',
+    },
+
+    // Signal (community)
+    {
+      tenantId: signalTenantId,
+      productId: signalProductId,
+      blueprint: 'community',
+      kind: 'web',
+      environment: 'local',
+      name: 'Signal Web',
+      tagline: 'Spaces + feeds for build-in-public founders.',
+      accent: '#3DBE76',
+      localDevUrl: 'http://localhost:3012',
+      localDevCommand: 'pnpm --filter @goldspire/community-web dev',
+      repoPath: 'apps/community-web',
+      healthCheckPath: '/api/health',
+    },
+
+    // Lumen (AI agent)
+    {
+      tenantId: lumenTenantId,
+      productId: lumenProductId,
+      blueprint: 'vertical_ai_agent',
+      kind: 'web',
+      environment: 'local',
+      name: 'Lumen Web',
+      tagline: 'Vertical AI co-pilot: sessions, tasks, tool invocations.',
+      accent: '#C9A227',
+      localDevUrl: 'http://localhost:3013',
+      localDevCommand: 'pnpm --filter @goldspire/ai-agent-web dev',
+      repoPath: 'apps/ai-agent-web',
+      healthCheckPath: '/api/health',
+    },
+
+    // Acme (B2B SaaS shell)
+    {
+      tenantId: acmeTenantId,
+      productId: acmeWorkspaceProductId,
+      blueprint: 'b2b_saas_shell',
+      kind: 'web',
+      environment: 'local',
+      name: 'Acme Workspace Web',
+      tagline: 'Internal B2B SaaS dashboard reference app.',
+      accent: '#5B8DEF',
+      localDevUrl: 'http://localhost:3014',
+      localDevCommand: 'pnpm --filter @goldspire/b2b-saas-web dev',
+      repoPath: 'apps/b2b-saas-web',
+      healthCheckPath: '/api/health',
+    },
+  ]);
 
   console.log('✓ seed complete');
   console.log(`  Studio tenant id : ${studioTenantId}`);

@@ -174,3 +174,36 @@ export const agentTaskStatusEnum = pgEnum('agent_task_status', [
   'failed',
   'canceled',
 ]);
+
+/**
+ * Goldspire Studio — deployment catalog enums. Used by `product_deployment`
+ * to drive the Studio Portal's Apps grid and launcher.
+ *
+ *  - `kind` identifies the SURFACE: web app, mobile binary, admin console,
+ *    background API, etc.
+ *  - `environment` identifies WHERE that surface is reachable: local dev,
+ *    staging, production. The Portal only health-pings staging/production.
+ *  - `health_status` is the last observed status from a /api/health probe;
+ *    rolled forward by the polling job on the Apps page.
+ */
+export const deploymentKindEnum = pgEnum('deployment_kind', [
+  'web',
+  'mobile_ios',
+  'mobile_android',
+  'admin',
+  'console',
+  'api',
+]);
+
+export const deploymentEnvironmentEnum = pgEnum('deployment_environment', [
+  'local',
+  'staging',
+  'production',
+]);
+
+export const deploymentHealthStatusEnum = pgEnum('deployment_health_status', [
+  'unknown',
+  'ok',
+  'degraded',
+  'down',
+]);

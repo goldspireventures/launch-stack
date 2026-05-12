@@ -120,16 +120,17 @@ export interface Column<T> {
   align?: 'left' | 'right' | 'center';
 }
 
-export interface DataTableProps<T extends { id?: string | number }> {
+export interface DataTableProps<T> {
   rows: T[];
   columns: Column<T>[];
   empty?: React.ReactNode;
+  /** Row key resolver. Falls back to `row.id` if the row has one, else array index. */
   rowKey?: (row: T) => string | number;
   className?: string;
   onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T extends { id?: string | number }>(props: DataTableProps<T>) {
+export function DataTable<T>(props: DataTableProps<T>) {
   if (props.rows.length === 0) {
     return (
       <Card className={cn(props.className)}>
@@ -164,7 +165,7 @@ export function DataTable<T extends { id?: string | number }>(props: DataTablePr
             {props.rows.map((row, idx) => {
               const key = props.rowKey
                 ? props.rowKey(row)
-                : (row.id as string | number | undefined) ?? idx;
+                : ((row as { id?: string | number }).id ?? idx);
               return (
                 <tr
                   key={key}

@@ -41,29 +41,32 @@ export const publicProcedure = t.procedure.use(async ({ next, ctx, path }) => {
   }
 });
 
-const requireUserMiddleware = middleware(async ({ next, ctx }) => {
+/**
+ * Combined auth + RLS guard for every protected procedure.
+ *
+ *  1. Refuses unauthenticated calls (narrows `ctx.user` to non-null).
+ *  2. Wraps the resolver in a tenant-scoped tx (or studio bypass for
+ *     STUDIO_OWNER / STUDIO_STAFF) so RLS policies match every query.
+ *
+ * Kept as one middleware so TypeScript can narrow `ctx.user` in a single
+ * step and downstream resolvers see `ctx.user: AuthedUser` (not nullable).
+ */
+const authedTenantMiddleware = middleware(async ({ next, ctx }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
   }
-  return next({ ctx: { ...ctx, user: ctx.user } });
-});
-
-/**
- * RLS policies on tenant-scoped tables require `app.tenant_id` / `app.user_id`
- * (or studio bypass). Run each protected call inside the appropriate DB context.
- */
-const tenantRlsMiddleware = middleware(async ({ ctx, next }) => {
   const user = ctx.user;
-  if (!user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
-  }
   if (inRoles(user.role, STUDIO_CONSOLE_ROLES)) {
-    return withStudioContext(ctx.db, user.id, async (tx) => next({ ctx: { ...ctx, db: tx } }));
+    return withStudioContext(ctx.db, user.id, async (tx) =>
+      next({ ctx: { ...ctx, db: tx, user } }),
+    );
   }
-  return withTenantContext(ctx.db, user.tenantId, user.id, async (tx) => next({ ctx: { ...ctx, db: tx } }));
+  return withTenantContext(ctx.db, user.tenantId, user.id, async (tx) =>
+    next({ ctx: { ...ctx, db: tx, user } }),
+  );
 });
 
-export const protectedProcedure = publicProcedure.use(requireUserMiddleware).use(tenantRlsMiddleware);
+export const protectedProcedure = publicProcedure.use(authedTenantMiddleware);
 
 export function roleProcedure(allowed: readonly Role[]) {
   return protectedProcedure.use(async ({ next, ctx }) => {

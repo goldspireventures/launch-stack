@@ -14,6 +14,9 @@ import {
 import { newId } from '../types';
 import {
   blueprintKindEnum,
+  deploymentEnvironmentEnum,
+  deploymentHealthStatusEnum,
+  deploymentKindEnum,
   entitlementSourceEnum,
   notificationStatusEnum,
   notificationTypeEnum,
@@ -482,6 +485,84 @@ export const tenantMembership = pgTable(
   }),
 );
 
+/**
+ * ─── ProductDeployment ────────────────────────────────────────────────────
+ * The Studio Portal's catalog of every launchable surface. One row per
+ * (product × kind × environment), e.g. "Heartline web @ production",
+ * "Heartline iOS @ production", "Heartline web @ local". Studio-internal
+ * tools (the Studio Console, the Admin dashboard) live under the goldspire
+ * tenant with `product_id IS NULL` and `is_studio_tool = true`.
+ *
+ * Liveness: only rows where `environment IN ('staging','production')` are
+ * pinged by the Apps page polling job. Local rows are launcher-only.
+ */
+export const productDeployment = pgTable(
+  'product_deployment',
+  {
+    id: varchar('id', { length: 26 }).$defaultFn(newId).primaryKey(),
+    tenantId: varchar('tenant_id', { length: 26 })
+      .notNull()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    productId: varchar('product_id', { length: 26 }).references(() => product.id, {
+      onDelete: 'cascade',
+    }),
+    /**
+     * Blueprint this deployment realizes — denormalized from product.blueprint
+     * so the Studio Portal can filter without a join. Null for studio tools.
+     */
+    blueprint: blueprintKindEnum('blueprint'),
+    kind: deploymentKindEnum('kind').notNull(),
+    environment: deploymentEnvironmentEnum('environment').notNull().default('local'),
+    /** Display name in the Studio Portal grid (e.g. "Heartline Web"). */
+    name: text('name').notNull(),
+    /** Short subtitle / one-liner shown beneath the name. */
+    tagline: text('tagline'),
+    /** Hex accent for the card border / icon background. */
+    accent: varchar('accent', { length: 9 }),
+    /** Public URL when deployed (https://heartline.com). Null for local-only. */
+    url: text('url'),
+    /** Local dev URL the launcher links to (http://localhost:3000). */
+    localDevUrl: text('local_dev_url'),
+    /** Copy-to-clipboard `pnpm` command to start this app locally. */
+    localDevCommand: text('local_dev_command'),
+    /** Path within the monorepo (apps/dating-web). Used by the "Open Repo" link. */
+    repoPath: text('repo_path'),
+    /** Path appended to `url` for liveness probes. Defaults to /api/health. */
+    healthCheckPath: varchar('health_check_path', { length: 200 }),
+    /** Deep-link scheme for mobile binaries (heartline://). */
+    mobileScheme: varchar('mobile_scheme', { length: 60 }),
+    /** EAS project id, for QR code generation in the Portal. */
+    expoProjectId: text('expo_project_id'),
+    /** True when this row is part of the Goldspire platform, not a client product. */
+    isStudioTool: boolean('is_studio_tool').notNull().default(false),
+    /** Last deploy git SHA, populated by CI. */
+    lastDeploySha: varchar('last_deploy_sha', { length: 40 }),
+    lastDeployAt: timestamp('last_deploy_at', { withTimezone: true }),
+    /** Last observed health from the polling probe. */
+    healthStatus: deploymentHealthStatusEnum('health_status').notNull().default('unknown'),
+    lastHealthCheckAt: timestamp('last_health_check_at', { withTimezone: true }),
+    lastHealthMessage: text('last_health_message'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    tenantKindEnvUq: uniqueIndex('product_deployment_tenant_product_kind_env_uq').on(
+      t.tenantId,
+      t.productId,
+      t.kind,
+      t.environment,
+    ),
+    tenantKindIx: index('product_deployment_tenant_kind_ix').on(t.tenantId, t.kind),
+    blueprintIx: index('product_deployment_blueprint_ix').on(t.blueprint),
+    healthIx: index('product_deployment_health_ix').on(t.environment, t.healthStatus),
+  }),
+);
+
 export type Tenant = typeof tenant.$inferSelect;
 export type NewTenant = typeof tenant.$inferInsert;
 export type User = typeof user.$inferSelect;
@@ -489,6 +570,8 @@ export type NewUser = typeof user.$inferInsert;
 export type Profile = typeof profile.$inferSelect;
 export type Product = typeof product.$inferSelect;
 export type NewProduct = typeof product.$inferInsert;
+export type ProductDeployment = typeof productDeployment.$inferSelect;
+export type NewProductDeployment = typeof productDeployment.$inferInsert;
 export type Subscription = typeof subscription.$inferSelect;
 export type Entitlement = typeof entitlement.$inferSelect;
 export type FeatureFlag = typeof featureFlag.$inferSelect;

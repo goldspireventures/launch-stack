@@ -4,6 +4,7 @@ import {
   user,
   profile,
   product,
+  productDeployment,
   subscription,
   entitlement,
   featureFlag,
@@ -24,6 +25,7 @@ import { assistantSession, assistantMessage, agentTask, toolInvocation } from '.
 export const tenantRelations = relations(tenant, ({ many }) => ({
   users: many(user),
   products: many(product),
+  deployments: many(productDeployment),
   memberships: many(tenantMembership),
 }));
 
@@ -37,8 +39,14 @@ export const userRelations = relations(user, ({ one, many }) => ({
   memberships: many(tenantMembership),
 }));
 
-export const productRelations = relations(product, ({ one }) => ({
+export const productRelations = relations(product, ({ one, many }) => ({
   tenant: one(tenant, { fields: [product.tenantId], references: [tenant.id] }),
+  deployments: many(productDeployment),
+}));
+
+export const productDeploymentRelations = relations(productDeployment, ({ one }) => ({
+  tenant: one(tenant, { fields: [productDeployment.tenantId], references: [tenant.id] }),
+  product: one(product, { fields: [productDeployment.productId], references: [product.id] }),
 }));
 
 export const subscriptionRelations = relations(subscription, ({ one, many }) => ({

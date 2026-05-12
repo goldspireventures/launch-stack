@@ -18,7 +18,7 @@ export interface GrantInput {
   expiresAt?: Date | null;
 }
 
-export async function grantEntitlement(input: GrantInput) {
+export async function grantEntitlement(input: GrantInput): Promise<schema.Entitlement> {
   const [row] = await db
     .insert(schema.entitlement)
     .values({
@@ -41,6 +41,9 @@ export async function grantEntitlement(input: GrantInput) {
       },
     })
     .returning();
+  if (!row) {
+    throw new Error(`grantEntitlement returned no rows (key=${input.key})`);
+  }
   return row;
 }
 
