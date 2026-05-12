@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { env } from '@goldspire/config/env';
+import { env, getRuntimeDatabaseUrl } from '@goldspire/config/env';
 import * as schema from './schema';
 
 /**
@@ -16,7 +16,10 @@ declare global {
 }
 
 function createClient() {
-  const sql = postgres(env.DATABASE_URL, {
+  // getRuntimeDatabaseUrl() prefers the transaction pooler (port 6543) when
+  // available, falling back to whatever DATABASE_URL is. Single source of
+  // truth is packages/config/src/db-url.ts.
+  const sql = postgres(getRuntimeDatabaseUrl(), {
     max: env.NODE_ENV === 'production' ? 20 : 5,
     idle_timeout: 20,
     connect_timeout: 10,

@@ -103,3 +103,10 @@ export const hasRealProvider = {
   analytics: !!env.POSTHOG_API_KEY,
   errors: !!env.SENTRY_DSN,
 } as const;
+
+export {
+  resolveDatabaseUrls,
+  getRuntimeDatabaseUrl,
+  getMigrationDatabaseUrl,
+  type DatabaseUrlChoice,
+} from './db-url';

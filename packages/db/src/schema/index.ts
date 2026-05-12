@@ -6,4 +6,5 @@ export * from './booking';
 export * from './marketplace';
 export * from './community';
 export * from './ai-agent';
+export * from './studio-commercial';
 export * from './relations';

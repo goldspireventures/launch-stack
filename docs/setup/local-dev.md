@@ -26,8 +26,7 @@ cp .env.example .env
 Fill in:
 
 ```
-DATABASE_URL=postgres://postgres:<password>@db.<ref>.supabase.co:5432/postgres
-DIRECT_URL=postgres://postgres:<password>@db.<ref>.supabase.co:5432/postgres
+DATABASE_URL=postgres://postgres:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
 SUPABASE_URL=https://<ref>.supabase.co
 SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -42,7 +41,6 @@ docker run -d --name goldspire-pg -p 5432:5432 -e POSTGRES_PASSWORD=goldspire po
 
 ```
 DATABASE_URL=postgres://postgres:goldspire@localhost:5432/postgres
-DIRECT_URL=postgres://postgres:goldspire@localhost:5432/postgres
 AUTH_PROVIDER=mock
 ```
 

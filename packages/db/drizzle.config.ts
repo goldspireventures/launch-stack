@@ -1,12 +1,15 @@
 import { defineConfig } from 'drizzle-kit';
-import { env } from '@goldspire/config/env';
+import { getMigrationDatabaseUrl } from '@goldspire/config/env';
 
 export default defineConfig({
   schema: './src/schema/index.ts',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: env.DIRECT_URL ?? env.DATABASE_URL,
+    // Migrations require a session-mode connection — Supabase's transaction
+    // pooler (port 6543) can't run DDL. resolveDatabaseUrls() in
+    // @goldspire/config/db-url derives the right URL automatically.
+    url: getMigrationDatabaseUrl(),
   },
   verbose: true,
   strict: true,

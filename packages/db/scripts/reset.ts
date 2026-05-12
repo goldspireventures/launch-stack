@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 import './_load-env';
 import postgres from 'postgres';
-import { env } from '@goldspire/config/env';
+import { env, getMigrationDatabaseUrl } from '@goldspire/config/env';
 
-const url = env.DIRECT_URL ?? env.DATABASE_URL;
+const url = getMigrationDatabaseUrl();
 
 async function main() {
   console.warn('⚠  DROPPING all goldspire tables in the public schema');

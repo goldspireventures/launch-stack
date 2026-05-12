@@ -18,8 +18,7 @@ Set these in each project's Vercel settings:
 
 | Required                       | Value                                                       |
 |--------------------------------|-------------------------------------------------------------|
-| `DATABASE_URL`                 | Supabase pooled connection string                           |
-| `DIRECT_URL`                   | Supabase direct connection string (used by migrations)      |
+| `DATABASE_URL`                 | Supabase Postgres URI (session pooler recommended for app + migrations) |
 | `SUPABASE_URL`                 | `https://<ref>.supabase.co`                                 |
 | `SUPABASE_ANON_KEY`            | Supabase anon key                                           |
 | `SUPABASE_SERVICE_ROLE_KEY`    | Supabase service role (server-only)                         |
@@ -64,5 +63,5 @@ Vercel cannot run DB migrations. After every deploy that changes schema, run fro
 machine or a CI step:
 
 ```bash
-DATABASE_URL=$PROD_DATABASE_URL DIRECT_URL=$PROD_DIRECT_URL pnpm db:migrate
+DATABASE_URL=$PROD_DATABASE_URL pnpm db:migrate
 ```

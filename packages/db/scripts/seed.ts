@@ -5,10 +5,10 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
 import { ulid } from 'ulid';
 import { ENTITLEMENT_KEYS } from '@goldspire/config';
-import { env } from '@goldspire/config/env';
+import { env, getMigrationDatabaseUrl } from '@goldspire/config/env';
 import * as schema from '../src/schema/index.js';
 
-const conn = postgres(env.DIRECT_URL ?? env.DATABASE_URL, { max: 1, prepare: false });
+const conn = postgres(getMigrationDatabaseUrl(), { max: 1, prepare: false });
 const db = drizzle(conn, { schema, casing: 'snake_case' });
 
 const NOW = new Date();
@@ -1016,7 +1016,7 @@ seed().catch(async (err) => {
   console.error('✗ seed failed:', err);
   if (isConnectionRefused(err)) {
     console.error(
-      '\nHint: Postgres refused the connection. Set DATABASE_URL / DIRECT_URL in `.env` to a reachable instance (e.g. Supabase), or start Postgres on the host and port in your URL.',
+      '\nHint: Postgres refused the connection. Set DATABASE_URL in `.env` to a reachable instance (e.g. Supabase), or start Postgres on the host and port in your URL.',
     );
   }
   try {

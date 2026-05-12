@@ -207,3 +207,25 @@ export const deploymentHealthStatusEnum = pgEnum('deployment_health_status', [
   'degraded',
   'down',
 ]);
+
+/** Goldspire Studio internal deal-desk / commercial planning. */
+export const studioEngagementKindEnum = pgEnum('studio_engagement_kind', [
+  'mvp',
+  'mvp_plus_prod_planned',
+]);
+
+export const studioDealClientRiskEnum = pgEnum('studio_deal_client_risk', [
+  'referred',
+  'unknown',
+  'enterprise',
+]);
+
+export const studioDealSubcontractEnum = pgEnum('studio_deal_subcontract', ['none', 'light', 'heavy']);
+
+export const studioDealStatusEnum = pgEnum('studio_deal_status', [
+  'draft',
+  'pipeline',
+  'won',
+  'lost',
+  'archived',
+]);

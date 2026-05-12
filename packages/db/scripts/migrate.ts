@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
-import { env } from '@goldspire/config/env';
+import { env, resolveDatabaseUrls } from '@goldspire/config/env';
 
 /**
  * Migration strategy:
@@ -25,9 +25,25 @@ import { env } from '@goldspire/config/env';
 // which existsSync can't open. fileURLToPath gives us a real native path.
 const DRIZZLE_DIR = fileURLToPath(new URL('../drizzle/', import.meta.url));
 const POLICIES_DIR = fileURLToPath(new URL('../policies/', import.meta.url));
-const url = env.DIRECT_URL ?? env.DATABASE_URL;
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '(unparseable URL)';
+  }
+}
 
 async function main() {
+  const { migration: url, rationale } = resolveDatabaseUrls();
+  console.log('▸ migration target:', hostOf(url));
+  console.log('  rationale       :', rationale);
+  if (hostOf(url).startsWith('db.') && hostOf(url).endsWith('.supabase.co')) {
+    console.warn(
+      '⚠ Using direct Supabase host (db.*). If you see ENOTFOUND, switch DATABASE_URL to the Session pooler URI (host *.pooler.supabase.com) in .env.',
+    );
+  }
+
   const sql = postgres(url, { max: 1, prepare: false });
   const db = drizzle(sql);
 
@@ -90,12 +106,25 @@ function isConnectionRefused(err: unknown): boolean {
   return false;
 }
 
-main().catch((err) => {
-  console.error('✗ migration failed:', err);
-  if (isConnectionRefused(err)) {
-    console.error(
-      '\nHint: Postgres refused the connection. Set DATABASE_URL / DIRECT_URL in `.env` to a reachable instance (e.g. Supabase), or start Postgres on the host and port in your URL.',
-    );
-  }
-  process.exit(1);
-});
+main()
+  .then(() => {
+    // postgres-js's sql.end() resolves immediately but background sockets
+    // can keep the event loop alive on Supavisor. Force a clean exit so
+    // `pnpm db:migrate` doesn't appear to hang after "✓ migrations complete".
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('✗ migration failed:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('ENOTFOUND') && msg.includes('db.') && msg.includes('supabase.co')) {
+      console.error(
+        '\nHint: Direct db.<project>.supabase.co did not resolve. Put the Supabase Session pooler URI in DATABASE_URL (host should be *.pooler.supabase.com), then retry.',
+      );
+    }
+    if (isConnectionRefused(err)) {
+      console.error(
+        '\nHint: Postgres refused the connection. Set DATABASE_URL in `.env` to a reachable instance (e.g. Supabase session pooler), or start Postgres on the host and port in your URL.',
+      );
+    }
+    process.exit(1);
+  });

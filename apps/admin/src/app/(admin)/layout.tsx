@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   History,
+  Handshake,
 } from 'lucide-react';
 import { AppShell, Sidebar, Topbar, NotificationBell } from '@goldspire/ui';
 import { ActiveTenantBadge } from '@/components/active-tenant-badge';
@@ -34,6 +35,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 { label: 'Users', href: '/users', icon: <Users className="h-4 w-4" /> },
                 { label: 'Products', href: '/products', icon: <Package className="h-4 w-4" /> },
                 { label: 'Subscriptions', href: '/subscriptions', icon: <CreditCard className="h-4 w-4" /> },
+              ],
+            },
+            {
+              label: 'Studio',
+              items: [
+                {
+                  label: 'Deal desk',
+                  href: '/studio/deals',
+                  icon: <Handshake className="h-4 w-4" />,
+                },
               ],
             },
             {

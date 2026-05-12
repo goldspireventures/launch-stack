@@ -17,6 +17,7 @@ import { marketplaceRouter } from './routers/marketplace';
 import { communityRouter } from './routers/community';
 import { aiAgentRouter } from './routers/ai-agent';
 import { deploymentsRouter } from './routers/deployments';
+import { studioDealsRouter } from './routers/studio-deals';
 
 export const appRouter = router({
   health: healthRouter,
@@ -37,6 +38,7 @@ export const appRouter = router({
   marketplace: marketplaceRouter,
   community: communityRouter,
   aiAgent: aiAgentRouter,
+  studioDeals: studioDealsRouter,
 });
 
 export type AppRouter = typeof appRouter;

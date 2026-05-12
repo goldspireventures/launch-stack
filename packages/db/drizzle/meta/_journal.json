@@ -15,6 +15,13 @@
       "when": 1778543475290,
       "tag": "0001_needy_runaways",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778547582627,
+      "tag": "0002_windy_landau",
+      "breakpoints": true
     }
   ]
 }

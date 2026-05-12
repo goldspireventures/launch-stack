@@ -17,7 +17,7 @@ corepack prepare pnpm@9.12.0 --activate
 ## 2. Database
 
 Replit's built-in Postgres works fine for a demo. From the **Database** tab, create a Postgres,
-then copy the connection string into a Replit Secret named `DATABASE_URL` and `DIRECT_URL`.
+then copy the connection string into a Replit Secret named `DATABASE_URL`.
 
 For real client work, **don't use Replit Postgres** — point at Supabase instead.
 
