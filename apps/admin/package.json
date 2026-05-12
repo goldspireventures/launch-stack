@@ -15,7 +15,6 @@
     "@goldspire/logger": "workspace:*",
     "@goldspire/auth": "workspace:*",
     "@goldspire/blueprints": "workspace:*",
-    "@goldspire/commercial": "workspace:*",
     "@goldspire/config": "workspace:*",
     "@goldspire/db": "workspace:*",
     "@goldspire/platform": "workspace:*",

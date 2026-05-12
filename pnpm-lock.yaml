@@ -44,9 +44,6 @@ importers:
       '@goldspire/blueprints':
         specifier: workspace:*
         version: link:../../packages/blueprints
-      '@goldspire/commercial':
-        specifier: workspace:*
-        version: link:../../packages/commercial
       '@goldspire/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -394,6 +391,9 @@ importers:
       '@goldspire/blueprints':
         specifier: workspace:*
         version: link:../../packages/blueprints
+      '@goldspire/commercial':
+        specifier: workspace:*
+        version: link:../../packages/commercial
       '@goldspire/config':
         specifier: workspace:*
         version: link:../../packages/config
