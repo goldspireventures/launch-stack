@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
+  Bell,
   Building2,
   Circle,
   CreditCard,
   Flag,
   Handshake,
   History,
+  LineChart,
   LayoutDashboard,
   Layers,
   Menu,
@@ -20,6 +22,7 @@ import {
   Search,
   Settings as SettingsIcon,
   ShieldAlert,
+  Sparkles,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -34,18 +37,21 @@ import { Button } from './primitives';
  */
 const NAV_ICONS: Record<string, LucideIcon> = {
   'bar-chart-3': BarChart3,
+  bell: Bell,
   'building-2': Building2,
   'credit-card': CreditCard,
   flag: Flag,
   handshake: Handshake,
   history: History,
   layers: Layers,
+  'line-chart': LineChart,
   'layout-dashboard': LayoutDashboard,
   'message-square': MessageSquare,
   package: Package,
   rocket: Rocket,
   settings: SettingsIcon,
   'shield-alert': ShieldAlert,
+  sparkles: Sparkles,
   users: Users,
 };
 
