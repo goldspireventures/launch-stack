@@ -11,6 +11,7 @@ import { messagesRouter } from './routers/messages';
 import { reportsRouter } from './routers/reports';
 import { analyticsRouter } from './routers/analytics';
 import { auditRouter } from './routers/audit';
+import { catalogRouter } from './routers/catalog';
 import { datingRouter } from './routers/dating';
 import { bookingRouter } from './routers/booking';
 import { marketplaceRouter } from './routers/marketplace';
@@ -33,6 +34,7 @@ export const appRouter = router({
   reports: reportsRouter,
   analytics: analyticsRouter,
   audit: auditRouter,
+  catalog: catalogRouter,
   dating: datingRouter,
   booking: bookingRouter,
   marketplace: marketplaceRouter,
