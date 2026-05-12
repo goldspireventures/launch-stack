@@ -27,6 +27,7 @@ const nextConfig = {
     '@goldspire/config',
     '@goldspire/auth',
     '@goldspire/blueprints',
+    '@goldspire/commercial',
     '@goldspire/db',
     '@goldspire/validation',
     '@goldspire/platform',

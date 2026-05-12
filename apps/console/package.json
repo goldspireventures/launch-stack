@@ -15,6 +15,7 @@
     "@goldspire/logger": "workspace:*",
     "@goldspire/auth": "workspace:*",
     "@goldspire/blueprints": "workspace:*",
+    "@goldspire/commercial": "workspace:*",
     "@goldspire/config": "workspace:*",
     "@goldspire/ui": "workspace:*",
     "@tanstack/react-query": "^5.59.0",
