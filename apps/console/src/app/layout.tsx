@@ -1,5 +1,5 @@
 import './globals.css';
-import { Toaster } from '@goldspire/ui';
+import { Toaster, ClientErrorReporter } from '@goldspire/ui';
 import { TRPCProvider } from '@/lib/trpc';
 
 export const metadata = {
@@ -11,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
+        <ClientErrorReporter app="console" />
         <TRPCProvider>{children}</TRPCProvider>
         <Toaster />
       </body>

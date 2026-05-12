@@ -40,49 +40,48 @@ export const studioReportsRouter = router({
 
   /**
    * Rolling active user counts (users with `last_seen_at` in window ending each day).
+   *
+   * Implementation note: the previous version loaded every user row and did
+   * 30 × O(N) filters in JS. That works at the seed scale (~150 users) but
+   * becomes O(N×30) for the studio overview the moment a real client has
+   * thousands of users. This rewrite pushes the work to Postgres with a
+   * generated date series + LATERAL count, keeping it constant-rows-out
+   * regardless of user table size.
    */
   activeUsersSeries: studioProcedure.query(async ({ ctx }) => {
-    const rows = await ctx.db
-      .select({ lastSeenAt: schema.user.lastSeenAt })
-      .from(schema.user)
-      .where(sql`${schema.user.lastSeenAt} is not null`);
-
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const series: { date: string; active7d: number; active30d: number; active90d: number }[] = [];
-    for (let i = 29; i >= 0; i--) {
-      const dayEnd = new Date(today);
-      dayEnd.setDate(dayEnd.getDate() - i);
-      dayEnd.setHours(23, 59, 59, 999);
-      const d7 = new Date(dayEnd);
-      d7.setDate(d7.getDate() - 7);
-      const d30 = new Date(dayEnd);
-      d30.setDate(d30.getDate() - 30);
-      const d90 = new Date(dayEnd);
-      d90.setDate(d90.getDate() - 90);
-      const inRange = (ls: Date | null) => {
-        if (!ls) return false;
-        return ls.getTime() <= dayEnd.getTime() && ls.getTime() >= d7.getTime();
-      };
-      const in30 = (ls: Date | null) => {
-        if (!ls) return false;
-        return ls.getTime() <= dayEnd.getTime() && ls.getTime() >= d30.getTime();
-      };
-      const in90 = (ls: Date | null) => {
-        if (!ls) return false;
-        return ls.getTime() <= dayEnd.getTime() && ls.getTime() >= d90.getTime();
-      };
-      const active7d = rows.filter((r) => inRange(r.lastSeenAt)).length;
-      const active30d = rows.filter((r) => in30(r.lastSeenAt)).length;
-      const active90d = rows.filter((r) => in90(r.lastSeenAt)).length;
-      series.push({
-        date: dayEnd.toISOString().slice(0, 10),
-        active7d,
-        active30d,
-        active90d,
-      });
-    }
-    return series;
+    const rows = await ctx.db.execute(sql`
+      WITH series AS (
+        SELECT (CURRENT_DATE - (29 - g)) AS day
+        FROM generate_series(0, 29) AS g
+      )
+      SELECT
+        to_char(s.day, 'YYYY-MM-DD') AS date,
+        (SELECT count(*)::int FROM "user" u
+         WHERE u.last_seen_at IS NOT NULL
+           AND u.last_seen_at <= (s.day + interval '1 day' - interval '1 microsecond')
+           AND u.last_seen_at >= (s.day + interval '1 day' - interval '7 days')) AS active7d,
+        (SELECT count(*)::int FROM "user" u
+         WHERE u.last_seen_at IS NOT NULL
+           AND u.last_seen_at <= (s.day + interval '1 day' - interval '1 microsecond')
+           AND u.last_seen_at >= (s.day + interval '1 day' - interval '30 days')) AS active30d,
+        (SELECT count(*)::int FROM "user" u
+         WHERE u.last_seen_at IS NOT NULL
+           AND u.last_seen_at <= (s.day + interval '1 day' - interval '1 microsecond')
+           AND u.last_seen_at >= (s.day + interval '1 day' - interval '90 days')) AS active90d
+      FROM series s
+      ORDER BY s.day ASC
+    `);
+    // drizzle-orm's execute returns a postgres-js Result; the rows live on
+    // the array directly. Coerce to the public shape.
+    const result = Array.isArray(rows) ? rows : ((rows as { rows?: unknown[] }).rows ?? []);
+    return (result as Array<{ date: string; active7d: number; active30d: number; active90d: number }>).map(
+      (r) => ({
+        date: r.date,
+        active7d: Number(r.active7d),
+        active30d: Number(r.active30d),
+        active90d: Number(r.active90d),
+      }),
+    );
   }),
 
   auditVolumeByDay: studioProcedure.query(async ({ ctx }) => {

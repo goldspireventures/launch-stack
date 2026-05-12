@@ -15,7 +15,23 @@ function getBaseUrl() {
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(() => new QueryClient());
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Pages reload from the same dataset constantly while you click
+            // around the Console. Without a staleTime, every navigation
+            // triggers a refetch the moment React re-mounts the component
+            // — which is a perceived "the page took ages to load" even
+            // though the network round-trip is fast.
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+  );
   const [trpcClient] = React.useState(() =>
     trpc.createClient({
       links: [
@@ -23,6 +39,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
           headers: () => ({ 'x-goldspire-tenant': 'goldspire' }),
+          maxURLLength: 2083,
         }),
       ],
     }),

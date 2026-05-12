@@ -187,15 +187,17 @@ export const studioRouter = router({
 
   /** Aggregated SaaS-style billing signals for the Console settings surface. */
   billingSummary: studioProcedure.query(async ({ ctx }) => {
-    const totalMrrMinor = await portfolioMrrMinor(ctx.db);
-    const [activeSubs] = await ctx.db
-      .select({ c: sql<number>`count(*)::int` })
-      .from(schema.subscription)
-      .where(inArray(schema.subscription.status, ['active', 'trialing']));
-    const [trialingTenants] = await ctx.db
-      .select({ c: sql<number>`count(*)::int` })
-      .from(schema.tenant)
-      .where(eq(schema.tenant.status, 'trial'));
+    const [totalMrrMinor, [activeSubs], [trialingTenants]] = await Promise.all([
+      portfolioMrrMinor(ctx.db),
+      ctx.db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(schema.subscription)
+        .where(inArray(schema.subscription.status, ['active', 'trialing'])),
+      ctx.db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(schema.tenant)
+        .where(eq(schema.tenant.status, 'trial')),
+    ]);
     return {
       totalMrrMinor,
       activeSubscriptions: activeSubs?.c ?? 0,
@@ -207,69 +209,87 @@ export const studioRouter = router({
   overview: studioProcedure.query(async ({ ctx }) => {
     const greetingName = ctx.persona?.name ?? ctx.user.name ?? 'there';
 
-    const [tenantCount] = await ctx.db
-      .select({ c: sql<number>`count(*)::int` })
-      .from(schema.tenant)
-      .where(isNull(schema.tenant.archivedAt));
+    // All seven queries are independent; running them sequentially was the
+    // single biggest contributor to a slow "Studio overview" load
+    // (~6 × pooler round-trip on a cold connection). Parallelizing typically
+    // brings this down to a single round-trip's worth of latency.
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 14);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
 
-    const deploymentRows = await ctx.db
-      .select({ healthStatus: schema.productDeployment.healthStatus, environment: schema.productDeployment.environment })
-      .from(schema.productDeployment)
-      .where(isNull(schema.productDeployment.archivedAt));
+    const [
+      [tenantCount],
+      deploymentRows,
+      mrrMinor,
+      [openDealsRow],
+      recentActivity,
+      staleTrials,
+      badDeployments,
+    ] = await Promise.all([
+      ctx.db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(schema.tenant)
+        .where(isNull(schema.tenant.archivedAt)),
+      ctx.db
+        .select({
+          healthStatus: schema.productDeployment.healthStatus,
+          environment: schema.productDeployment.environment,
+        })
+        .from(schema.productDeployment)
+        .where(isNull(schema.productDeployment.archivedAt)),
+      portfolioMrrMinor(ctx.db),
+      ctx.db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(schema.studioDeal)
+        .where(inArray(schema.studioDeal.status, ['draft', 'pipeline'])),
+      ctx.db
+        .select({
+          id: schema.auditLog.id,
+          action: schema.auditLog.action,
+          entityType: schema.auditLog.entityType,
+          createdAt: schema.auditLog.createdAt,
+          tenantId: schema.auditLog.tenantId,
+          tenantName: schema.tenant.name,
+          tenantSlug: schema.tenant.slug,
+        })
+        .from(schema.auditLog)
+        .leftJoin(schema.tenant, eq(schema.auditLog.tenantId, schema.tenant.id))
+        .orderBy(desc(schema.auditLog.createdAt))
+        .limit(10),
+      ctx.db
+        .select({
+          id: schema.tenant.id,
+          name: schema.tenant.name,
+          slug: schema.tenant.slug,
+          createdAt: schema.tenant.createdAt,
+        })
+        .from(schema.tenant)
+        .where(and(eq(schema.tenant.status, 'trial'), lte(schema.tenant.createdAt, cutoff))),
+      ctx.db
+        .select({
+          tenantId: schema.productDeployment.tenantId,
+          name: schema.productDeployment.name,
+          healthStatus: schema.productDeployment.healthStatus,
+          updatedAt: schema.productDeployment.updatedAt,
+          tenantName: schema.tenant.name,
+          tenantSlug: schema.tenant.slug,
+        })
+        .from(schema.productDeployment)
+        .leftJoin(schema.tenant, eq(schema.productDeployment.tenantId, schema.tenant.id))
+        .where(
+          and(
+            isNull(schema.productDeployment.archivedAt),
+            inArray(schema.productDeployment.healthStatus, ['down', 'degraded']),
+            gte(schema.productDeployment.updatedAt, weekAgo),
+          ),
+        )
+        .limit(20),
+    ]);
+
     const activeDeployments = deploymentRows.filter(
       (d) => d.environment === 'production' && d.healthStatus === 'ok',
     ).length;
-
-    const mrrMinor = await portfolioMrrMinor(ctx.db);
-
-    const [openDealsRow] = await ctx.db
-      .select({ c: sql<number>`count(*)::int` })
-      .from(schema.studioDeal)
-      .where(inArray(schema.studioDeal.status, ['draft', 'pipeline']));
-
-    const recentActivity = await ctx.db
-      .select({
-        id: schema.auditLog.id,
-        action: schema.auditLog.action,
-        entityType: schema.auditLog.entityType,
-        createdAt: schema.auditLog.createdAt,
-        tenantId: schema.auditLog.tenantId,
-        tenantName: schema.tenant.name,
-        tenantSlug: schema.tenant.slug,
-      })
-      .from(schema.auditLog)
-      .leftJoin(schema.tenant, eq(schema.auditLog.tenantId, schema.tenant.id))
-      .orderBy(desc(schema.auditLog.createdAt))
-      .limit(10);
-
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 14);
-    const staleTrials = await ctx.db
-      .select({ id: schema.tenant.id, name: schema.tenant.name, slug: schema.tenant.slug, createdAt: schema.tenant.createdAt })
-      .from(schema.tenant)
-      .where(and(eq(schema.tenant.status, 'trial'), lte(schema.tenant.createdAt, cutoff)));
-
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const badDeployments = await ctx.db
-      .select({
-        tenantId: schema.productDeployment.tenantId,
-        name: schema.productDeployment.name,
-        healthStatus: schema.productDeployment.healthStatus,
-        updatedAt: schema.productDeployment.updatedAt,
-        tenantName: schema.tenant.name,
-        tenantSlug: schema.tenant.slug,
-      })
-      .from(schema.productDeployment)
-      .leftJoin(schema.tenant, eq(schema.productDeployment.tenantId, schema.tenant.id))
-      .where(
-        and(
-          isNull(schema.productDeployment.archivedAt),
-          inArray(schema.productDeployment.healthStatus, ['down', 'degraded']),
-          gte(schema.productDeployment.updatedAt, weekAgo),
-        ),
-      )
-      .limit(20);
 
     const attention: { tenantId: string; name: string; slug: string; reason: string }[] = [];
     const seen = new Set<string>();

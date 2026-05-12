@@ -1,5 +1,5 @@
 import './globals.css';
-import { Toaster } from '@goldspire/ui';
+import { Toaster, ClientErrorReporter } from '@goldspire/ui';
 import { TRPCProvider } from '@/lib/trpc';
 import { readActiveTenantSlug } from '@/lib/active-tenant';
 
@@ -17,6 +17,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="antialiased">
+        <ClientErrorReporter app="admin" />
         <TRPCProvider tenantSlug={activeTenantSlug}>{children}</TRPCProvider>
         <Toaster />
       </body>

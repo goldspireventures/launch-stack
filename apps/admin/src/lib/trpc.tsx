@@ -16,7 +16,12 @@ function getBaseUrl() {
 
 export function TRPCProvider({ children, tenantSlug }: { children: React.ReactNode; tenantSlug: string }) {
   const [queryClient] = React.useState(
-    () => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } }),
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { staleTime: 30_000, refetchOnWindowFocus: false, retry: 1 },
+        },
+      }),
   );
   const [trpcClient] = React.useState(() =>
     trpc.createClient({

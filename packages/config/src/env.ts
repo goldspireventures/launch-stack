@@ -91,17 +91,40 @@ export const isTest = NODE_ENV === 'test';
  * Returns true when real (non-mock) credentials are present for the given
  * provider. Use this to gate features that should be hidden when running
  * with mocks (e.g. the "Connect Stripe" button).
+ *
+ * IMPORTANT: every key here is a lazy getter. The naive eager form
+ * (`auth: env.AUTH_PROVIDER !== 'mock'`) would read server-only env vars
+ * at module-load time, which t3-env throws on in the browser. With getters,
+ * accessing `hasRealProvider.foo` only triggers env access at the call
+ * site — server callers see real values; client callers will still throw,
+ * but only at the point of misuse, not on the bare `import { env } from
+ * '@goldspire/config/env'` that hundreds of files do.
  */
 export const hasRealProvider = {
-  auth: env.AUTH_PROVIDER !== 'mock' && (!!env.SUPABASE_URL || !!env.CLERK_SECRET_KEY),
-  payments: env.PAYMENT_PROVIDER === 'stripe' && !!env.STRIPE_SECRET_KEY,
-  ai:
-    (env.AI_PROVIDER === 'openai' && !!env.OPENAI_API_KEY) ||
-    (env.AI_PROVIDER === 'anthropic' && !!env.ANTHROPIC_API_KEY),
-  email: !!env.RESEND_API_KEY,
-  jobs: !!env.INNGEST_EVENT_KEY,
-  analytics: !!env.POSTHOG_API_KEY,
-  errors: !!env.SENTRY_DSN,
+  get auth() {
+    return env.AUTH_PROVIDER !== 'mock' && (!!env.SUPABASE_URL || !!env.CLERK_SECRET_KEY);
+  },
+  get payments() {
+    return env.PAYMENT_PROVIDER === 'stripe' && !!env.STRIPE_SECRET_KEY;
+  },
+  get ai() {
+    return (
+      (env.AI_PROVIDER === 'openai' && !!env.OPENAI_API_KEY) ||
+      (env.AI_PROVIDER === 'anthropic' && !!env.ANTHROPIC_API_KEY)
+    );
+  },
+  get email() {
+    return !!env.RESEND_API_KEY;
+  },
+  get jobs() {
+    return !!env.INNGEST_EVENT_KEY;
+  },
+  get analytics() {
+    return !!env.POSTHOG_API_KEY;
+  },
+  get errors() {
+    return !!env.SENTRY_DSN;
+  },
 } as const;
 
 export {
