@@ -3,10 +3,55 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Search } from 'lucide-react';
+import {
+  BarChart3,
+  Building2,
+  Circle,
+  CreditCard,
+  Flag,
+  Handshake,
+  History,
+  LayoutDashboard,
+  Layers,
+  Menu,
+  MessageSquare,
+  Package,
+  Rocket,
+  Search,
+  Settings as SettingsIcon,
+  ShieldAlert,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '../utils/cn';
 import type { NavItem, NavRegistry, NavSection } from '../registry/nav';
 import { Button } from './primitives';
+
+/**
+ * Lucide icon resolution map. Add new icons here when a registry references
+ * them. Keys are kebab-case (the canonical lucide name). The unknown fallback
+ * is `Circle` so typos never crash the sidebar.
+ */
+const NAV_ICONS: Record<string, LucideIcon> = {
+  'bar-chart-3': BarChart3,
+  'building-2': Building2,
+  'credit-card': CreditCard,
+  flag: Flag,
+  handshake: Handshake,
+  history: History,
+  layers: Layers,
+  'layout-dashboard': LayoutDashboard,
+  'message-square': MessageSquare,
+  package: Package,
+  rocket: Rocket,
+  settings: SettingsIcon,
+  'shield-alert': ShieldAlert,
+  users: Users,
+};
+
+function resolveNavIcon(name: string): LucideIcon {
+  return NAV_ICONS[name.toLowerCase()] ?? Circle;
+}
 
 /* ─── AppShell ────────────────────────────────────────────────────────── */
 
@@ -77,8 +122,8 @@ function isNavRegistry(sections: NavRegistry | SidebarSection[]): sections is Na
   if (!Array.isArray(sections) || sections.length === 0) return false;
   const firstItem = sections[0]?.items?.[0];
   if (!firstItem || !('icon' in firstItem) || firstItem.icon == null) return false;
-  // Legacy callers pass rendered icons (React elements). Registries pass component refs.
-  return !React.isValidElement(firstItem.icon);
+  // Legacy callers pass rendered icons (React elements). Registries pass string keys.
+  return typeof firstItem.icon === 'string';
 }
 
 function sectionRolesAllowed(section: Pick<NavSection, 'roles'>, userRole?: string): boolean {
@@ -119,7 +164,7 @@ function registryToSidebarSections(
     out.push({
       label: section.label.trim() ? section.label : undefined,
       items: items.map((item) => {
-        const Icon = item.icon;
+        const Icon = resolveNavIcon(item.icon);
         return {
           label: item.label,
           href: item.href,

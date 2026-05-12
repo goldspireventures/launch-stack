@@ -1,30 +1,20 @@
-import {
-  BarChart3,
-  CreditCard,
-  Flag,
-  Handshake,
-  History,
-  LayoutDashboard,
-  MessageSquare,
-  Package,
-  Settings,
-  ShieldAlert,
-  Users,
-} from 'lucide-react';
 import type { NavRegistry } from './nav';
 
 /**
- * Deal desk is studio-internal. Includes STUDIO_STAFF (used in DB) and STUDIO_DEVELOPER
- * (reserved for future role alignment / Workstream C catalog).
+ * Admin sidebar. Icons are string keys (lucide-react names) so the registry
+ * survives the RSC server→client serialization boundary.
+ *
+ * Deal desk is studio-internal. Includes STUDIO_STAFF (used in DB) and
+ * STUDIO_DEVELOPER (reserved for future role alignment / Workstream C catalog).
  */
 export const adminNav = [
   {
     label: '',
     items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Users', href: '/users', icon: Users },
-      { label: 'Products', href: '/products', icon: Package },
-      { label: 'Subscriptions', href: '/subscriptions', icon: CreditCard },
+      { label: 'Dashboard', href: '/dashboard', icon: 'layout-dashboard' },
+      { label: 'Users', href: '/users', icon: 'users' },
+      { label: 'Products', href: '/products', icon: 'package' },
+      { label: 'Subscriptions', href: '/subscriptions', icon: 'credit-card' },
     ],
   },
   {
@@ -33,7 +23,7 @@ export const adminNav = [
       {
         label: 'Deal desk',
         href: '/studio/deals',
-        icon: Handshake,
+        icon: 'handshake',
         roles: ['STUDIO_OWNER', 'STUDIO_DEVELOPER', 'STUDIO_STAFF'],
       },
     ],
@@ -41,15 +31,15 @@ export const adminNav = [
   {
     label: 'Operations',
     items: [
-      { label: 'Feature Flags', href: '/feature-flags', icon: Flag },
-      { label: 'Reports', href: '/reports', icon: ShieldAlert },
-      { label: 'Messages', href: '/messages', icon: MessageSquare },
-      { label: 'Analytics', href: '/analytics', icon: BarChart3 },
-      { label: 'Audit log', href: '/audit', icon: History },
+      { label: 'Feature Flags', href: '/feature-flags', icon: 'flag' },
+      { label: 'Reports', href: '/reports', icon: 'shield-alert' },
+      { label: 'Messages', href: '/messages', icon: 'message-square' },
+      { label: 'Analytics', href: '/analytics', icon: 'bar-chart-3' },
+      { label: 'Audit log', href: '/audit', icon: 'history' },
     ],
   },
   {
     label: 'System',
-    items: [{ label: 'Settings', href: '/settings', icon: Settings }],
+    items: [{ label: 'Settings', href: '/settings', icon: 'settings' }],
   },
 ] as const satisfies NavRegistry;
