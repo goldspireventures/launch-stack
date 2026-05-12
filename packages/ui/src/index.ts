@@ -6,3 +6,7 @@ export * from './components/data';
 export * from './components/app-shell';
 export * from './components/domain';
 export * from './components/notice-banner';
+export * from './components/motion';
+export * from './components/toast';
+export * from './components/persona-picker';
+export * from './components/user-menu';

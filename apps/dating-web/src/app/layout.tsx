@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Toaster } from '@goldspire/ui';
 import { appConfig } from '@/app.config';
 import { hexToHslChannels } from '@/lib/hexToHslChannels';
 import { TRPCProvider } from '@/lib/trpc';
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
         <TRPCProvider>{children}</TRPCProvider>
+        <Toaster />
       </body>
     </html>
   );
