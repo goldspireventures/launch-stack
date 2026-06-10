@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Goldspire Secure Text</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup__header">
+        <div class="popup__logo">🔒</div>
+        <div>
+          <h1>Secure Text</h1>
+          <p>Highlight → <strong>[redacted]</strong> → send. Click to unlock on the same page.</p>
+        </div>
+      </header>
+
+      <nav class="tabs">
+        <button type="button" class="tabs__btn tabs__btn--active" data-tab="tools">Tools</button>
+        <button type="button" class="tabs__btn" data-tab="settings">Settings</button>
+        <button type="button" class="tabs__btn" data-tab="help">Help</button>
+      </nav>
+
+      <section id="tab-tools" class="tab tab--active">
+        <div class="card">
+          <h2>Quick actions</h2>
+          <p id="selection-preview" class="selection-preview">Highlight text on the page.</p>
+          <div class="row row--stack">
+            <button type="button" id="action-secure" class="btn">Secure selection</button>
+            <button type="button" id="action-unlock" class="btn btn--ghost">Unlock [redacted]</button>
+          </div>
+          <p class="selection-tip">Fastest: highlight text → <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></p>
+        </div>
+
+        <div class="card">
+          <h2>Password generator</h2>
+          <output id="generated-password" class="password-output">—</output>
+          <div class="row">
+            <button type="button" id="generate-password" class="btn btn--ghost">Generate</button>
+            <button type="button" id="copy-password" class="btn btn--ghost">Copy</button>
+            <button type="button" id="insert-password" class="btn btn--ghost">Insert</button>
+            <button type="button" id="save-password-1p" class="btn btn--ghost">Save to 1Password</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Receiver without extension</h2>
+          <p class="card__text">Drag this to your bookmarks bar. On any page with <code>[redacted]</code>, click it to unlock in place.</p>
+          <a id="bookmarklet-link" class="bookmarklet" href="#">Unlock [redacted]</a>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="tab">
+        <form id="settings-form" class="popup__form">
+          <label class="field">
+            <span>Security profile</span>
+            <select id="securityProfile" name="securityProfile">
+              <option value="personal">Personal</option>
+              <option value="organization">Organization (stricter)</option>
+            </select>
+          </label>
+
+          <label class="checkbox">
+            <input id="passphraseIn1Password" name="passphraseIn1Password" type="checkbox" />
+            <span>Team passphrase lives in 1Password (don't store locally)</span>
+          </label>
+
+          <label class="field" id="passphrase-field">
+            <span>Team passphrase</span>
+            <input id="passphrase" name="passphrase" type="password" autocomplete="current-password" />
+            <small id="passphrase-strength" class="hint"></small>
+          </label>
+
+          <label class="field">
+            <span>Default protection</span>
+            <select id="defaultSecureMode" name="defaultSecureMode">
+              <option value="team">Team passphrase</option>
+              <option value="one-time">One-time code</option>
+              <option value="custom">Custom passphrase</option>
+            </select>
+          </label>
+
+          <label class="checkbox">
+            <input id="useSavedPassphrase" name="useSavedPassphrase" type="checkbox" checked />
+            <span>One-click secure with saved passphrase</span>
+          </label>
+
+          <label class="checkbox">
+            <input id="autoDetectRedacted" name="autoDetectRedacted" type="checkbox" checked />
+            <span>Make [redacted] clickable on pages</span>
+          </label>
+
+          <label class="checkbox">
+            <input id="resecureAfterUnlock" name="resecureAfterUnlock" type="checkbox" checked />
+            <span>Auto re-lock after unlock</span>
+          </label>
+
+          <label class="field">
+            <span>Re-lock delay (seconds)</span>
+            <input id="resecureDelaySeconds" name="resecureDelaySeconds" type="number" min="5" max="600" step="1" />
+          </label>
+
+          <details class="field field--advanced">
+            <summary>Advanced: custom unlock page URL</summary>
+            <input id="publicUnlockUrl" name="publicUnlockUrl" type="url" placeholder="Leave blank — uses Goldspire default" />
+            <small class="hint">Only for orgs hosting their own unlock page.</small>
+          </details>
+
+          <button type="submit" class="btn">Save</button>
+        </form>
+      </section>
+
+      <section id="tab-help" class="tab">
+        <div class="card">
+          <h2>Security</h2>
+          <p class="card__text">Encryption runs in your browser only. Use a strong team passphrase in 1Password (16+ characters). One-time codes expire after 72 hours and burn after first unlock on each device.</p>
+          <p class="card__text">See <code>docs/THREAT_MODEL.md</code> in the extension folder for limits and enterprise guidance.</p>
+        </div>
+        <div class="card">
+          <h2>1Password at work</h2>
+          <ol>
+            <li>Create a shared item for the team passphrase in 1Password (optional)</li>
+            <li>Enable <em>Team passphrase lives in 1Password</em> — fill from 1Password once per session, then highlight + <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> is one-click</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h2>You (sender)</h2>
+          <ol>
+            <li>Highlight the secret → <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></li>
+            <li>Message shows <code>[redacted]</code> — send as normal</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h2>Receiver</h2>
+          <ul>
+            <li><strong>Browser + extension:</strong> click <code>[redacted]</code> → unlock popup</li>
+            <li><strong>Outlook app / phone:</strong> tap link → unlock page (1Password autofills)</li>
+            <li><strong>No tools:</strong> bookmarklet on Tools tab</li>
+          </ul>
+        </div>
+      </section>
+
+      <p id="status" class="status" hidden></p>
+    </main>
+    <script src="../src/constants.js"></script>
+    <script src="../src/passphrase-policy.js"></script>
+    <script src="../src/browser.js"></script>
+    <script src="../src/secrets.js"></script>
+    <script src="../src/onepassword.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
