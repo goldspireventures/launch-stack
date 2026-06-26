@@ -233,6 +233,17 @@ const DEFAULT_TEMPLATE_CAPACITY = mergeTemplateAcceptingClones(undefined);
 /** Public catalog reads — fall back to blueprint defaults when Postgres is unreachable. */
 async function loadPublicMarketingDbContext(db: Parameters<typeof withStudioContext>[0]) {
   try {
+    await db.execute(sql`select 1`);
+  } catch {
+    return {
+      overrides: null,
+      capacity: DEFAULT_TEMPLATE_CAPACITY,
+      tierOverrides: null,
+      dbAvailable: false as const,
+    };
+  }
+
+  try {
     const [overrides, capacity, tierOverrides] = await Promise.all([
       loadTemplateMarketingOverrides(db),
       loadTemplateCapacity(db),

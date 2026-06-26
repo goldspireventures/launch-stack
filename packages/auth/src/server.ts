@@ -169,43 +169,48 @@ async function loadMockUser(
 ): Promise<AuthedUser | null> {
   // When DATABASE_URL_APP is set, unscoped reads hit RLS and return empty.
   // Studio-scoped tx matches how marketing leads are written.
-  return withSystemStudioContext(db, async (tx) => {
-    const persona = getPersonaById(personaId);
-    if (persona) {
-      const user = await loadUserByPersonaTx(tx, persona);
-      if (user) return user;
-      if (env.NODE_ENV !== 'production') {
-        const t = await resolveTenantTx(tx, persona.tenantSlug);
-        if (t) return syntheticUserFromPersona(persona, t.id);
+  try {
+    return await withSystemStudioContext(db, async (tx) => {
+      const persona = getPersonaById(personaId);
+      if (persona) {
+        const user = await loadUserByPersonaTx(tx, persona);
+        if (user) return user;
+        if (env.NODE_ENV !== 'production') {
+          const t = await resolveTenantTx(tx, persona.tenantSlug);
+          if (t) return syntheticUserFromPersona(persona, t.id);
+        }
       }
-    }
 
-    const tenantSlug = tenantHint ?? persona?.tenantSlug ?? env.GOLDSPIRE_TENANT_ID;
-    const t = await resolveTenantTx(tx, tenantSlug);
-    if (!t) return null;
+      const tenantSlug = tenantHint ?? persona?.tenantSlug ?? env.GOLDSPIRE_TENANT_ID;
+      const t = await resolveTenantTx(tx, tenantSlug);
+      if (!t) return null;
 
-    const rows = await tx
-      .select()
-      .from(schema.user)
-      .where(eq(schema.user.tenantId, t.id))
-      .orderBy(
-        sql`case
+      const rows = await tx
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.tenantId, t.id))
+        .orderBy(
+          sql`case
           when "role" = 'STUDIO_OWNER' then 0
           when "role" = 'STUDIO_STAFF' then 1
           when "role" = 'TENANT_OWNER' then 2
           when "role" = 'TENANT_ADMIN' then 3
           else 4
         end`,
-        schema.user.createdAt,
-      )
-      .limit(1);
-    const u = rows[0];
-    if (u) return mapUserRow(u);
-    if (persona && env.NODE_ENV !== 'production') {
-      return syntheticUserFromPersona(persona, t.id);
-    }
+          schema.user.createdAt,
+        )
+        .limit(1);
+      const u = rows[0];
+      if (u) return mapUserRow(u);
+      if (persona && env.NODE_ENV !== 'production') {
+        return syntheticUserFromPersona(persona, t.id);
+      }
+      return null;
+    });
+  } catch {
+    // Marketing / static deploys may run without Postgres — public procedures still work.
     return null;
-  });
+  }
 }
 
 async function loadUserByPersonaTx(
