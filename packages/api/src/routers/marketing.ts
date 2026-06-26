@@ -228,6 +228,37 @@ async function loadTemplateMarketingOverrides(
   });
 }
 
+const DEFAULT_TEMPLATE_CAPACITY = mergeTemplateAcceptingClones(undefined);
+
+/** Public catalog reads — fall back to blueprint defaults when Postgres is unreachable. */
+async function loadPublicMarketingDbContext(db: Parameters<typeof withStudioContext>[0]) {
+  try {
+    const [overrides, capacity, tierOverrides] = await Promise.all([
+      loadTemplateMarketingOverrides(db),
+      loadTemplateCapacity(db),
+      loadEngagementTierOverrides(db),
+    ]);
+    return { overrides, capacity, tierOverrides, dbAvailable: true as const };
+  } catch {
+    return {
+      overrides: null,
+      capacity: DEFAULT_TEMPLATE_CAPACITY,
+      tierOverrides: null,
+      dbAvailable: false as const,
+    };
+  }
+}
+
+function assertMarketingDbForWrites(dbAvailable: boolean) {
+  if (!dbAvailable) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'Enquiries are temporarily unavailable. Email hello@goldspire.dev and we will respond directly.',
+    });
+  }
+}
+
 type ProductTemplateRow = ReturnType<typeof listProductTemplates>[number];
 
 function withTemplateMarketingOverrides(
@@ -262,10 +293,7 @@ export const marketingRouter = router({
    * `planned` templates stay in Console catalog / blueprints for internal roadmap.
    */
   templates: publicProcedure.query(async ({ ctx }) => {
-    const [overrides, capacity] = await Promise.all([
-      loadTemplateMarketingOverrides(ctx.db),
-      loadTemplateCapacity(ctx.db),
-    ]);
+    const { overrides, capacity } = await loadPublicMarketingDbContext(ctx.db);
     return listProductTemplates()
       .filter((t) => t.status === 'shipped' || t.status === 'beta')
       .map((t) => withTemplateMarketingOverrides(t, overrides))
@@ -277,8 +305,8 @@ export const marketingRouter = router({
    * Merges code defaults from `@goldspire/commercial` with optional Studio overrides.
    */
   engagementTiers: publicProcedure.query(async ({ ctx }) => {
-    const overrides = await loadEngagementTierOverrides(ctx.db);
-    return mergePublicEngagementTiers(overrides);
+    const { tierOverrides } = await loadPublicMarketingDbContext(ctx.db);
+    return mergePublicEngagementTiers(tierOverrides);
   }),
 
   /**
@@ -292,10 +320,7 @@ export const marketingRouter = router({
       const raw = getProductTemplate(input.id);
       if (!raw) throw new NotFoundError('template', input.id);
       if (raw.status === 'planned') throw new NotFoundError('template', input.id);
-      const [overrides, capacity] = await Promise.all([
-        loadTemplateMarketingOverrides(ctx.db),
-        loadTemplateCapacity(ctx.db),
-      ]);
+      const { overrides, capacity } = await loadPublicMarketingDbContext(ctx.db);
       const t = withTemplateMarketingOverrides(raw, overrides);
       const deliverySkus =
         t.id === DATING_PRODUCT_TEMPLATE_ID
@@ -351,7 +376,8 @@ export const marketingRouter = router({
         return { ok: true, id: 'silenced' as const };
       }
 
-      const capacity = await loadTemplateCapacity(ctx.db);
+      const { capacity, dbAvailable } = await loadPublicMarketingDbContext(ctx.db);
+      assertMarketingDbForWrites(dbAvailable);
       const template = input.templateInterest
         ? getProductTemplate(input.templateInterest)
         : null;
