@@ -1,9 +1,0 @@
-{
-  "name": "@goldspire/secure-text-extension",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Browser extension to secure highlighted text inline with a shared passphrase.",
-  "scripts": {
-    "package": "node scripts/package.mjs"
-  }
-}

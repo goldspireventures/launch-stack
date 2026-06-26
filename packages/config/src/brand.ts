@@ -7,11 +7,17 @@ export const brand = {
   name: 'Goldspire',
   productSuiteName: 'Goldspire Launch Stack',
   studioName: 'Goldspire Studio',
+  /** Operating division of the parent holding company. */
+  parentLegalName: 'Goldspire Ventures Ltd',
+  parentSiteUrl: 'https://goldspireventures.com',
+  operatingAs: 'a division of Goldspire Ventures Ltd',
   tagline: 'The internal MVP factory for the Goldspire studio.',
   description:
     'A multi-tenant, blueprint-driven launch platform for shipping high-quality client products in days, not months.',
   domain: 'goldspire.studio',
+  marketingDomain: 'goldspire.dev',
   supportEmail: 'support@goldspire.studio',
+  salesEmail: 'hello@goldspire.dev',
 
   // Default design tokens — every tenant inherits these, then overrides via tenant.theme.
   theme: {
