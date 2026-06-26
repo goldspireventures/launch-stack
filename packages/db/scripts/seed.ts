@@ -3,14 +3,35 @@ import './_load-env';
 import { createHash } from 'node:crypto';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { and, count, inArray, isNull } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 import { factory as ulidFactory } from 'ulid';
 import { PERSONAS } from '@goldspire/config';
-import { buildCommercialPlan } from '@goldspire/commercial';
+import {
+  STUDIO_SALES_DEMO_DEAL_ID,
+  STUDIO_SALES_DEMO_PORTAL_TOKEN_HASH,
+} from '@goldspire/config/studio-sales-demo';
+import {
+  STUDIO_TIER2_DEMO_DEAL_ID,
+  STUDIO_TIER2_DEMO_PORTAL_TOKEN_HASH,
+} from '@goldspire/config/studio-tier2-demo';
+import {
+  HEARTLINE_CAPABILITY_METADATA_KEY,
+  HEARTLINE_CAPABILITY_PRESET_METADATA_KEY,
+  HEARTLINE_PRESET_SHOWROOM,
+  TIER2_TEMPLATE_PRESET,
+  buildCommercialPlan,
+} from '@goldspire/commercial';
+import { buildHeartlineCapabilityFlagRows } from './heartline-capability-flag-rows.js';
+import { insertStudioDealActivity } from '../src/studio-deal-activity.js';
 import { getMigrationDatabaseUrl } from '@goldspire/config/env';
+import { resolveDevSurfaceOrigin } from '@goldspire/config/dev-surfaces';
 import * as schema from '../src/schema/index.js';
 
 const conn = postgres(getMigrationDatabaseUrl(), { max: 1, prepare: false });
+
+/** Local dev URLs from the canonical surface registry (honours `.env` overrides). */
+const devUrl = (id: Parameters<typeof resolveDevSurfaceOrigin>[0]) =>
+  resolveDevSurfaceOrigin(id, process.env);
 const db = drizzle(conn, { schema, casing: 'snake_case' });
 
 /** Deterministic Crockford ULIDs (do not use `ulid()` with wall-clock randomness). */
@@ -31,6 +52,8 @@ const SEED_DEAL_IDS = [
   stableUlid('deal:acme-discovery'),
   stableUlid('deal:heartline-retention'),
   stableUlid('deal:bazaar-seller-m2'),
+  STUDIO_SALES_DEMO_DEAL_ID,
+  STUDIO_TIER2_DEMO_DEAL_ID,
 ] as const;
 
 const GLOBAL_FLAG_KEYS = ['module.studio_deals', 'ops.read_only'] as const;
@@ -181,6 +204,10 @@ function daysAgo(rng: () => number, maxDays: number): Date {
   return new Date(Date.now() - d * 86_400_000);
 }
 
+function offsetDaysFromNow(days: number): Date {
+  return new Date(Date.now() + days * 86_400_000);
+}
+
 function hoursAgoInLast30d(rng: () => number): Date {
   const hours = Math.floor(rng() * 30 * 24);
   return new Date(Date.now() - hours * 3_600_000);
@@ -245,7 +272,13 @@ async function seed() {
       status: 'active',
       plan: 'enterprise',
       theme: { accent: '#E15A82', accentForeground: '#FFFFFF' },
-      metadata: { blueprint: 'social_matching', commercialPlan: 'growth' },
+      metadata: {
+        blueprint: 'social_matching',
+        productTemplate: 'social_matching/dating',
+        commercialPlan: 'growth',
+        [HEARTLINE_CAPABILITY_METADATA_KEY]: [...HEARTLINE_PRESET_SHOWROOM],
+        [HEARTLINE_CAPABILITY_PRESET_METADATA_KEY]: 'showroom',
+      },
     },
     {
       id: tenantId['nova-care'],
@@ -506,6 +539,37 @@ async function seed() {
 
   await db.insert(schema.user).values(personaRows);
 
+  const studioOwnerId = userIdByEmail.get('eamon@goldspire.studio');
+  const studioStaffId = userIdByEmail.get('maya@goldspire.studio');
+  const leadAssigneeUserIds = [studioOwnerId, studioStaffId].filter((id): id is string => Boolean(id));
+  if (leadAssigneeUserIds.length > 0) {
+    const [gs] = await db
+      .select({ metadata: schema.tenant.metadata })
+      .from(schema.tenant)
+      .where(eq(schema.tenant.id, tenantId.goldspire))
+      .limit(1);
+    const meta = { ...((gs?.metadata as Record<string, unknown>) ?? {}) };
+    meta.consoleStudioProfile = {
+      studioName: 'Goldspire',
+      logoUrl: '',
+      primaryContactEmail: 'ops@goldspire.studio',
+      supportEmail: 'support@goldspire.studio',
+      supportPhone: '',
+      postalAddress: '',
+      deskWebhookUrl: '',
+      deskAlertsEnabled: true,
+      leadAssigneeUserIds,
+      leadAssignRoundRobinIndex: 0,
+      autoStampOnKickoff: true,
+      autoIssuePortalOnConvert: true,
+      autoRotateDeployHookOnStamp: true,
+    };
+    await db
+      .update(schema.tenant)
+      .set({ metadata: meta })
+      .where(eq(schema.tenant.id, tenantId.goldspire));
+  }
+
   // Extra tenant admins (2 per non-studio tenant with owner+admin personas)
   const extraAdminRows: (typeof schema.user.$inferInsert)[] = [];
   const extraAdminDefs: { slug: SeedTenantSlug; email: string; name: string }[] = [
@@ -623,7 +687,7 @@ async function seed() {
   }));
   await db.insert(schema.profile).values(profileRows);
 
-  // ─── Heartline dating profiles (customers on Free product) ───────────────
+  // ─── Heartline dating profiles (canonical app product: heartline-dating) ───
   const hlCustomers = customersByTenant.heartline;
   const datingProfileRows = hlCustomers.map((u) => {
     const rng = rngForTenant(`${u.id}:dating`);
@@ -636,7 +700,7 @@ async function seed() {
     return {
       id: stableUlid(`datingprof:${u.id}`),
       tenantId: tenantId.heartline,
-      productId: productIds.hlFree,
+      productId: productIds.hlDating,
       userId: u.id,
       displayName: (u.name ?? u.email).split(' ')[0] ?? 'Member',
       birthdate: `${birthYear}-06-15`,
@@ -933,35 +997,14 @@ async function seed() {
   await db.insert(schema.auditLog).values(auditRows);
 
   // ─── Feature flag overrides ──────────────────────────────────────────────
+  const heartlineCapabilityFlags = buildHeartlineCapabilityFlagRows({
+    tenantId: tenantId.heartline,
+    preset: 'showroom',
+    stableUlid,
+  });
+
   const flagRows: (typeof schema.featureFlag.$inferInsert)[] = [
-    {
-      id: stableUlid('flag:hl-swipe'),
-      tenantId: tenantId.heartline,
-      key: 'feature.swipe_v2',
-      kind: 'feature',
-      tags: ['experiment'],
-      enabled: true,
-      description: 'Heartline trialing swipe v2',
-    },
-    {
-      id: stableUlid('flag:hl-likes'),
-      tenantId: tenantId.heartline,
-      key: 'limit.daily_likes',
-      kind: 'limit',
-      tags: [],
-      enabled: true,
-      numericValue: 100,
-      description: 'Premium-tier daily likes cap',
-    },
-    {
-      id: stableUlid('flag:hl-ai'),
-      tenantId: tenantId.heartline,
-      key: 'ai.profile_assist',
-      kind: 'feature',
-      tags: ['ai'],
-      enabled: true,
-      description: null,
-    },
+    ...heartlineCapabilityFlags,
     {
       id: stableUlid('flag:nv-gdpr'),
       tenantId: tenantId['nova-care'],
@@ -1070,7 +1113,7 @@ async function seed() {
       weeksMin: 10,
       weeksMax: 16,
       totalFeeMinorUnits: 248_000_00,
-      currency: 'USD',
+      currency: 'EUR',
       status: 'won',
       planSnapshot: buildCommercialPlan({
         engagementKind: 'mvp_plus_prod_planned',
@@ -1079,7 +1122,7 @@ async function seed() {
         weeksMin: 10,
         weeksMax: 16,
         totalFeeMinorUnits: 248_000_00,
-        currency: 'USD',
+        currency: 'EUR',
       }),
       notes: 'Telehealth booking MVP + production hardening; referral from existing clinic partner.',
       linkedTenantId: tenantId['nova-care'],
@@ -1095,7 +1138,7 @@ async function seed() {
       weeksMin: 14,
       weeksMax: 22,
       totalFeeMinorUnits: 186_500_00,
-      currency: 'USD',
+      currency: 'EUR',
       status: 'pipeline',
       planSnapshot: buildCommercialPlan({
         engagementKind: 'mvp_plus_prod_planned',
@@ -1104,7 +1147,7 @@ async function seed() {
         weeksMin: 14,
         weeksMax: 22,
         totalFeeMinorUnits: 186_500_00,
-        currency: 'USD',
+        currency: 'EUR',
       }),
       notes: 'Events module + referrals + mobile surfaces.',
       linkedTenantId: tenantId['pulse-club'],
@@ -1120,7 +1163,7 @@ async function seed() {
       weeksMin: 6,
       weeksMax: 10,
       totalFeeMinorUnits: 95_000_00,
-      currency: 'USD',
+      currency: 'EUR',
       status: 'draft',
       planSnapshot: buildCommercialPlan({
         engagementKind: 'mvp',
@@ -1129,7 +1172,7 @@ async function seed() {
         weeksMin: 6,
         weeksMax: 10,
         totalFeeMinorUnits: 95_000_00,
-        currency: 'USD',
+        currency: 'EUR',
       }),
       notes: 'Initial discovery — scope TBD after stakeholder workshops.',
       linkedTenantId: null,
@@ -1145,7 +1188,7 @@ async function seed() {
       weeksMin: 4,
       weeksMax: 6,
       totalFeeMinorUnits: 42_000_00,
-      currency: 'USD',
+      currency: 'EUR',
       status: 'pipeline',
       planSnapshot: buildCommercialPlan({
         engagementKind: 'mvp',
@@ -1154,10 +1197,11 @@ async function seed() {
         weeksMin: 4,
         weeksMax: 6,
         totalFeeMinorUnits: 42_000_00,
-        currency: 'USD',
+        currency: 'EUR',
       }),
       notes: 'Swipe v2 experiment wrap-up + paywall analytics.',
       linkedTenantId: tenantId.heartline,
+      intakeTemplateId: 'social_matching_v1',
       createdByUserId: eamonId,
     },
     {
@@ -1170,7 +1214,7 @@ async function seed() {
       weeksMin: 5,
       weeksMax: 8,
       totalFeeMinorUnits: 58_750_00,
-      currency: 'USD',
+      currency: 'EUR',
       status: 'won',
       planSnapshot: buildCommercialPlan({
         engagementKind: 'mvp',
@@ -1179,14 +1223,158 @@ async function seed() {
         weeksMin: 5,
         weeksMax: 8,
         totalFeeMinorUnits: 58_750_00,
-        currency: 'USD',
+        currency: 'EUR',
       }),
       notes: 'CSV exports + featured listing workflows.',
       linkedTenantId: tenantId.bazaar,
       createdByUserId: eamonId,
     },
+    {
+      id: STUDIO_SALES_DEMO_DEAL_ID,
+      title: 'Sample: Tier 1 dating clone',
+      clientName: 'Northline (sample)',
+      engagementKind: 'mvp',
+      clientRisk: 'referred',
+      subcontracting: 'none',
+      weeksMin: 6,
+      weeksMax: 10,
+      totalFeeMinorUnits: 20_000_00,
+      currency: 'EUR',
+      status: 'pipeline',
+      planSnapshot: buildCommercialPlan({
+        engagementKind: 'mvp',
+        clientRisk: 'referred',
+        subcontracting: 'none',
+        weeksMin: 6,
+        weeksMax: 10,
+        totalFeeMinorUnits: 20_000_00,
+        currency: 'EUR',
+      }),
+      milestoneState: {
+        kickoff: {
+          status: 'done',
+          completedAt: offsetDaysFromNow(-18).toISOString(),
+        },
+        staging: {
+          status: 'in_progress',
+          dueAt: offsetDaysFromNow(14).toISOString(),
+        },
+        uat: { status: 'pending' },
+      },
+      intakeTemplateId: 'social_matching_v1',
+      clientIntake: {},
+      clientContactEmail: 'demo.client@goldspire.dev',
+      dealAcceptedAt: offsetDaysFromNow(-16),
+      stagingUrl: process.env.NEXT_PUBLIC_HEARTLINE_DEMO_URL?.trim() || 'http://localhost:4000',
+      clientDeliveryFocus: 'This month: Heartline onboarding flow + discover polish on staging.',
+      notes:
+        'Sales sample for demos and screenshots. Token is in @goldspire/config/studio-sales-demo — do not treat as a real client.',
+      linkedTenantId: tenantId.heartline,
+      createdByUserId: eamonId,
+    },
+    {
+      id: STUDIO_TIER2_DEMO_DEAL_ID,
+      title: 'Sample: Tier 2 mentorship template',
+      clientName: 'Northline Growth (sample)',
+      engagementKind: TIER2_TEMPLATE_PRESET.planInput.engagementKind,
+      clientRisk: TIER2_TEMPLATE_PRESET.planInput.clientRisk,
+      subcontracting: TIER2_TEMPLATE_PRESET.planInput.subcontracting,
+      weeksMin: TIER2_TEMPLATE_PRESET.planInput.weeksMin,
+      weeksMax: TIER2_TEMPLATE_PRESET.planInput.weeksMax,
+      totalFeeMinorUnits: TIER2_TEMPLATE_PRESET.planInput.totalFeeMinorUnits,
+      currency: TIER2_TEMPLATE_PRESET.planInput.currency,
+      status: 'pipeline',
+      planSnapshot: buildCommercialPlan(TIER2_TEMPLATE_PRESET.planInput),
+      dealPresetSlug: TIER2_TEMPLATE_PRESET.slug,
+      intakeTemplateId: 'social_matching_v1',
+      clientIntake: {
+        templateId: 'social_matching_v1',
+        version: 1,
+        answers: { targetTemplateId: 'social_matching/mentorship' },
+        submittedAt: offsetDaysFromNow(-5).toISOString(),
+        lastSavedAt: offsetDaysFromNow(-5).toISOString(),
+      },
+      clientContactEmail: 'tier2.demo@goldspire.dev',
+      dealAcceptedAt: offsetDaysFromNow(-7),
+      notes:
+        'Tier 2 sample for portal delivery sign-offs and template-spec runbook. Token in @goldspire/config/studio-tier2-demo.',
+      linkedTenantId: null,
+      createdByUserId: eamonId,
+    },
   ];
   await db.insert(schema.studioDeal).values(deals);
+
+  const salesDemoPlan = deals.find((d) => d.id === STUDIO_SALES_DEMO_DEAL_ID)!.planSnapshot;
+  await db.insert(schema.studioDealPaymentLine).values(
+    salesDemoPlan.milestones.map((m) => ({
+      dealId: STUDIO_SALES_DEMO_DEAL_ID,
+      milestoneKey: m.key,
+      sortOrder: m.order,
+      label: m.title,
+      amountMinorUnits: m.amountMinorUnits,
+      currency: 'EUR',
+      status: m.key === 'kickoff' ? ('paid' as const) : ('pending' as const),
+      paidAt: m.key === 'kickoff' ? offsetDaysFromNow(-15) : null,
+    })),
+  );
+
+  await db.insert(schema.studioDealPortalToken).values([
+    {
+      dealId: STUDIO_SALES_DEMO_DEAL_ID,
+      tokenHash: STUDIO_SALES_DEMO_PORTAL_TOKEN_HASH,
+      expiresAt: null,
+      scopes: ['view', 'accept', 'pay', 'intake', 'note'],
+    },
+    {
+      dealId: STUDIO_TIER2_DEMO_DEAL_ID,
+      tokenHash: STUDIO_TIER2_DEMO_PORTAL_TOKEN_HASH,
+      expiresAt: null,
+      scopes: ['view', 'accept', 'pay', 'intake', 'note'],
+    },
+  ]);
+
+  const tier2DemoPlan = buildCommercialPlan(TIER2_TEMPLATE_PRESET.planInput);
+  await db.insert(schema.studioDealPaymentLine).values(
+    tier2DemoPlan.milestones.map((m) => ({
+      dealId: STUDIO_TIER2_DEMO_DEAL_ID,
+      milestoneKey: m.key,
+      sortOrder: m.order,
+      label: m.title,
+      amountMinorUnits: m.amountMinorUnits,
+      currency: 'EUR',
+      status: m.key === 'kickoff' ? ('paid' as const) : ('pending' as const),
+      paidAt: m.key === 'kickoff' ? offsetDaysFromNow(-6) : null,
+    })),
+  );
+
+  const demoAcceptedAt = offsetDaysFromNow(-16).toISOString();
+  await insertStudioDealActivity(db, {
+    dealId: STUDIO_SALES_DEMO_DEAL_ID,
+    kind: 'deal_accepted',
+    source: 'portal',
+    payload: { acceptedAt: demoAcceptedAt },
+  });
+  await insertStudioDealActivity(db, {
+    dealId: STUDIO_SALES_DEMO_DEAL_ID,
+    kind: 'payment_settled',
+    source: 'system',
+    payload: { milestoneKey: 'kickoff', label: 'Contract & kickoff' },
+  });
+  await insertStudioDealActivity(db, {
+    dealId: STUDIO_SALES_DEMO_DEAL_ID,
+    kind: 'studio_note',
+    source: 'console',
+    payload: {
+      text: 'Staging build refreshed — onboarding flow v2 is live. Have a click before Friday’s demo.',
+    },
+    actorUserId: eamonId,
+  });
+  await insertStudioDealActivity(db, {
+    dealId: STUDIO_SALES_DEMO_DEAL_ID,
+    kind: 'milestone_updated',
+    source: 'system',
+    payload: { milestoneKey: 'staging', status: 'in_progress' },
+  });
 
   // ─── Product deployments (portal launcher) ───────────────────────────────
   await db.insert(schema.productDeployment).values([
@@ -1199,7 +1387,7 @@ async function seed() {
       name: 'Goldspire Studio Console',
       tagline: 'Control plane for tenants, blueprints, and shipping.',
       accent: '#0F172A',
-      localDevUrl: 'http://localhost:3001',
+      localDevUrl: devUrl('console'),
       localDevCommand: 'pnpm --filter @goldspire/console dev',
       repoPath: 'apps/console',
       healthCheckPath: '/api/health',
@@ -1214,9 +1402,41 @@ async function seed() {
       name: 'Goldspire Admin',
       tagline: 'Per-tenant administration and moderation.',
       accent: '#475569',
-      localDevUrl: 'http://localhost:3002',
+      localDevUrl: devUrl('admin'),
       localDevCommand: 'pnpm --filter @goldspire/admin dev',
       repoPath: 'apps/admin',
+      healthCheckPath: '/api/health',
+      isStudioTool: true,
+    },
+    {
+      id: stableUlid('deploy:atlas-local'),
+      tenantId: tenantId.goldspire,
+      productId: null,
+      kind: 'atlas',
+      environment: 'local',
+      name: 'Goldspire Atlas',
+      tagline: 'Role-scoped knowledge portal — ask the platform in plain English.',
+      accent: '#7C3AED',
+      localDevUrl: devUrl('atlas'),
+      localDevCommand: 'pnpm --filter @goldspire/atlas dev',
+      repoPath: 'apps/atlas',
+      healthCheckPath: '/api/health',
+      isStudioTool: true,
+    },
+    {
+      id: stableUlid('deploy:atlas-staging'),
+      tenantId: tenantId.goldspire,
+      productId: null,
+      kind: 'atlas',
+      environment: 'staging',
+      name: 'Goldspire Atlas (staging)',
+      tagline: 'Role-scoped knowledge portal — staging deployment.',
+      accent: '#7C3AED',
+      url:
+        process.env.NEXT_PUBLIC_ATLAS_STAGING_URL?.trim() ||
+        process.env.NEXT_PUBLIC_ATLAS_URL?.trim() ||
+        'https://atlas.goldspire.studio',
+      repoPath: 'apps/atlas',
       healthCheckPath: '/api/health',
       isStudioTool: true,
     },
@@ -1230,7 +1450,7 @@ async function seed() {
       name: 'Heartline Web',
       tagline: 'Dating — discovery to match to chat.',
       accent: '#E15A82',
-      localDevUrl: 'http://localhost:3000',
+      localDevUrl: devUrl('heartline'),
       localDevCommand: 'pnpm --filter @goldspire/dating-web dev',
       repoPath: 'apps/dating-web',
       healthCheckPath: '/api/health',
@@ -1259,7 +1479,7 @@ async function seed() {
       name: 'Nova Care Web',
       tagline: 'Telehealth scheduling and visit history.',
       accent: '#7C5CFF',
-      localDevUrl: 'http://localhost:3010',
+      localDevUrl: devUrl('nova_care'),
       localDevCommand: 'pnpm --filter @goldspire/booking-web dev',
       repoPath: 'apps/booking-web',
       healthCheckPath: '/api/health',
@@ -1274,7 +1494,7 @@ async function seed() {
       name: 'Bazaar Web',
       tagline: 'Artisan marketplace — listings, checkout, payouts.',
       accent: '#F4B740',
-      localDevUrl: 'http://localhost:3011',
+      localDevUrl: devUrl('bazaar'),
       localDevCommand: 'pnpm --filter @goldspire/marketplace-web dev',
       repoPath: 'apps/marketplace-web',
       healthCheckPath: '/api/health',
@@ -1289,10 +1509,142 @@ async function seed() {
       name: 'Pulse Club Web',
       tagline: 'Community spaces, events, and member directory.',
       accent: '#22C55E',
-      localDevUrl: 'http://localhost:3012',
+      localDevUrl: devUrl('signal'),
       localDevCommand: 'pnpm --filter @goldspire/community-web dev',
       repoPath: 'apps/community-web',
       healthCheckPath: '/api/health',
+    },
+  ]);
+
+  // ─── Owner Lab ventures (demo portfolio) ───────────────────────────────
+  const SEED_VENTURE_SLUGS = ['inventory-ios', 'studio-lab-meta', 'heartline-operator'] as const;
+  await db
+    .delete(schema.studioVenture)
+    .where(inArray(schema.studioVenture.slug, [...SEED_VENTURE_SLUGS]));
+
+  await db.insert(schema.studioVenture).values([
+    {
+      id: stableUlid('venture:inventory-ios'),
+      slug: 'inventory-ios',
+      name: 'Inventory iOS',
+      tagline: 'Personal inventory tracker with shopping list',
+      status: 'active',
+      category: 'product',
+      priority: 2,
+      localPath: 'C:\\Users\\eamon\\Personal Projects\\Inventory',
+      cursorWorkspace: 'Inventory.xcodeproj',
+      nextAction: 'Polish shopping list UX and TestFlight build',
+      linkedDeploymentId: stableUlid('deploy:heartline-web-local'),
+      manualMrrMinor: 12500,
+      monthlyCostsMinor: 4000,
+      runwayMonths: 18,
+      economicsNotes: 'Pre-revenue side project; manual MRR placeholder for Lab economics UI demo.',
+      ownershipPercent: 100,
+      timeAllocationPercent: 20,
+      economicsMode: 'cash',
+      stripeAccountHint: 'inventory-ios',
+      plLines: [
+        { id: 'pl-inv-rev', kind: 'revenue', label: 'App subscriptions (manual)', amountMinor: 12500, currency: 'eur' },
+        { id: 'pl-inv-cogs', kind: 'cogs', label: 'Apple + infra', amountMinor: 2500, currency: 'eur' },
+      ],
+      okrs: [
+        {
+          id: 'okr-inv-1',
+          objective: 'Ship TestFlight beta',
+          keyResult: '50 testers onboarded',
+          progressPercent: 40,
+          quarter: 'Q2',
+        },
+      ],
+      metrics: [
+        { key: 'testflight', label: 'TestFlight builds', value: '3', unit: null, recordedAt: NOW.toISOString() },
+      ],
+      metricHistory: [
+        {
+          recordedAt: new Date(NOW.getTime() - 30 * 86400000).toISOString(),
+          metrics: [{ key: 'testflight', label: 'TestFlight builds', value: '2', unit: null, recordedAt: NOW.toISOString() }],
+        },
+        {
+          recordedAt: NOW.toISOString(),
+          metrics: [{ key: 'testflight', label: 'TestFlight builds', value: '3', unit: null, recordedAt: NOW.toISOString() }],
+        },
+      ],
+      docsMarkdown:
+        '## Scope\nNative SwiftUI app for home inventory.\n\n## Stack\nSwiftUI, Core Data, CloudKit later.\n\n## Apps link (demo)\nLinked to **Heartline Web** in Apps so you can try Lab → Apps deep-link without shipping Inventory. Real code path is local folder above.\n\n## Open questions\n- Barcode scan v1 or v2?\n- Share list with household?',
+      tags: ['ios', 'cursor', 'personal'],
+      lastTouchedAt: NOW,
+    },
+    {
+      id: stableUlid('venture:studio-lab-meta'),
+      slug: 'studio-lab-meta',
+      name: 'Goldspire Lab surface',
+      tagline: 'This Console page — portfolio command center',
+      status: 'shipped',
+      category: 'tool',
+      priority: 3,
+      repoUrl: 'https://github.com/eolaniyan/goldspire-launch-stack',
+      localPath: 'C:\\Users\\eamon\\Personal Projects\\goldspire-launch-stack',
+      linkedDeploymentId: stableUlid('deploy:console-local'),
+      shippedAt: NOW,
+      nextAction: 'Add ventures for each Cursor workspace you care about',
+      docsMarkdown:
+        '## Purpose\nOwner-only registry for side projects + Atlas `studio.ventures` corpus.\n\n## Integration\nDesk queue, Apps grid, Playbooks for SOPs.',
+      tags: ['studio', 'meta'],
+      lastTouchedAt: NOW,
+    },
+    {
+      id: stableUlid('venture:heartline-operator'),
+      slug: 'heartline-operator',
+      name: 'Heartline (operator view)',
+      tagline: 'Demo: tenant-linked MRR + live deployment health',
+      status: 'shipped',
+      category: 'product',
+      priority: 2,
+      linkedTenantId: tenantId.heartline,
+      linkedDeploymentId: stableUlid('deploy:heartline-web-local'),
+      shippedAt: NOW,
+      nextAction: 'Review dating-web conversion funnel',
+      metrics: [
+        { key: 'mau', label: 'MAU (demo)', value: '12400', unit: null, recordedAt: NOW.toISOString() },
+        { key: 'conversion', label: 'Signup conversion', value: '4.2', unit: '%', recordedAt: NOW.toISOString() },
+      ],
+      metricHistory: [
+        {
+          recordedAt: new Date(NOW.getTime() - 14 * 86400000).toISOString(),
+          metrics: [
+            { key: 'mau', label: 'MAU (demo)', value: '11800', unit: null, recordedAt: NOW.toISOString() },
+            { key: 'conversion', label: 'Signup conversion', value: '3.9', unit: '%', recordedAt: NOW.toISOString() },
+          ],
+        },
+        {
+          recordedAt: NOW.toISOString(),
+          metrics: [
+            { key: 'mau', label: 'MAU (demo)', value: '12400', unit: null, recordedAt: NOW.toISOString() },
+            { key: 'conversion', label: 'Signup conversion', value: '4.2', unit: '%', recordedAt: NOW.toISOString() },
+          ],
+        },
+      ],
+      externalBillingUrl: 'https://dashboard.stripe.com/test/dashboard',
+      ownershipPercent: 100,
+      timeAllocationPercent: 35,
+      economicsMode: 'accrual',
+      plLines: [
+        { id: 'pl-hl-rev', kind: 'revenue', label: 'SaaS subscriptions', amountMinor: 89000, currency: 'eur' },
+        { id: 'pl-hl-opex', kind: 'opex', label: 'Hosting + support', amountMinor: 22000, currency: 'eur' },
+      ],
+      okrs: [
+        {
+          id: 'okr-hl-1',
+          objective: 'Improve signup conversion',
+          keyResult: 'Reach 5% trial-to-paid',
+          progressPercent: 55,
+          quarter: 'Q2',
+        },
+      ],
+      docsMarkdown:
+        '## Purpose\nShows how a **shipped** venture links to a real tenant for automatic MRR and to Apps for health.\n\nNot your personal Inventory app — a product you operate inside the stack.',
+      tags: ['demo', 'dating'],
+      lastTouchedAt: NOW,
     },
   ]);
 

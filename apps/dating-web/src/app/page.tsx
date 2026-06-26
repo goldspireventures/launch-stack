@@ -99,14 +99,14 @@ export default function LandingPage() {
         <div className="grid items-center gap-12 md:grid-cols-2">
           <SlideUp className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
-              <Sparkles className="h-3 w-3" /> Built on Goldspire Launch Stack
+              <Sparkles className="h-3 w-3" /> Thoughtful dating, shipped fast
             </div>
             <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
               Real conversations <br /> over real connections.
             </h1>
             <p className="max-w-md text-base text-muted-foreground md:text-lg">
-              {appConfig.brand.name} is a reference Social Matching app — the kind of dating, mentorship, or
-              community-pairing product Goldspire ships for clients in days, not months.
+              {appConfig.brand.name} is designed to feel like a premium consumer product — profiles, discovery, mutual
+              matches, and chat — while staying easy for your studio to re-theme and extend.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button asChild size="xl">
@@ -158,7 +158,7 @@ export default function LandingPage() {
         <Reveal>
           <h2 className="text-center text-2xl font-semibold tracking-tight">Loved by early hearts</h2>
           <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
-            Mock quotes for demo — swap with real testimonials when you ship.
+            Placeholder voices — wire real testimonials when you go live.
           </p>
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

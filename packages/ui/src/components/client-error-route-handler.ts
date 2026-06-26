@@ -48,5 +48,16 @@ export async function handleClientErrorReport(req: Request): Promise<Response> {
     console.error(`  ua: ${payload.userAgent}`);
   }
 
+  const err = new Error(message);
+  if (payload.stack) err.stack = payload.stack;
+  void import('@goldspire/platform/sentry').then(({ captureException }) => {
+    captureException(err, {
+      app: payload.app,
+      kind: payload.kind,
+      url: payload.url,
+      client: true,
+    });
+  });
+
   return new Response(null, { status: 204 });
 }

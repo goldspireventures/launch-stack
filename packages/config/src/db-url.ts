@@ -175,6 +175,10 @@ export function resolveDatabaseUrls(): DatabaseUrlChoice {
 }
 
 export function getRuntimeDatabaseUrl(): string {
+  const appUrl = env.DATABASE_URL_APP?.trim();
+  if (appUrl) {
+    return appUrl;
+  }
   return resolveDatabaseUrls().runtime;
 }
 

@@ -30,7 +30,7 @@ export async function POST() {
     personaId,
     tenantHint: 'goldspire',
   });
-  if (!user || !inRoles(user.role, STUDIO_CONSOLE_ROLES)) {
+  if (!user || user.role !== 'STUDIO_OWNER') {
     return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 });
   }
 

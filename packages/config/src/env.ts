@@ -18,6 +18,12 @@ export const env = createEnv({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
     DATABASE_URL: z.string().min(1).default('postgresql://postgres:postgres@localhost:5432/goldspire'),
+    /**
+     * Optional RLS-enforced runtime connection (`goldspire_app` role).
+     * When set, the app uses this instead of DATABASE_URL for queries.
+     * Migrations/seeds should keep using DATABASE_URL (postgres / service role).
+     */
+    DATABASE_URL_APP: z.string().optional(),
     DIRECT_URL: z.string().optional(),
 
     SUPABASE_URL: z.string().url().optional(),
@@ -30,6 +36,8 @@ export const env = createEnv({
     PAYMENT_PROVIDER: z.enum(['mock', 'stripe']).default('mock'),
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    /** When `true`, studio console exposes deal payment reset for local/staging retesting only. Never enable in production. */
+    STUDIO_DEAL_DEV_RESET_ENABLED: z.string().optional(),
     REVENUECAT_API_KEY: z.string().optional(),
 
     RESEND_API_KEY: z.string().optional(),
@@ -56,11 +64,20 @@ export const env = createEnv({
     S3_SECRET_KEY: z.string().optional(),
 
     GOLDSPIRE_TENANT_ID: z.string().default('acme'),
+    /** Operator tenant row slug (Console enquiries, studio profile JSON). */
+    GOLDSPIRE_STUDIO_TENANT_SLUG: z.string().default('goldspire'),
+    /** Bearer secret for `POST /api/webhooks/venture-revenue` (Lab MRR ingest). */
+    STUDIO_LAB_REVENUE_WEBHOOK_SECRET: z.string().optional(),
+    /** Bearer secret for `POST /api/webhooks/marketing-lead-inbound` (enquiry email replies). */
+    STUDIO_LEAD_INBOUND_WEBHOOK_SECRET: z.string().optional(),
   },
   client: {
-    NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
-    NEXT_PUBLIC_CONSOLE_URL: z.string().url().default('http://localhost:3001'),
-    NEXT_PUBLIC_ADMIN_URL: z.string().url().default('http://localhost:3002'),
+    NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:4000'),
+    NEXT_PUBLIC_CONSOLE_URL: z.string().url().default('http://localhost:4001'),
+    /** Public deal portal (accept + milestone payments). Default matches `apps/client-portal` dev port. */
+    NEXT_PUBLIC_CLIENT_PORTAL_URL: z.string().url().default('http://localhost:4005'),
+    NEXT_PUBLIC_ADMIN_URL: z.string().url().default('http://localhost:4002'),
+    NEXT_PUBLIC_ATLAS_URL: z.string().url().default('http://localhost:4016'),
     NEXT_PUBLIC_SUPABASE_URL: z.string().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
@@ -68,6 +85,14 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().default('https://eu.i.posthog.com'),
     NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+    /** Optional link to the monorepo (GitHub etc.) — Console Apps page “Open repo”. */
+    NEXT_PUBLIC_STUDIO_MONOREPO_URL: z.string().url().optional(),
+    /** Public marketing site (goldspire-web). Used in emails and cross-links. */
+    NEXT_PUBLIC_GOLDSPIRE_MARKETING_URL: z.string().url().default('http://localhost:4010'),
+    /** Live or staging Heartline web — linked from marketing as the dating template demo. */
+    NEXT_PUBLIC_HEARTLINE_DEMO_URL: z.string().url().optional(),
+    /** Optional Calendly (or similar) link after contact form submit. */
+    NEXT_PUBLIC_GOLDSPIRE_DISCOVERY_CALL_URL: z.string().url().optional(),
   },
   clientPrefix: 'NEXT_PUBLIC_',
   runtimeEnv: typeof process !== 'undefined' ? process.env : {},

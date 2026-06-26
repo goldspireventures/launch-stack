@@ -8,8 +8,11 @@ import './globals.css';
 const primaryChannels = hexToHslChannels(appConfig.theme.primaryHex);
 
 export const metadata: Metadata = {
-  title: `${appConfig.brand.name} — built on Goldspire Launch Stack`,
-  description: `A reference Social Matching app built on the Goldspire Launch Stack. ${appConfig.brand.tagline}`,
+  title: {
+    default: `${appConfig.brand.name} · ${appConfig.brand.tagline}`,
+    template: `%s · ${appConfig.brand.name}`,
+  },
+  description: `${appConfig.brand.name} — intentional dating: discover, match, and chat on the Goldspire Social Matching blueprint.`,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

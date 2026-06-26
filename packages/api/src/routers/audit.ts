@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { auditFilterOptions, queryAudit } from '@goldspire/audit';
 import { router, studioProcedure, tenantAdminProcedure } from '../trpc';
+import { tenantScopeId } from '../lib/tenant-scope';
 
 const isoDate = z.string().datetime().optional();
 
@@ -25,7 +26,7 @@ export const auditRouter = router({
    */
   list: tenantAdminProcedure.input(filterInput).query(({ ctx, input }) =>
     queryAudit({
-      tenantId: ctx.user.tenantId,
+      tenantId: tenantScopeId(ctx),
       q: input?.q,
       action: input?.action,
       entityType: input?.entityType,

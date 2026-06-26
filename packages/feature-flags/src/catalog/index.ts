@@ -47,3 +47,8 @@ export function listPublicBooleanFlagKeys(): readonly string[] {
 export function listPublicLimitFlagKeys(): readonly string[] {
   return FLAG_CATALOG.filter((d) => isLimitDef(d) && hasPublicTag(d)).map((d) => d.key);
 }
+
+/** Module catalog keys exposed to end-user clients (e.g. referrals, verification). */
+export function listPublicModuleFlagKeys(): readonly string[] {
+  return FLAG_CATALOG.filter((d) => d.kind === 'module' && hasPublicTag(d)).map((d) => d.key);
+}

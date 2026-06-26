@@ -20,6 +20,7 @@ out/
 .env.development
 .env.production
 .env.staging
+.env.smoke
 !.env.example
 
 # logs
@@ -35,6 +36,7 @@ lerna-debug.log*
 .vscode/
 !.vscode/extensions.json
 !.vscode/settings.recommended.json
+.cursor/
 .idea/
 *.swp
 *.swo
@@ -82,5 +84,8 @@ android/
 secrets/
 .secret
 
-# Stray editor workspace files
-*.code-workspace
+# local certification record (pnpm certify:v1)
+certify-v1.result.json
+certify-tier1-factory.result.json
+
+.vercel

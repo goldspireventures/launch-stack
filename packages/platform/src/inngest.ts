@@ -40,6 +40,9 @@ type Events = {
       metadata?: Record<string, unknown>;
     };
   };
+  'goldspire/studio.ops.scan': {
+    data: { kind: 'stale_enquiry' | 'runbook_blocker' };
+  };
 };
 
 export const inngest = new Inngest({

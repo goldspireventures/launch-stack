@@ -1,7 +1,9 @@
 @import '@goldspire/ui/styles.css';
 
 :root {
-  --primary: 252 95% 68%;
+  --primary: 188 78% 42%;
   --primary-foreground: 0 0% 100%;
-  --accent: 252 95% 68%;
+  --accent: 262 83% 58%;
+  --accent-foreground: 0 0% 100%;
+  --ring: 188 78% 42%;
 }

@@ -34,7 +34,8 @@ export function ActiveTenantBadge({ canSwitchTenants = false }: ActiveTenantBadg
   const [query, setQuery] = React.useState('');
   const [busy, setBusy] = React.useState<string | null>(null);
 
-  const currentQ = trpc.tenants.current.useQuery(undefined, { staleTime: 60_000 });
+  const utils = trpc.useUtils();
+  const currentQ = trpc.tenants.current.useQuery(undefined, { staleTime: 0 });
   const listQ = trpc.tenants.list.useQuery(undefined, {
     staleTime: 60_000,
     // Only fetch the full list when the popover opens and we have access.
@@ -75,14 +76,18 @@ export function ActiveTenantBadge({ canSwitchTenants = false }: ActiveTenantBadg
       });
       if (!res.ok) throw new Error('switch failed');
       const data = (await res.json()) as { ok: boolean; next: string };
+      const name = tenants.find((t) => t.slug === slug)?.name ?? slug;
       toast({
-        title: `Switched to ${tenants.find((t) => t.slug === slug)?.name ?? slug}`,
+        title: `Switched to ${name}`,
         tone: 'success',
       });
       setOpen(false);
-      // Force the layout to re-resolve with the new cookie.
+      setQuery('');
+      void utils.tenants.current.invalidate();
+      void utils.users.list.invalidate();
+      void utils.products.list.invalidate();
+      void utils.subscriptions.list.invalidate();
       router.refresh();
-      // Also navigate to the requested `next` in case it was different (it isn't here, but keeps the contract).
       if (data.next && data.next !== pathname) router.push(data.next);
     } catch (err) {
       toast({ title: 'Could not switch tenant', description: String(err), tone: 'danger' });

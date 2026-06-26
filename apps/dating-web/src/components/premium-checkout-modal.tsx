@@ -108,7 +108,11 @@ export function PremiumCheckoutModal({
     }
     if (!validate()) return;
     try {
-      await checkout.mutateAsync({ productId, billingCycle });
+      const res = await checkout.mutateAsync({ productId, billingCycle });
+      if (res && typeof res === 'object' && 'mode' in res && res.mode === 'stripe' && res.checkoutUrl) {
+        window.location.href = res.checkoutUrl;
+        return;
+      }
       await utils.dating.currentSubscription.invalidate();
       setPhase('success');
       window.setTimeout(() => {

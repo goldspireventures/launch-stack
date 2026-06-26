@@ -1,12 +1,14 @@
 import type { CommercialPlanSnapshot } from './plan';
+import {
+  BUILD_CLIENT_DELIVERABLES_V0,
+  CLONE_SCOPE_GUARDRAILS_V0,
+  ENGAGEMENT_SCOPE_LAYERS_V0,
+} from './studio-service-catalog';
+
+import { formatMinorUnits } from './format-currency';
 
 function formatMoney(minor: number, currency: string): string {
-  const major = minor / 100;
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(major);
-  } catch {
-    return `${(major).toFixed(2)} ${currency}`;
-  }
+  return formatMinorUnits(minor, currency);
 }
 
 /** Proposal-style Markdown for copy/paste into Docs / Notion. */
@@ -48,6 +50,41 @@ export function commercialPlanToMarkdown(
   }
 
   lines.push('## Subcontracting / delivery model', '', subcontractingNote, '');
+
+  lines.push(
+    '## What the client receives (build engagements)',
+    '',
+    'The following is boilerplate for proposals — trim to match the signed scope.',
+    '',
+    ...BUILD_CLIENT_DELIVERABLES_V0.map((b) => `- ${b}`),
+    '',
+  );
+
+  lines.push(
+    '## How we scope template and clone work',
+    '',
+    'Three layers — trim this section for non-template engagements.',
+    '',
+    ...ENGAGEMENT_SCOPE_LAYERS_V0.flatMap((L) => [
+      `### ${L.headline}`,
+      '',
+      L.description,
+      '',
+      `**Typical clone path:** ${L.cloneIncludes}`,
+      '',
+      `**Boundary:** ${L.cloneBoundary}`,
+      '',
+    ]),
+  );
+
+  lines.push(
+    '## Clone / floor scope guardrails',
+    '',
+    'Use for template-led or smallest-path engagements — trim or supersede where the signed scope differs.',
+    '',
+    ...CLONE_SCOPE_GUARDRAILS_V0.map((b) => `- ${b}`),
+    '',
+  );
 
   if (extraNotes?.trim()) {
     lines.push('## Internal notes', '', extraNotes.trim(), '');

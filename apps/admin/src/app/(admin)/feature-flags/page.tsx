@@ -165,20 +165,28 @@ function FlagRow({ row, actorIsStudio, pending, onToggle, onLimitChange, onReset
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
             className="h-9 w-28 rounded-md border border-input bg-background px-2 text-sm"
             disabled={locked || pending}
-            min={row.minNumeric}
-            max={row.maxNumeric}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => setDraft(e.target.value.replace(/\D/g, ''))}
             onBlur={() => {
-              const n = Number(draft);
+              const raw = draft.trim();
+              if (raw === '') {
+                setDraft(String(row.effectiveValue));
+                return;
+              }
+              let n = Number.parseInt(raw, 10);
               if (!Number.isFinite(n)) {
                 setDraft(String(row.effectiveValue));
                 return;
               }
-              if (n !== row.effectiveValue) onLimitChange(Math.trunc(n));
+              if (row.minNumeric != null) n = Math.max(row.minNumeric, n);
+              if (row.maxNumeric != null) n = Math.min(row.maxNumeric, n);
+              setDraft(String(n));
+              if (n !== row.effectiveValue) onLimitChange(n);
             }}
           />
           {row.isOverridden ? (

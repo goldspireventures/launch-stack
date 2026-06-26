@@ -192,6 +192,7 @@ export const deploymentKindEnum = pgEnum('deployment_kind', [
   'mobile_android',
   'admin',
   'console',
+  'atlas',
   'api',
 ]);
 
@@ -212,6 +213,8 @@ export const deploymentHealthStatusEnum = pgEnum('deployment_health_status', [
 export const studioEngagementKindEnum = pgEnum('studio_engagement_kind', [
   'mvp',
   'mvp_plus_prod_planned',
+  'discovery_sprint',
+  'retainer',
 ]);
 
 export const studioDealClientRiskEnum = pgEnum('studio_deal_client_risk', [
@@ -230,10 +233,36 @@ export const studioDealStatusEnum = pgEnum('studio_deal_status', [
   'archived',
 ]);
 
+/** Per milestone payment row on a studio deal (Stripe or manual settlement). */
+export const studioDealPaymentLineStatusEnum = pgEnum('studio_deal_payment_line_status', [
+  'pending',
+  'processing',
+  'paid',
+  'waived',
+]);
+
 /** Feature / module / limit / ops catalog row classification (see @goldspire/feature-flags). */
 export const featureFlagKindEnum = pgEnum('feature_flag_kind', [
   'module',
   'feature',
   'limit',
   'operation',
+]);
+
+/** Owner-only Lab ventures — personal portfolio / side projects. */
+export const studioVentureStatusEnum = pgEnum('studio_venture_status', [
+  'idea',
+  'exploring',
+  'active',
+  'paused',
+  'shipped',
+  'archived',
+]);
+
+export const studioVentureCategoryEnum = pgEnum('studio_venture_category', [
+  'business',
+  'product',
+  'tool',
+  'content',
+  'other',
 ]);

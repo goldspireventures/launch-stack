@@ -11,8 +11,16 @@ import {
   type FlagDefinition,
 } from './catalog/index';
 
-export type { FlagKey, FlagKind, FlagDefinition, ModuleFlagKey } from './catalog/index';
-export { FLAG_CATALOG, getFlagDefinition, listFlagsByKind, allFlags, listPublicBooleanFlagKeys, listPublicLimitFlagKeys } from './catalog/index';
+export type { FlagKey, FlagKind, FlagDefinition, FlagLifecycle, ModuleFlagKey } from './catalog/index';
+export {
+  FLAG_CATALOG,
+  getFlagDefinition,
+  listFlagsByKind,
+  allFlags,
+  listPublicBooleanFlagKeys,
+  listPublicLimitFlagKeys,
+  listPublicModuleFlagKeys,
+} from './catalog/index';
 
 export interface FlagContext {
   tenantId?: string | null;

@@ -10,7 +10,9 @@
     "./root": "./src/root.ts",
     "./trpc": "./src/trpc.ts",
     "./context": "./src/context.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./http-health": "./src/http-health.ts",
+    "./inngest/studio-cron": "./src/inngest/studio-cron.ts"
   },
   "scripts": { "typecheck": "tsc --noEmit", "clean": "rimraf .turbo dist" },
   "dependencies": {
@@ -28,7 +30,9 @@
     "@goldspire/notifications": "workspace:*",
     "@goldspire/chat": "workspace:*",
     "@goldspire/blueprints": "workspace:*",
+    "@goldspire/access": "workspace:*",
     "@goldspire/ai": "workspace:*",
+    "@goldspire/knowledge": "workspace:*",
     "@trpc/server": "^11.0.0-rc.593",
     "@trpc/client": "^11.0.0-rc.593",
     "drizzle-orm": "^0.36.0",

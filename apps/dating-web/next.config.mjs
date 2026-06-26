@@ -46,6 +46,7 @@ const nextConfig = {
     ],
   },
   experimental: {
+    instrumentationHook: true,
     serverActions: { allowedOrigins: ['*'] },
   },
 };

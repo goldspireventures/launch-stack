@@ -1,5 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadMonorepoRootEnv } from '../../scripts/next-load-root-env.mjs';
+
+loadMonorepoRootEnv(import.meta.url);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -7,6 +10,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   reactStrictMode: true,
+  experimental: {
+    instrumentationHook: true,
+  },
   transpilePackages: [
     '@goldspire/api',
     '@goldspire/ui',

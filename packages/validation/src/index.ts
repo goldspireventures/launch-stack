@@ -12,5 +12,8 @@ export * as bookingSchemas from './booking';
 export * as marketplaceSchemas from './marketplace';
 export * as communitySchemas from './community';
 export * as aiAgentSchemas from './ai-agent';
+export * as studioClientIntakeSchemas from './studio-client-intake';
 
 export * from './common';
+export * from './studio-client-intake';
+export * from './studio-client-intake-flow';

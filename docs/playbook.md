@@ -2,6 +2,8 @@
 
 How we actually deliver MVPs without burning out.
 
+**Lifecycle map:** [`docs/studio/internal-delivery-lifecycle.md`](./studio/internal-delivery-lifecycle.md) · **Console:** Delivery guide (`/delivery`) + per-deal Factory runbook.
+
 ## The cadence
 
 Every project runs on **two-week sprints**, even if it's a 4-week project. End of sprint
@@ -61,7 +63,20 @@ Things that always cost a change order or get pushed to v2:
 
 ## Money
 
-- Production MVP: 50% deposit, 50% at launch. Retainer auto-billed monthly starting at launch.
+- **Default finish line = Launch ready**: production URL live, core flows verified, handover complete.
+- Production MVP: 50% deposit, 50% at **Launch ready**. Retainer auto-billed monthly starting at launch (if purchased).
 - Custom Build: 30% / 40% / 30% across kickoff / mid / launch.
 - Hourly out-of-scope: monthly invoice, net-15.
 - Never start work without the deposit cleared.
+
+## Where we stop (handoff)
+
+Goldspire does not sell “we build forever.” Every engagement ends at a named finish line:
+
+- **Launch ready (default)**: live in production + handover. This is what Tier 1 clones are sold to.
+- **Store ready (only if mobile SKU)**: internal/testing builds and submission drafts when agreed (store approval timelines are not owned by us).
+- **Operate (optional)**: maintenance retainer (bugs, upgrades, included feature hours). New product scope beyond included hours → change order.
+
+## Scope tiers (sales + delivery)
+
+Public **clone / template / blueprint** paths (`marketing-offerings.ts`) describe **how much we invent**. **Clone** stays margin-safe when we sell **Identity + Configuration** on a shipped template, and treat **Invention** as change-order or tier-up — see [`docs/product/template-scope-and-tiers.md`](./product/template-scope-and-tiers.md). When a request arrives, ask which layer it touches before calling it "small."

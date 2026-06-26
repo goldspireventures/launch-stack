@@ -25,6 +25,13 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, eq, inArray } from 'drizzle-orm';
 import { factory as ulidFactory } from 'ulid';
 import { getMigrationDatabaseUrl } from '@goldspire/config/env';
+import {
+  HEARTLINE_CAPABILITY_METADATA_KEY,
+  HEARTLINE_CAPABILITY_PRESET_METADATA_KEY,
+  mergeCapabilityOverrides,
+  resolveHeartlinePackIds,
+} from '@goldspire/commercial';
+import { setFlag, type FlagKey } from '@goldspire/feature-flags';
 import * as schema from '../src/schema/index.js';
 
 const conn = postgres(getMigrationDatabaseUrl(), { max: 1, prepare: false });
@@ -144,6 +151,112 @@ async function main() {
     console.log('[fixup-heartline] cleared Sarah subscriptions', deleted);
   } else {
     console.warn('[fixup-heartline] Sarah (sarah@example.com) not found — re-seed first');
+  }
+
+  /* ─── 3. Apply Heartline showroom capability packs (flags + metadata) ─── */
+  const packIds = resolveHeartlinePackIds({ preset: 'showroom' });
+  const overrides = mergeCapabilityOverrides(packIds);
+  for (const o of overrides) {
+    await setFlag({
+      tenantId: heartlineTenantId,
+      key: o.key as FlagKey,
+      enabled: o.enabled,
+      numericValue: o.numericValue,
+      db,
+      actorRole: 'STUDIO_OWNER',
+    });
+  }
+  const [tenantRow] = await db
+    .select({ metadata: schema.tenant.metadata })
+    .from(schema.tenant)
+    .where(eq(schema.tenant.id, heartlineTenantId))
+    .limit(1);
+  const metadata = {
+    ...(typeof tenantRow?.metadata === 'object' && tenantRow.metadata !== null
+      ? (tenantRow.metadata as Record<string, unknown>)
+      : {}),
+    [HEARTLINE_CAPABILITY_METADATA_KEY]: packIds,
+    [HEARTLINE_CAPABILITY_PRESET_METADATA_KEY]: 'showroom',
+    heartlineInviteCodes: {
+      HEARTLINE: { label: 'Heartline launch', maxUses: 500, uses: 0 },
+      CITYLAUNCH: { label: 'City launch VIP', maxUses: 100, uses: 0 },
+    },
+  };
+  await db
+    .update(schema.tenant)
+    .set({ metadata, updatedAt: new Date() })
+    .where(eq(schema.tenant.id, heartlineTenantId));
+  console.log(`[fixup-heartline] applied showroom capabilities (${overrides.length} flags)`);
+
+  /* ─── 4. Point dating graph at heartline-dating (apps use this slug) ─── */
+  const hlDatingProductId =
+    existingDating?.id ??
+    (
+      await db
+        .select({ id: schema.product.id })
+        .from(schema.product)
+        .where(
+          and(eq(schema.product.tenantId, heartlineTenantId), eq(schema.product.slug, 'heartline-dating')),
+        )
+        .limit(1)
+    )[0]?.id ??
+    hlDatingId;
+
+  const legacyProductIds = (
+    await db
+      .select({ id: schema.product.id })
+      .from(schema.product)
+      .where(
+        and(
+          eq(schema.product.tenantId, heartlineTenantId),
+          inArray(schema.product.slug, ['heartline-free', 'heartline-plus', 'heartline-premium']),
+        ),
+      )
+  ).map((p) => p.id);
+
+  if (legacyProductIds.length > 0) {
+    const legacyProfiles = await db
+      .select()
+      .from(schema.datingProfile)
+      .where(
+        and(
+          eq(schema.datingProfile.tenantId, heartlineTenantId),
+          inArray(schema.datingProfile.productId, legacyProductIds),
+        ),
+      );
+
+    for (const legacy of legacyProfiles) {
+      const [canonical] = await db
+        .select({ id: schema.datingProfile.id })
+        .from(schema.datingProfile)
+        .where(
+          and(
+            eq(schema.datingProfile.tenantId, heartlineTenantId),
+            eq(schema.datingProfile.productId, hlDatingProductId),
+            eq(schema.datingProfile.userId, legacy.userId),
+          ),
+        )
+        .limit(1);
+
+      if (canonical) {
+        await db.delete(schema.datingProfile).where(eq(schema.datingProfile.id, legacy.id));
+      } else {
+        await db
+          .update(schema.datingProfile)
+          .set({ productId: hlDatingProductId })
+          .where(eq(schema.datingProfile.id, legacy.id));
+      }
+    }
+
+    for (const table of [schema.datingSwipe, schema.datingMatch, schema.datingUserBlock] as const) {
+      await db
+        .update(table)
+        .set({ productId: hlDatingProductId })
+        .where(
+          and(eq(table.tenantId, heartlineTenantId), inArray(table.productId, legacyProductIds)),
+        );
+    }
+    console.log('[fixup-heartline] migrated dating rows to heartline-dating product');
   }
 
   console.log('[fixup-heartline] done');

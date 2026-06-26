@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, ilike, lte, or, sql } from 'drizzle-orm';
-import { db, schema } from '@goldspire/db';
+import { db, schema, withTenantContext, type Database } from '@goldspire/db';
 import type { Role } from '@goldspire/config';
 import { logger } from '@goldspire/platform';
 
@@ -13,6 +13,8 @@ export interface AuditEventInput {
   metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
+  /** Request-scoped client (RLS context already set). Omit to open a tenant-scoped tx when tenantId is set. */
+  db?: Database;
 }
 
 /**
@@ -21,17 +23,26 @@ export interface AuditEventInput {
  */
 export async function logAudit(input: AuditEventInput): Promise<void> {
   try {
-    await db.insert(schema.auditLog).values({
-      tenantId: input.tenantId ?? null,
-      actorId: input.actorId ?? null,
-      actorRole: input.actorRole ?? null,
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId ?? null,
-      metadata: input.metadata ?? {},
-      ipAddress: input.ipAddress ?? null,
-      userAgent: input.userAgent ?? null,
-    });
+    const run = async (client: Database) => {
+      await client.insert(schema.auditLog).values({
+        tenantId: input.tenantId ?? null,
+        actorId: input.actorId ?? null,
+        actorRole: input.actorRole ?? null,
+        action: input.action,
+        entityType: input.entityType,
+        entityId: input.entityId ?? null,
+        metadata: input.metadata ?? {},
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      });
+    };
+    if (input.db) {
+      await run(input.db);
+    } else if (input.tenantId) {
+      await withTenantContext(db, input.tenantId, input.actorId ?? null, run);
+    } else {
+      await run(db);
+    }
   } catch (err) {
     // Never throw from audit — but make sure operators see it.
     logger.error('audit log write failed', err, { action: input.action });

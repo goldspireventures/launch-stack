@@ -26,6 +26,8 @@ import {
   profilePhotoCarouselUrls,
   pravatarUrl,
 } from '@/lib/dating-display';
+import { useFlag } from '@/lib/use-flag';
+import { TrustActions } from '@/components/trust-actions';
 
 const SWIPE_X = 420;
 const THRESH = 110;
@@ -55,6 +57,7 @@ type MatchOverlayState = {
 };
 
 interface DiscoverSwipeDeckProps {
+  productId?: string;
   profiles: DiscoverCardProfile[];
   myLat: number | null;
   myLng: number | null;
@@ -68,9 +71,12 @@ interface DiscoverSwipeDeckProps {
   ) => Promise<SwipeMutationResult>;
   onAfterSwipe: () => Promise<void>;
   onDailyLimit: () => void;
+  onRewind?: () => Promise<{ ok: boolean; message?: string }>;
+  rewindPending?: boolean;
 }
 
 export function DiscoverSwipeDeck({
+  productId,
   profiles,
   myLat,
   myLng,
@@ -81,7 +87,10 @@ export function DiscoverSwipeDeck({
   onSwipe,
   onAfterSwipe,
   onDailyLimit,
+  onRewind,
+  rewindPending = false,
 }: DiscoverSwipeDeckProps) {
+  const rewindEnabled = useFlag('feature.dating_rewind', false);
   const { toast } = useToast();
   const top = profiles[0];
   const stack = profiles.slice(0, 3);
@@ -221,15 +230,34 @@ export function DiscoverSwipeDeck({
         <CircleAction
           label="Undo"
           className="bg-muted text-muted-foreground"
-          onClick={() =>
-            toast({
-              title: 'Rewind',
-              description:
-                'MOCK: Rewind is a Heartline Plus perk — not wired to the backend in this demo.',
-              tone: 'info',
-            })
-          }
-          disabled={busy}
+          onClick={() => {
+            if (!rewindEnabled || !onRewind) {
+              toast({
+                title: 'Rewind',
+                description: 'Upgrade to Plus to undo your last swipe.',
+                tone: 'info',
+              });
+              return;
+            }
+            void (async () => {
+              try {
+                const res = await onRewind();
+                if (res.ok) {
+                  toast({ title: 'Rewound', description: 'Your last swipe was undone.', tone: 'success' });
+                  await onAfterSwipe();
+                } else {
+                  toast({ title: 'Rewind', description: res.message ?? 'Nothing to undo', tone: 'info' });
+                }
+              } catch (e) {
+                toast({
+                  title: 'Rewind unavailable',
+                  description: e instanceof Error ? e.message : 'Try again',
+                  tone: 'danger',
+                });
+              }
+            })();
+          }}
+          disabled={busy || rewindPending}
         >
           <RotateCcw className="h-6 w-6" />
         </CircleAction>
@@ -289,6 +317,14 @@ export function DiscoverSwipeDeck({
                   </Card>
                 ))}
               </div>
+            ) : null}
+            {productId && top ? (
+              <TrustActions
+                productId={productId}
+                targetUserId={top.userId}
+                targetLabel={top.displayName}
+                surface="discover"
+              />
             ) : null}
           </div>
         </DialogContent>

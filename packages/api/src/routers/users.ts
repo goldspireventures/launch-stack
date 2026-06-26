@@ -7,6 +7,8 @@ import { ANALYTICS_EVENTS } from '@goldspire/config';
 import { z } from 'zod';
 import { router, tenantAdminProcedure, protectedProcedure } from '../trpc';
 import { NotFoundError } from '@goldspire/platform';
+import { tenantScopeId } from '../lib/tenant-scope';
+import { assertCtxSupportMutation } from '../lib/assert-support-scope';
 
 export const usersRouter = router({
   me: protectedProcedure.query(({ ctx }) => ctx.user),
@@ -52,7 +54,7 @@ export const usersRouter = router({
   list: tenantAdminProcedure
     .input(z.object({ status: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
-      const conditions = [eq(schema.user.tenantId, ctx.user.tenantId)];
+      const conditions = [eq(schema.user.tenantId, tenantScopeId(ctx))];
       if (input?.status) conditions.push(eq(schema.user.status, input.status as schema.User['status']));
       return ctx.db
         .select()
@@ -66,14 +68,15 @@ export const usersRouter = router({
     const [u] = await ctx.db
       .select()
       .from(schema.user)
-      .where(and(eq(schema.user.id, input.id), eq(schema.user.tenantId, ctx.user.tenantId)))
+      .where(and(eq(schema.user.id, input.id), eq(schema.user.tenantId, tenantScopeId(ctx))))
       .limit(1);
     if (!u) throw new NotFoundError('user', input.id);
     return u;
   }),
 
   create: tenantAdminProcedure.input(userSchemas.createUser).mutation(async ({ ctx, input }) => {
-    const [row] = await ctx.db.insert(schema.user).values(input).returning();
+    assertCtxSupportMutation(ctx);
+    const [row] = await ctx.db.insert(schema.user).values({ ...input, tenantId: tenantScopeId(ctx) }).returning();
     if (!row) throw new Error('failed to create user');
     await logAudit({
       tenantId: row.tenantId,
@@ -93,11 +96,13 @@ export const usersRouter = router({
   }),
 
   update: tenantAdminProcedure.input(userSchemas.updateUser).mutation(async ({ ctx, input }) => {
+    assertCtxSupportMutation(ctx);
     const { id, ...patch } = input;
+    const scopeId = tenantScopeId(ctx);
     const [row] = await ctx.db
       .update(schema.user)
       .set({ ...patch, updatedAt: new Date() })
-      .where(and(eq(schema.user.id, id), eq(schema.user.tenantId, ctx.user.tenantId)))
+      .where(and(eq(schema.user.id, id), eq(schema.user.tenantId, scopeId)))
       .returning();
     if (!row) throw new NotFoundError('user', id);
     await logAudit({

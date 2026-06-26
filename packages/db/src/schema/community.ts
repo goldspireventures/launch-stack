@@ -28,7 +28,7 @@ export const space = pgTable(
     description: text('description'),
     visibility: spaceVisibilityEnum('visibility').notNull().default('public'),
     priceCents: integer('price_cents').default(0),
-    currency: varchar('currency', { length: 3 }).default('USD'),
+    currency: varchar('currency', { length: 3 }).default('EUR'),
     metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })

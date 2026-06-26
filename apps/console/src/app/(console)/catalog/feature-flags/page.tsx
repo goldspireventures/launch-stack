@@ -10,29 +10,27 @@ import {
   EmptyState,
   Input,
   LoadingState,
-  PageHeader,
-  SectionCard,
-} from '@goldspire/ui';
+  SectionCard} from '@goldspire/ui';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '@goldspire/api';
+import { StudioPageHeader } from '@/components/studio-page-header';
+import { StudioDialogBody } from '@/components/studio-page-shell';
 import { trpc } from '@/lib/trpc';
 
-type CatalogRow = NonNullable<
-  ReturnType<typeof trpc.catalog.listFeatureFlags.useQuery>['data']
->[number];
+type CatalogRow = inferRouterOutputs<AppRouter>['catalog']['listFeatureFlags'][number];
 
 const KIND_LABEL: Record<CatalogRow['kind'], string> = {
   module: 'Modules',
   feature: 'Features',
   limit: 'Limits',
-  operation: 'Ops controls',
-};
+  operation: 'Ops controls'};
 
 const KIND_ORDER: CatalogRow['kind'][] = ['module', 'feature', 'limit', 'operation'];
 
 const LIFECYCLE_STYLE: Record<string, string> = {
   experimental: 'border-amber-500/40 bg-amber-500/10 text-amber-200',
   stable: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
-  deprecated: 'border-rose-500/40 bg-rose-500/10 text-rose-200',
-};
+  deprecated: 'border-rose-500/40 bg-rose-500/10 text-rose-200'};
 
 function formatDefault(row: CatalogRow): string {
   if (row.kind === 'limit') return String(row.defaultValue);
@@ -94,7 +92,7 @@ export default function CatalogFeatureFlagsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <StudioPageHeader
         title="Feature flag catalog"
         description="Studio-wide view of every flag the code defines, including which tenants diverge from defaults."
       />
@@ -167,11 +165,13 @@ export default function CatalogFeatureFlagsPage() {
 
       {/* Drill-down */}
       <Dialog open={selectedKey != null} onOpenChange={(open) => !open && setSelectedKey(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="flex max-h-[min(90vh,720px)] max-w-2xl flex-col gap-0 p-0">
           <DialogTitle className="sr-only">
             Feature flag details: {selectedKey ?? ''}
           </DialogTitle>
-          {selectedKey && <CatalogFlagDrawer flagKey={selectedKey} />}
+          <StudioDialogBody className="px-6 py-4">
+            {selectedKey && <CatalogFlagDrawer flagKey={selectedKey} />}
+          </StudioDialogBody>
         </DialogContent>
       </Dialog>
     </div>
@@ -183,8 +183,7 @@ export default function CatalogFeatureFlagsPage() {
 function StatCard({
   label,
   value,
-  tone,
-}: {
+  tone}: {
   label: string;
   value: number;
   tone?: 'warn' | 'danger';

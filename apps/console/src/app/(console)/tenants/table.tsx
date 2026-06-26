@@ -1,31 +1,17 @@
 'use client';
 
-import { ExternalLink } from 'lucide-react';
-import { env } from '@goldspire/config/env';
+import Link from 'next/link';
 import {
   Button,
   Card,
   CardContent,
   DataTable,
   LoadingState,
-  PageHeader,
-  StatusBadge,
-} from '@goldspire/ui';
+  StatusBadge} from '@goldspire/ui';
+import { StudioPageHeader } from '@/components/studio-page-header';
 import { trpc } from '@/lib/trpc';
 
-/**
- * "Open Admin" deep-link builder. Forwards the current Studio persona on the
- * query string so the Admin app (a separate origin) can set its own persona
- * cookie — cookies don't cross host:port boundaries.
- */
-function adminDeepLink(slug: string, personaId: string | null, next = '/dashboard') {
-  const base = env.NEXT_PUBLIC_ADMIN_URL;
-  const params = new URLSearchParams({ slug, next });
-  if (personaId) params.set('persona', personaId);
-  return `${base}/api/active-tenant?${params.toString()}`;
-}
-
-export function TenantsTable({ personaId }: { personaId: string | null }) {
+export function TenantsTable({ hideChrome = false }: { hideChrome?: boolean }) {
   const q = trpc.tenants.list.useQuery();
 
   if (q.isLoading) return <LoadingState />;
@@ -39,36 +25,54 @@ export function TenantsTable({ personaId }: { personaId: string | null }) {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Tenants"
-        description="Every client/product organisation the studio operates. Click 'Open Admin' to operate as that tenant."
-      />
+      {!hideChrome ? (
+        <StudioPageHeader
+          title="Tenants"
+          description="Every client organisation the studio operates. Open a tenant to request JIT Admin access or manage delivery."
+        />
+      ) : null}
       <Card>
         <CardContent className="px-0 py-0">
           <DataTable
             rows={q.data ?? []}
             columns={[
-              { key: 'name', header: 'Name' },
+              {
+                key: 'name',
+                header: 'Name',
+                cell: (r) => (
+                  <Link href={`/tenants/${r.id}`} className="font-medium hover:text-primary">
+                    {r.name}
+                  </Link>
+                ),
+              },
               { key: 'slug', header: 'Slug', cell: (r) => <code className="text-xs">{r.slug}</code> },
               { key: 'plan', header: 'Plan' },
               { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.status} /> },
               {
                 key: 'createdAt',
                 header: 'Created',
-                cell: (r) => new Date(r.createdAt).toLocaleDateString(),
+                cell: (r) => new Date(r.createdAt).toLocaleDateString()},
+              {
+                key: 'capabilities',
+                header: '',
+                cell: (r) =>
+                  r.metadata &&
+                  typeof r.metadata === 'object' &&
+                  (r.metadata as { productTemplate?: string }).productTemplate ===
+                    'social_matching/dating' ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/tenants/${r.id}/capabilities`}>Capabilities</Link>
+                    </Button>
+                  ) : null,
               },
               {
                 key: 'open',
                 header: '',
                 cell: (r) => (
                   <Button variant="secondary" size="sm" asChild>
-                    <a href={adminDeepLink(r.slug, personaId)}>
-                      Open Admin
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                    <Link href={`/tenants/${r.id}`}>Manage</Link>
                   </Button>
-                ),
-              },
+                )},
             ]}
           />
         </CardContent>

@@ -64,6 +64,8 @@ export interface QuoteAddOn {
   effortMultiplier: number;
 }
 
+import { DEAL_DESK_SOLO_BASELINE_MINOR } from './pricing-constants';
+
 const EUR = 'EUR' as const;
 
 export const TIER_CATALOG: readonly TierDefinition[] = [
@@ -83,7 +85,7 @@ export const TIER_CATALOG: readonly TierDefinition[] = [
       subcontracting: 'none',
       weeksMin: 6,
       weeksMax: 10,
-      totalFeeMinorUnits: 2_500_000,
+      totalFeeMinorUnits: DEAL_DESK_SOLO_BASELINE_MINOR,
       currency: EUR,
     },
     priceLabelOverride: null,
@@ -194,10 +196,30 @@ export const BLUEPRINT_MODIFIERS: Readonly<Record<BlueprintQuoteKind, BlueprintQ
 
 export const QUOTE_ADDONS: readonly QuoteAddOn[] = [
   {
+    id: 'mobile_companion',
+    label: 'Mobile companion (Expo)',
+    description:
+      'List discover, matches, profile on iOS/Android — shared API with web. Not for dating presets that already include companion or native.',
+    effortMultiplier: 1.15,
+  },
+  {
+    id: 'mobile_native',
+    label: 'Mobile native launch (Expo)',
+    description:
+      'Store-ready builds with chat, paywall, and onboarding parity where the template supports it. Use dating native preset instead of web + this add-on.',
+    effortMultiplier: 1.35,
+  },
+  {
     id: 'mobile',
-    label: 'Mobile app (Expo)',
-    description: 'Ship the iOS/Android shell alongside the web app.',
+    label: 'Mobile app (Expo) — legacy',
+    description: 'Prefer mobile_companion or mobile_native. Kept for existing quotes.',
     effortMultiplier: 1.2,
+  },
+  {
+    id: 'store_listing',
+    label: 'Store listing support',
+    description: 'Submission drafts, metadata, and review support — client developer accounts required.',
+    effortMultiplier: 1.05,
   },
   {
     id: 'ai',

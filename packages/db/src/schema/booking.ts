@@ -27,7 +27,7 @@ export const business = pgTable(
     slug: varchar('slug', { length: 64 }).notNull(),
     description: text('description'),
     timezone: varchar('timezone', { length: 64 }).notNull().default('UTC'),
-    currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+    currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     addressLine1: text('address_line1'),
     city: text('city'),
     countryCode: varchar('country_code', { length: 2 }),

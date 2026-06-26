@@ -14,6 +14,8 @@ import {
   StatusBadge,
 } from '@goldspire/ui';
 import { getBlueprintByIndustry } from '@goldspire/blueprints';
+import { env } from '@goldspire/config/env';
+import { inRoles, STUDIO_CONSOLE_ROLES } from '@goldspire/config';
 import { trpc } from '@/lib/trpc';
 
 export default function SelectTenantPage() {
@@ -22,10 +24,13 @@ export default function SelectTenantPage() {
   const nextHref = params.get('next') ?? '/dashboard';
 
   const q = trpc.tenants.list.useQuery();
+  const me = trpc.users.me.useQuery();
   const [query, setQuery] = React.useState('');
   const [pending, setPending] = React.useState<string | null>(null);
 
-  if (q.isLoading) return <LoadingState />;
+  const isStudio = me.data ? inRoles(me.data.role, STUDIO_CONSOLE_ROLES) : false;
+
+  if (q.isLoading || me.isLoading) return <LoadingState />;
 
   const rows = (q.data ?? []).filter((t) => {
     if (!query) return true;
@@ -57,9 +62,26 @@ export default function SelectTenantPage() {
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
       <PageHeader
         title="Choose a tenant to manage"
-        description="The admin app scopes everything to one tenant at a time. You can switch from the sidebar later."
+        description={
+          isStudio
+            ? 'Studio staff use Console to request time-bound client Admin access. Client owners sign in here for their own tenant.'
+            : 'The admin app scopes everything to one tenant at a time.'
+        }
         eyebrow="Goldspire Admin"
       />
+
+      {isStudio ? (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+          <p className="font-medium text-amber-100">Studio account</p>
+          <p className="mt-1 text-muted-foreground">
+            Open a tenant in{' '}
+            <a href={`${env.NEXT_PUBLIC_CONSOLE_URL}/build?tab=tenants`} className="text-primary hover:underline">
+              Studio Console → Tenants
+            </a>
+            , request support access, and enter Admin only after the client approves.
+          </p>
+        </div>
+      ) : null}
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -77,7 +99,8 @@ export default function SelectTenantPage() {
           const bp = getBlueprintByIndustry(industry);
           const kind = bp?.kind ?? 'b2b_saas_shell';
           const isLoading = pending === t.slug;
-          const isStudio = t.slug === 'goldspire';
+          const isPlatformTenant = t.slug === 'goldspire';
+          const studioBlocked = isStudio && !isPlatformTenant;
           return (
             <Card
               key={t.id}
@@ -90,7 +113,7 @@ export default function SelectTenantPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium">{t.name}</h3>
-                    {isStudio && (
+                    {isPlatformTenant && (
                       <Badge variant="outline" className="text-[10px]">
                         Platform
                       </Badge>
@@ -100,15 +123,21 @@ export default function SelectTenantPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {!isStudio && <ProductTypeBadge kind={kind} />}
+                {!isPlatformTenant && <ProductTypeBadge kind={kind} />}
                 <StatusBadge status={t.status} />
                 <Button
                   size="sm"
-                  variant={isStudio ? 'ghost' : 'default'}
+                  variant={isPlatformTenant ? 'ghost' : 'default'}
                   onClick={() => pick(t.slug)}
-                  disabled={isLoading || isStudio}
+                  disabled={isLoading || isPlatformTenant || studioBlocked}
                   className="gap-1.5"
-                  title={isStudio ? 'The Goldspire studio tenant has no per-tenant admin surface.' : undefined}
+                  title={
+                    studioBlocked
+                      ? 'Request access from Studio Console first'
+                      : isPlatformTenant
+                        ? 'The Goldspire studio tenant has no per-tenant admin surface.'
+                        : undefined
+                  }
                 >
                   {isLoading ? 'Loading…' : 'Manage'}
                   <ChevronRight className="h-3.5 w-3.5" />

@@ -21,6 +21,38 @@ try {
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   reactStrictMode: true,
+  async redirects() {
+    return [
+      { source: '/leads', destination: '/pipeline?stage=inbound', permanent: false },
+      { source: '/deals', destination: '/pipeline?stage=delivery', permanent: false },
+      { source: '/deals/:id', destination: '/engagements/:id', permanent: false },
+      { source: '/factory', destination: '/build?tab=factory', permanent: false },
+      { source: '/tenants', destination: '/build?tab=tenants', permanent: false },
+      { source: '/onboard', destination: '/build?tab=onboard', permanent: false },
+      { source: '/build/launch', destination: '/build?tab=launch', permanent: false },
+      { source: '/reports', destination: '/insight?tab=reports', permanent: false },
+      { source: '/apps', destination: '/insight?tab=apps', permanent: false },
+      { source: '/lab', destination: '/insight?tab=lab', permanent: false },
+      { source: '/lab/compare', destination: '/insight?tab=lab', permanent: false },
+      { source: '/commercial', destination: '/configure?tab=commercial', permanent: false },
+      { source: '/playbooks', destination: '/configure?tab=playbooks', permanent: false },
+      { source: '/catalog', destination: '/configure?tab=templates', permanent: false },
+      { source: '/catalog/templates', destination: '/configure?tab=templates', permanent: false },
+      { source: '/catalog/offerings', destination: '/configure?tab=offerings', permanent: false },
+      { source: '/catalog/feature-flags', destination: '/configure?tab=flags', permanent: false },
+      { source: '/reference', destination: '/configure?tab=launch', permanent: false },
+      { source: '/docs', destination: '/configure?tab=docs', permanent: false },
+      { source: '/delivery', destination: '/configure?tab=playbooks', permanent: false },
+      { source: '/blueprints', destination: '/configure?tab=templates', permanent: false },
+      { source: '/settings', destination: '/configure?tab=studio', permanent: false },
+      { source: '/audit', destination: '/insight?tab=reports', permanent: false },
+      { source: '/analytics', destination: '/insight?tab=reports', permanent: false },
+      { source: '/plans', destination: '/insight?tab=reports', permanent: false },
+    ];
+  },
+  experimental: {
+    instrumentationHook: true,
+  },
   transpilePackages: [
     '@goldspire/api',
     '@goldspire/ui',

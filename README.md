@@ -28,7 +28,10 @@ and own.
 | `dating-mobile`     | Expo | `social_matching`        | Heartline mobile (Expo Router + NativeWind) sharing the tRPC layer |
 | `admin`             | 3002 | per-tenant               | Admin dashboard: users, products, subs, flags, reports, audit, analytics |
 | `console`           | 3001 | studio                   | Studio Console: cross-tenant overview, blueprint catalog |
-| `booking-web`       | 3010 | `multi_staff_booking`    | Nova Care — service booking, staff selection, customer dashboard |
+| `atlas`             | 3016 | studio                   | Goldspire Atlas: RAG knowledge portal (role-scoped Q&A) |
+| `client-portal`    | 3005 | studio (public)          | Client-facing deal portal: accept SOW, pay milestones (token link) |
+| `goldspire-web`     | 3010 | studio (marketing)       | Public marketing site + discovery form |
+| `booking-web`       | 3015 | `multi_staff_booking`    | Nova Care — service booking, staff selection, customer dashboard |
 | `marketplace-web`   | 3011 | `marketplace`            | Bazaar — listings, seller dashboard, orders |
 | `community-web`     | 3012 | `community`              | Signal — spaces, feeds, posting |
 | `ai-agent-web`      | 3013 | `vertical_ai_agent`      | Lumen — assistant sessions, chat, task list |
@@ -54,6 +57,8 @@ and own.
 | `@goldspire/platform`         | Cross-cutting: errors, logger, Stripe/Supabase/Sentry/Inngest clients |
 | `@goldspire/blueprints`       | Blueprint metadata + pricing + nav |
 | `@goldspire/cli`              | `goldspire new` scaffolder |
+| `@goldspire/access`           | Policy registry, capabilities, corpus access |
+| `@goldspire/knowledge`        | Indexing, search, RAG for Atlas |
 
 ## Quick start
 
@@ -75,6 +80,8 @@ pnpm --filter @goldspire/dating-web dev   # http://localhost:3000
 
 Open any other app the same way — `pnpm --filter @goldspire/admin dev`, etc.
 
+**Manual QA:** follow the ordered checklist in [TESTING.md](./TESTING.md) (marketing → leads → client portal → Nova Care → studio smoke).
+
 ## Spin up a new client product
 
 ```bash
@@ -87,12 +94,16 @@ to do next (add a seed row, run `pnpm install`, `pnpm dev`).
 
 ## Docs
 
+- [`docs/platform/executive-operating-model.md`](./docs/platform/executive-operating-model.md) — multi-hat company + product review (CEO, COO, CPO, …)
+- [`docs/platform/studio-comprehensive-build-plan.md`](./docs/platform/studio-comprehensive-build-plan.md) — master build plan (Waves 0–5); manual tasks in Appendix A
 - [`docs/architecture/overview.md`](./docs/architecture/overview.md) — system design, RLS, multi-tenancy
 - [`docs/setup/local-dev.md`](./docs/setup/local-dev.md) — getting a dev DB running
 - [`docs/deployment/`](./docs/deployment) — Vercel, Replit, Railway/Render
+- [`docs/deployment/phase-0-revenue-ready.md`](./docs/deployment/phase-0-revenue-ready.md) — prod checklist before first sale
 - [`docs/blueprints/`](./docs/blueprints) — one doc per blueprint (use case, models, APIs, screens)
 - [`docs/client-delivery/`](./docs/client-delivery) — SOWs, scope templates, handover, retainers
-- [`docs/pricing/package-structure.md`](./docs/pricing/package-structure.md) — studio pricing tiers
+- [`docs/product/template-scope-and-tiers.md`](./docs/product/template-scope-and-tiers.md) — clone vs template vs blueprint; three-layer scope model
+- [`docs/pricing/package-structure.md`](./docs/pricing/package-structure.md) — how public tiers map to Deal Desk and `commercial` packages
 - [`docs/playbook.md`](./docs/playbook.md) — how the studio actually delivers MVPs
 
 ## Quality bar

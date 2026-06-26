@@ -1,3 +1,13 @@
 export * from './entitlements';
 export * from './checkout';
 export * from './stripe-webhook';
+export * from './studio-deal-checkout';
+export * from './studio-deal-payment-metadata';
+export * from './studio-deal-payment-sync';
+export * from './studio-deal-deploy';
+export * from './studio-deal-notify';
+export * from './studio-desk-notify';
+export { notifyRunbookBlocker } from './studio-desk-notify';
+export * from './studio-deal-portal';
+export * from './studio-deal-lifecycle';
+export * from './studio-deal-kickoff-hooks';

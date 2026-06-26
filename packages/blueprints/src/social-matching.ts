@@ -14,7 +14,7 @@ export const socialMatchingBlueprint: BlueprintDefinition = {
   defaultTenantSlug: 'heartline',
   defaultPort: 3000,
   localDevCommand: 'pnpm --filter @goldspire/dating-web dev',
-  demoUrl: 'http://localhost:3000',
+  demoUrl: 'http://localhost:4000',
   badgeAccent: '#E15A82',
   badgeLabel: 'Dating',
   industryAliases: ['dating', 'social', 'matching'],
@@ -57,6 +57,8 @@ export const socialMatchingBlueprint: BlueprintDefinition = {
       flagKey: 'ai.safety_classifier',
     },
   ],
+  /** Studio capability packs map 1:1 to `heartline-capability-packs.ts` (depth without forks). */
+  capabilityPackCatalog: 'heartline' as const,
   clientNotes: [
     'Dating market is brutal — recommend niche positioning, not general dating, unless the client has distribution.',
     'Photo moderation is mandatory at launch. Wire in a content-moderation provider before going live.',

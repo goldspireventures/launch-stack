@@ -1,0 +1,17 @@
+{
+  "name": "@goldspire/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "install:browsers": "playwright install chromium",
+    "screenshots:dating-mobile": "playwright test --project=dating-mobile-web",
+    "screenshots:heartline": "playwright test --project=heartline-showcase --project=heartline-mobile-showcase"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "typescript": "^5.6.2"
+  }
+}

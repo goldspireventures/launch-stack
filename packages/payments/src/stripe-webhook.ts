@@ -1,10 +1,12 @@
 import type Stripe from 'stripe';
 import { and, eq } from 'drizzle-orm';
 import { db, schema } from '@goldspire/db';
+import { logAudit } from '@goldspire/audit';
 import { ENTITLEMENT_KEYS } from '@goldspire/config';
 import { env } from '@goldspire/config/env';
 import { logger, stripe, IntegrationError } from '@goldspire/platform';
 import { grantEntitlement, revokeEntitlement } from './entitlements';
+import { parseStudioDealCheckoutMetadata } from './studio-deal-payment-metadata';
 
 /**
  * Process a Stripe webhook event. Idempotent: we store every event ID in
@@ -69,14 +71,58 @@ async function handleEvent(event: Stripe.Event) {
     case 'customer.subscription.deleted':
       await deactivateSubscription(event.data.object as Stripe.Subscription);
       break;
-    case 'checkout.session.completed':
-      logger.info('[stripe] checkout completed', {
-        sessionId: (event.data.object as Stripe.Checkout.Session).id,
-      });
+    case 'checkout.session.completed': {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const { tryApplyStudioDealCheckoutSession } = await import('./studio-deal-payment-sync');
+      const outcome = await tryApplyStudioDealCheckoutSession(db, session);
+      if (outcome === 'settled') {
+        const meta = parseStudioDealCheckoutMetadata(session.metadata);
+        if (meta.dealId && meta.paymentLineId) {
+          const [deal] = await db
+            .select({ linkedTenantId: schema.studioDeal.linkedTenantId })
+            .from(schema.studioDeal)
+            .where(eq(schema.studioDeal.id, meta.dealId))
+            .limit(1);
+          await logAudit({
+            tenantId: deal?.linkedTenantId ?? null,
+            actorId: null,
+            actorRole: null,
+            action: 'studio_deal_payment_settled',
+            entityType: 'studio_deal',
+            entityId: meta.dealId,
+            metadata: {
+              source: 'stripe_webhook',
+              paymentLineId: meta.paymentLineId,
+              sessionId: session.id,
+            },
+          });
+        }
+      } else if (outcome === 'not_studio_deal') {
+        logger.info('[stripe] checkout completed (non-studio-deal)', {
+          sessionId: session.id,
+          mode: session.mode,
+        });
+      }
       break;
+    }
     default:
       logger.debug('[stripe] unhandled event type', { type: event.type });
   }
+}
+
+function stripePriceMirror(price: Stripe.Price | undefined) {
+  if (!price?.unit_amount) {
+    return {
+      amountMinorUnits: null as number | null,
+      currency: 'eur' as const,
+      billingInterval: null as string | null,
+    };
+  }
+  return {
+    amountMinorUnits: price.unit_amount,
+    currency: (price.currency ?? 'eur').slice(0, 3),
+    billingInterval: price.recurring?.interval ?? 'month',
+  };
 }
 
 async function upsertSubscription(sub: Stripe.Subscription) {
@@ -88,6 +134,8 @@ async function upsertSubscription(sub: Stripe.Subscription) {
     });
     return;
   }
+  const price = sub.items.data[0]?.price;
+  const billing = stripePriceMirror(price);
   await db
     .insert(schema.subscription)
     .values({
@@ -96,8 +144,11 @@ async function upsertSubscription(sub: Stripe.Subscription) {
       provider: 'stripe',
       providerSubscriptionId: sub.id,
       providerCustomerId: typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
-      priceId: sub.items.data[0]?.price.id,
-      plan: sub.items.data[0]?.price.nickname ?? sub.items.data[0]?.price.id ?? 'unknown',
+      priceId: price?.id,
+      plan: price?.nickname ?? price?.id ?? 'unknown',
+      amountMinorUnits: billing.amountMinorUnits,
+      currency: billing.currency,
+      billingInterval: billing.billingInterval,
       status: sub.status as schema.Subscription['status'],
       currentPeriodStart: new Date(sub.current_period_start * 1000),
       currentPeriodEnd: new Date(sub.current_period_end * 1000),
@@ -106,6 +157,11 @@ async function upsertSubscription(sub: Stripe.Subscription) {
     .onConflictDoUpdate({
       target: [schema.subscription.provider, schema.subscription.providerSubscriptionId],
       set: {
+        priceId: price?.id,
+        plan: price?.nickname ?? price?.id ?? 'unknown',
+        amountMinorUnits: billing.amountMinorUnits,
+        currency: billing.currency,
+        billingInterval: billing.billingInterval,
         status: sub.status as schema.Subscription['status'],
         currentPeriodStart: new Date(sub.current_period_start * 1000),
         currentPeriodEnd: new Date(sub.current_period_end * 1000),

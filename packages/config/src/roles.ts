@@ -2,7 +2,7 @@
  * Role hierarchy for the Goldspire stack.
  *
  *   STUDIO_OWNER  — full god mode across all tenants (you, the studio operator)
- *   STUDIO_STAFF  — studio team members; can manage any tenant
+ *   STUDIO_STAFF  — studio operators; enquiries/deals/factory (see studioConsoleCapabilities)
  *   TENANT_OWNER  — owner of a single tenant (your client's CEO)
  *   TENANT_ADMIN  — admin within a tenant (your client's ops team)
  *   MODERATOR     — moderation actions only (reports, abuse)
@@ -26,12 +26,21 @@ export const ROLES = [
 
 export type Role = (typeof ROLES)[number];
 
-/** Roles that should be able to access the per-tenant admin app. */
-export const TENANT_ADMIN_ROLES: readonly Role[] = [
-  'STUDIO_OWNER',
-  'STUDIO_STAFF',
+/** Client roles — Admin is their product operations console. */
+export const CLIENT_ADMIN_ROLES: readonly Role[] = [
   'TENANT_OWNER',
   'TENANT_ADMIN',
+  'MODERATOR',
+];
+
+/**
+ * Roles that may load Admin routes. Studio requires an approved support session
+ * (enforced in apps/admin layout). Clients use CLIENT_ADMIN_ROLES.
+ */
+export const TENANT_ADMIN_ROLES: readonly Role[] = [
+  ...CLIENT_ADMIN_ROLES,
+  'STUDIO_OWNER',
+  'STUDIO_STAFF',
 ];
 
 /** Roles that should be able to access the studio console app. */

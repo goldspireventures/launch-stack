@@ -18,7 +18,9 @@ export default async function RootLayout({
     <html lang="en" className="dark">
       <body className="antialiased">
         <ClientErrorReporter app="admin" />
-        <TRPCProvider tenantSlug={activeTenantSlug}>{children}</TRPCProvider>
+        <TRPCProvider key={activeTenantSlug} tenantSlug={activeTenantSlug}>
+          {children}
+        </TRPCProvider>
         <Toaster />
       </body>
     </html>

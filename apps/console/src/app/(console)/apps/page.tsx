@@ -15,20 +15,22 @@ import {
   RefreshCw,
   Smartphone,
   Sparkles,
-  Wrench,
-} from 'lucide-react';
+  Wrench} from 'lucide-react';
 import {
   Badge,
   Button,
   Card,
   EmptyState,
   LoadingState,
-  PageHeader,
   ProductTypeBadge,
   SectionCard,
+  cn,
 } from '@goldspire/ui';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@goldspire/api';
+import { APPS_GRID_FILTERS, type AppsGridFilter } from '@goldspire/commercial';
+import { env } from '@goldspire/config/env';
+import { StudioPageHeader } from '@/components/studio-page-header';
 import { trpc } from '@/lib/trpc';
 
 type DeploymentRow = inferRouterOutputs<AppRouter>['deployments']['listAll'][number];
@@ -43,8 +45,7 @@ const KIND_LABEL: Record<Kind, string> = {
   mobile_android: 'Android',
   admin: 'Admin',
   console: 'Console',
-  api: 'API',
-};
+  api: 'API'};
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -54,25 +55,24 @@ const KIND_ICON: Record<Kind, IconComponent> = {
   mobile_android: Smartphone,
   admin: LayoutDashboard,
   console: Wrench,
-  api: Activity,
-};
+  api: Activity};
 
 const HEALTH_STYLE: Record<HealthStatus, { label: string; className: string; icon: IconComponent }> = {
   ok: { label: 'Healthy', className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: CircleCheck },
   degraded: { label: 'Degraded', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20', icon: CircleSlash },
   down: { label: 'Down', className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: CircleOff },
-  unknown: { label: 'Idle', className: 'bg-muted text-muted-foreground border-border', icon: CircleSlash },
-};
+  unknown: { label: 'Idle', className: 'bg-muted text-muted-foreground border-border', icon: CircleSlash }};
 
-const GITHUB_REPO = 'https://github.com/eolaniyan/goldspire-launch-stack';
+const STUDIO_MONOREPO_URL =
+  env.NEXT_PUBLIC_STUDIO_MONOREPO_URL ?? 'https://github.com/eolaniyan/goldspire-launch-stack';
 
 export default function AppsPage() {
   const q = trpc.deployments.listAll.useQuery();
   const utils = trpc.useUtils();
   const recordHealth = trpc.deployments.recordHealth.useMutation({
-    onSuccess: () => utils.deployments.listAll.invalidate(),
-  });
-  const [filter, setFilter] = React.useState<'all' | 'studio' | 'client' | 'production' | 'local'>('all');
+    onSuccess: () => utils.deployments.listAll.invalidate()});
+  const [filter, setFilter] = React.useState<AppsGridFilter>('all');
+  const [highlightId, setHighlightId] = React.useState<string | null>(null);
 
   if (q.isLoading) return <LoadingState />;
 
@@ -85,17 +85,27 @@ export default function AppsPage() {
     return true;
   });
 
+  React.useEffect(() => {
+    const raw = typeof window !== 'undefined' ? window.location.hash : '';
+    const id = raw.startsWith('#deployment-') ? raw.slice('#deployment-'.length) : null;
+    if (!id || !rows.some((r) => r.id === id)) return;
+    setHighlightId(id);
+    const el = document.getElementById(`deployment-${id}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const t = window.setTimeout(() => setHighlightId(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [rows, filtered.length]);
+
   const totals = {
     all: rows.length,
     studio: rows.filter((r) => r.isStudioTool).length,
     client: rows.filter((r) => !r.isStudioTool).length,
     production: rows.filter((r) => r.environment === 'production').length,
-    local: rows.filter((r) => r.environment === 'local').length,
-  };
+    local: rows.filter((r) => r.environment === 'local').length};
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <StudioPageHeader
         title="Apps"
         description="Every launchable surface the studio runs — platform tools and live client products. Click any card to open it; production deployments report live health."
         eyebrow="Studio · Launcher"
@@ -104,15 +114,23 @@ export default function AppsPage() {
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <FilterPill active={filter === 'all'} onClick={() => setFilter('all')} label={`All (${totals.all})`} />
-            <FilterPill active={filter === 'studio'} onClick={() => setFilter('studio')} label={`Studio tools (${totals.studio})`} />
-            <FilterPill active={filter === 'client'} onClick={() => setFilter('client')} label={`Client products (${totals.client})`} />
-            <FilterPill
-              active={filter === 'production'}
-              onClick={() => setFilter('production')}
-              label={`Production (${totals.production})`}
-            />
-            <FilterPill active={filter === 'local'} onClick={() => setFilter('local')} label={`Local (${totals.local})`} />
+            {APPS_GRID_FILTERS.map((key) => {
+              const labels: Record<AppsGridFilter, string> = {
+                all: `All (${totals.all})`,
+                client: `Client products (${totals.client})`,
+                studio: `Studio tools (${totals.studio})`,
+                local: `Local (${totals.local})`,
+                production: `Production (${totals.production})`,
+              };
+              return (
+                <FilterPill
+                  key={key}
+                  active={filter === key}
+                  onClick={() => setFilter(key)}
+                  label={labels[key]}
+                />
+              );
+            })}
           </div>
           <Button variant="outline" size="sm" onClick={() => utils.deployments.listAll.invalidate()} className="gap-2">
             <RefreshCw className="h-3.5 w-3.5" />
@@ -133,6 +151,7 @@ export default function AppsPage() {
             <DeploymentCard
               key={d.id}
               row={d}
+              highlighted={highlightId === d.id}
               onProbe={(status) => recordHealth.mutate({ id: d.id, status })}
               probing={recordHealth.isPending}
             />
@@ -174,10 +193,11 @@ function FilterPill({ active, onClick, label }: { active: boolean; onClick: () =
 
 function DeploymentCard({
   row,
+  highlighted,
   onProbe,
-  probing,
-}: {
+  probing}: {
   row: DeploymentRow;
+  highlighted?: boolean;
   onProbe: (status: HealthStatus) => void;
   probing: boolean;
 }) {
@@ -194,8 +214,7 @@ function DeploymentCard({
     try {
       const res = await fetch(`${targetUrl}${row.healthCheckPath ?? '/api/health'}`, {
         mode: 'no-cors',
-        cache: 'no-store',
-      });
+        cache: 'no-store'});
       // no-cors gives us an opaque response; just being reachable counts as ok.
       onProbe(res.type === 'opaque' || res.ok ? 'ok' : 'degraded');
     } catch {
@@ -205,10 +224,10 @@ function DeploymentCard({
 
   return (
     <Card
-      className="overflow-hidden p-0"
+      id={`deployment-${row.id}`}
+      className={cn('overflow-hidden p-0', highlighted && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}
       style={{
-        borderLeft: row.accent ? `4px solid ${row.accent}` : undefined,
-      }}
+        borderLeft: row.accent ? `4px solid ${row.accent}` : undefined}}
     >
       <div className="space-y-4 p-5">
         <header className="flex items-start justify-between gap-3">
@@ -283,7 +302,11 @@ function DeploymentCard({
           )}
           {isMobile && (
             <Button asChild size="sm" variant="secondary" className="gap-1.5">
-              <a href={GITHUB_REPO + '/tree/main/apps/dating-mobile' /* TODO: derive from repoPath */} target="_blank" rel="noreferrer">
+              <a
+                href={`${STUDIO_MONOREPO_URL}/tree/main/${row.repoPath ?? 'apps/dating-mobile'}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Smartphone className="h-3.5 w-3.5" />
                 Build instructions
               </a>
@@ -294,7 +317,7 @@ function DeploymentCard({
           )}
           {row.repoPath && (
             <Button asChild size="sm" variant="ghost" className="gap-1.5">
-              <a href={`${GITHUB_REPO}/tree/main/${row.repoPath}`} target="_blank" rel="noreferrer">
+              <a href={`${STUDIO_MONOREPO_URL}/tree/main/${row.repoPath}`} target="_blank" rel="noreferrer">
                 <Github className="h-3.5 w-3.5" />
                 Repo
               </a>

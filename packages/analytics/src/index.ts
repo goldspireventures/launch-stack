@@ -1,5 +1,5 @@
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-import { db, schema } from '@goldspire/db';
+import { db, schema, withTenantContext, type Database } from '@goldspire/db';
 import { capture, logger } from '@goldspire/platform';
 import type { AnalyticsEvent } from '@goldspire/config';
 
@@ -11,23 +11,36 @@ export interface TrackInput {
   properties?: Record<string, unknown>;
   distinctId?: string;
   sessionId?: string;
+  /** Request-scoped client (RLS context already set). Omit to open a tenant-scoped tx when tenantId is set. */
+  db?: Database;
 }
 
 /**
  * Persist an analytics event to the local store and forward to PostHog. Both
  * are best-effort: a failure here must not break the user-facing operation.
  */
+async function insertAnalyticsEvent(client: Database, input: TrackInput): Promise<void> {
+  await client.insert(schema.analyticsEvent).values({
+    tenantId: input.tenantId ?? null,
+    userId: input.userId ?? null,
+    productId: input.productId ?? null,
+    eventName: input.eventName,
+    properties: input.properties ?? {},
+    distinctId: input.distinctId ?? input.userId ?? null,
+    sessionId: input.sessionId ?? null,
+  });
+}
+
 export async function trackEvent(input: TrackInput): Promise<void> {
   try {
-    await db.insert(schema.analyticsEvent).values({
-      tenantId: input.tenantId ?? null,
-      userId: input.userId ?? null,
-      productId: input.productId ?? null,
-      eventName: input.eventName,
-      properties: input.properties ?? {},
-      distinctId: input.distinctId ?? input.userId ?? null,
-      sessionId: input.sessionId ?? null,
-    });
+    const run = (client: Database) => insertAnalyticsEvent(client, input);
+    if (input.db) {
+      await run(input.db);
+    } else if (input.tenantId) {
+      await withTenantContext(db, input.tenantId, input.userId ?? null, run);
+    } else {
+      await run(db);
+    }
   } catch (err) {
     logger.error('analytics insert failed', err, { event: input.eventName });
   }

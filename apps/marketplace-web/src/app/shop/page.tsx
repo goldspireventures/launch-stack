@@ -1,6 +1,17 @@
 'use client';
 
-import { Card, CardContent, EmptyState, LoadingState, PageHeader } from '@goldspire/ui';
+import {
+  Card,
+  CardContent,
+  EmptyState,
+  FadeIn,
+  LoadingState,
+  PageHeader,
+  SlideUp,
+  Stagger,
+  StaggerItem,
+  formatMinorUnits,
+} from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
 
 export default function ShopPage() {
@@ -14,30 +25,46 @@ export default function ShopPage() {
   if (products.isLoading || listings.isLoading) return <LoadingState />;
   if ((listings.data ?? []).length === 0)
     return (
-      <div className="mx-auto max-w-3xl px-6 py-12">
-        <PageHeader title="Shop" description="Hand-made goods from our makers." />
-        <EmptyState title="No listings yet" description="Once sellers add inventory, you'll see it here." />
-      </div>
+      <FadeIn>
+        <div className="mx-auto max-w-3xl px-6 py-12">
+          <SlideUp>
+            <PageHeader title="Shop" description="Hand-made goods from our makers." />
+            <EmptyState
+              className="mt-10 rounded-xl border border-dashed border-border/80 bg-muted/10 py-14"
+              title="No listings yet"
+              description="Open Sell and publish something — it will appear here right away."
+            />
+          </SlideUp>
+        </div>
+      </FadeIn>
     );
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      <PageHeader title="Shop" description="Hand-made goods from our makers." />
-      <div className="grid gap-5 md:grid-cols-3">
-        {(listings.data ?? []).map((l) => (
-          <Card key={l.id} className="overflow-hidden">
-            {l.imageUrls?.[0] && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={l.imageUrls[0]} alt={l.title} className="aspect-square w-full object-cover" />
-            )}
-            <CardContent className="space-y-1 p-5">
-              <h3 className="font-medium">{l.title}</h3>
-              <p className="text-sm text-muted-foreground">{l.description}</p>
-              <p className="pt-2 text-lg font-semibold">${(l.priceCents / 100).toFixed(0)}</p>
-            </CardContent>
-          </Card>
-        ))}
+    <FadeIn>
+      <div className="mx-auto max-w-6xl px-6 py-12">
+        <SlideUp delay={0.02}>
+          <PageHeader title="Shop" description="Hand-made goods from our makers." />
+        </SlideUp>
+        <Stagger step={0.05} initialDelay={0.06} className="mt-8 grid gap-5 md:grid-cols-3">
+          {(listings.data ?? []).map((l) => (
+            <StaggerItem key={l.id}>
+              <Card className="h-full overflow-hidden border-border/80 transition-shadow hover:shadow-md">
+                {l.imageUrls?.[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={l.imageUrls[0]} alt={l.title} className="aspect-square w-full object-cover" />
+                )}
+                <CardContent className="space-y-2 p-5">
+                  <h3 className="font-semibold leading-snug">{l.title}</h3>
+                  <p className="line-clamp-3 text-sm text-muted-foreground">{l.description}</p>
+                  <p className="pt-1 text-lg font-semibold tabular-nums text-primary">
+                    {formatMinorUnits(l.priceCents, l.currency ?? 'EUR')}
+                  </p>
+                </CardContent>
+              </Card>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </div>
-    </div>
+    </FadeIn>
   );
 }

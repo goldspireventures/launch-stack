@@ -4,13 +4,14 @@ import { billingSchemas } from '@goldspire/validation';
 import { createCheckoutSession } from '@goldspire/payments';
 import { z } from 'zod';
 import { router, tenantAdminProcedure, protectedProcedure } from '../trpc';
+import { tenantScopeId } from '../lib/tenant-scope';
 
 export const subscriptionsRouter = router({
   list: tenantAdminProcedure.query(async ({ ctx }) => {
     return ctx.db
       .select()
       .from(schema.subscription)
-      .where(eq(schema.subscription.tenantId, ctx.user.tenantId))
+      .where(eq(schema.subscription.tenantId, tenantScopeId(ctx)))
       .orderBy(desc(schema.subscription.createdAt))
       .limit(200);
   }),

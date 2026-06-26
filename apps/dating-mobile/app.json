@@ -11,8 +11,11 @@
     "android": { "package": "studio.goldspire.heartline" },
     "web": { "bundler": "metro" },
     "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
-      "apiBaseUrl": "http://localhost:3000"
+      "apiBaseUrl": "http://localhost:4000"
     }
   }
 }

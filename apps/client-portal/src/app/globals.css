@@ -1,0 +1,40 @@
+@import '@goldspire/ui/styles.css';
+
+/**
+ * Client portal — Command Bridge + Editorial (client-facing)
+ * Matches Studio Console navy/cyan signal; serif display titles.
+ */
+:root {
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+
+  --background: 222 47% 6%;
+  --foreground: 210 25% 96%;
+  --card: 222 38% 9%;
+  --card-foreground: 210 25% 96%;
+  --popover: 222 38% 9%;
+  --popover-foreground: 210 25% 96%;
+  --primary: 187 92% 48%;
+  --primary-foreground: 222 47% 6%;
+  --secondary: 222 28% 14%;
+  --secondary-foreground: 210 20% 92%;
+  --muted: 222 25% 13%;
+  --muted-foreground: 215 14% 58%;
+  --accent: 18 55% 58%;
+  --accent-foreground: 210 25% 98%;
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 158 64% 45%;
+  --warning: 38 92% 55%;
+  --border: 222 22% 18%;
+  --ring: 187 92% 48%;
+  --radius: 0.375rem;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}

@@ -169,3 +169,22 @@ export function listPersonasByGroup(): Record<'studio' | 'tenant' | 'customer', 
     customer: PERSONAS.filter((p) => p.group === 'customer'),
   };
 }
+
+const TENANT_SLUG_LABEL: Record<string, string> = {
+  goldspire: 'Goldspire Studio',
+  heartline: 'Heartline',
+  'nova-care': 'Nova Care',
+  bazaar: 'Bazaar',
+  'pulse-club': 'Pulse Club',
+};
+
+/** Tenant-operator personas grouped by `tenantSlug` (data-driven login sub-sections). */
+export function listPersonasByTenantSlug(): { slug: string; label: string; personas: PersonaDefinition[] }[] {
+  const tenants = PERSONAS.filter((p) => p.group === 'tenant');
+  const order = [...new Set(tenants.map((p) => p.tenantSlug))];
+  return order.map((slug) => ({
+    slug,
+    label: TENANT_SLUG_LABEL[slug] ?? slug,
+    personas: tenants.filter((p) => p.tenantSlug === slug),
+  }));
+}

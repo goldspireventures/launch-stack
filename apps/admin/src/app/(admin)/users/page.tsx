@@ -20,14 +20,21 @@ import {
   StatusBadge,
   useToast,
 } from '@goldspire/ui';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '@goldspire/api';
 import { trpc } from '@/lib/trpc';
 
-type UserRow = NonNullable<ReturnType<typeof trpc.users.list.useQuery>['data']>[number];
+type UserRow = inferRouterOutputs<AppRouter>['users']['list'][number];
 
 /** All assignable roles (excludes `CUSTOMER` which is for end-users — they
  * shouldn't be promoted from the admin console). */
 const ASSIGNABLE_ROLES = ['MEMBER', 'TENANT_ADMIN', 'TENANT_OWNER'] as const;
-const STATUSES = ['active', 'invited', 'suspended', 'archived'] as const;
+/**
+ * Statuses surfaced in the Manage dialog. Mirrors the DB `user_status` enum
+ * but omits `deleted` (deletion is a separate destructive action, not a
+ * status flip in a dropdown).
+ */
+const STATUSES = ['active', 'invited', 'suspended', 'banned'] as const;
 
 export default function UsersPage() {
   const q = trpc.users.list.useQuery();

@@ -18,16 +18,6 @@ export const studioAnalyticsRouter = router({
     return rows.map((r) => ({ date: r.day, signups: Number(r.count) }));
   }),
 
-  /** Product-marketing style funnel — not yet wired to web analytics. */
-  conversionFunnel: studioProcedure.query(() =>
-    [
-      { stage: 'Visitors', value: 100 },
-      { stage: 'Signups', value: 32 },
-      { stage: 'Onboarded', value: 18 },
-      { stage: 'Paying', value: 9 },
-    ] as const,
-  ),
-
   /** Distinct tenants with each module flag enabled (catalog overrides). */
   featureFlagModuleCoverage: studioProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db

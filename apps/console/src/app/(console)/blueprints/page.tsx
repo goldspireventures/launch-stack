@@ -2,12 +2,17 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Copy, ExternalLink, Sparkles } from 'lucide-react';
-import { listBlueprints, type BlueprintDefinition } from '@goldspire/blueprints';
+import { useSearchParams } from 'next/navigation';
+import { ArrowRight, Copy, ExternalLink, Sparkles } from 'lucide-react';
+import {
+  listBlueprints,
+  listTemplatesByBlueprint,
+  type BlueprintDefinition} from '@goldspire/blueprints';
 import {
   BLUEPRINT_MODIFIERS,
-  type BlueprintQuoteKind,
-} from '@goldspire/commercial';
+  type BlueprintQuoteKind} from '@goldspire/commercial';
+import { StudioPageHeader } from '@/components/studio-page-header';
+import { StudioDialogBody, StudioDialogFooter } from '@/components/studio-page-shell';
 import {
   Badge,
   Button,
@@ -19,25 +24,36 @@ import {
   DialogTitle,
   Input,
   Label,
-  PageHeader,
   ProductTypeBadge,
   SectionCard,
   StatusBadge,
-} from '@goldspire/ui';
+  Stagger,
+  StaggerItem,
+  formatMinorUnits} from '@goldspire/ui';
 
 export default function BlueprintsPage() {
+  const searchParams = useSearchParams();
+  const highlight = searchParams?.get('highlight')?.toLowerCase() ?? null;
   const blueprints = listBlueprints();
   const [stampOpen, setStampOpen] = React.useState<BlueprintDefinition | null>(null);
+  const cardRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+
+  React.useEffect(() => {
+    if (!highlight) return;
+    const el = cardRefs.current[highlight];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlight, blueprints.length]);
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <StudioPageHeader
         title="Blueprints"
         description="The studio's reusable product templates. Each blueprint has a working reference app you can open locally, and a CLI generator that stamps out a new client product."
         eyebrow="Studio · Catalog"
       />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <Stagger step={0.04} initialDelay={0.04} className="grid gap-4 md:grid-cols-2">
         {blueprints.map((b) => {
           // Pricing lives in @goldspire/commercial/catalog (single source of truth).
           // Falls back to the blueprint's own legacy price hint if the catalog
@@ -49,7 +65,15 @@ export default function BlueprintsPage() {
           const retainerCents = mod?.retainerPriceCents ?? b.retainerPriceCents;
           const effortLabel = mod ? `×${mod.effortMultiplier.toFixed(2)}` : null;
           return (
-            <Card key={b.kind} className="p-6">
+            <StaggerItem key={b.kind}>
+            <Card
+              ref={(node) => {
+                cardRefs.current[b.kind] = node;
+              }}
+              className={`p-6 transition-shadow hover:shadow-md ${
+                highlight === b.kind ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+              }`}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -74,12 +98,12 @@ export default function BlueprintsPage() {
               <div className="mt-4 grid grid-cols-4 gap-3 text-xs">
                 <div>
                   <p className="text-muted-foreground">Prototype</p>
-                  <p className="font-medium">€{(prototypeCents / 100).toLocaleString()}</p>
+                  <p className="font-medium">{formatMinorUnits(prototypeCents, 'EUR')}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Retainer</p>
                   <p className="font-medium">
-                    €{(retainerCents / 100).toLocaleString()}/mo
+                    {formatMinorUnits(retainerCents, 'EUR')}/mo
                   </p>
                 </div>
                 <div>
@@ -93,10 +117,60 @@ export default function BlueprintsPage() {
                     Quote effort
                   </p>
                   <p className="font-medium">
-                    {effortLabel ?? <Link href="/plans" className="text-primary underline-offset-2 hover:underline">see /plans</Link>}
+                    {effortLabel ?? (
+                    <Link href="/catalog/templates?tab=pricing" className="text-primary underline-offset-2 hover:underline">
+                      see Templates & pricing
+                    </Link>
+                  )}
                   </p>
                 </div>
               </div>
+
+              {(() => {
+                const templates = listTemplatesByBlueprint(b.kind);
+                if (templates.length === 0) return null;
+                return (
+                  <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Templates · {templates.length}
+                      </p>
+                      <Link
+                        href="/catalog/templates"
+                        className="inline-flex items-center gap-1 text-[11px] text-primary underline-offset-2 hover:underline"
+                      >
+                        View catalog <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                    <ul className="space-y-1 text-xs">
+                      {templates.map((t) => (
+                        <li key={t.id} className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: t.brand.defaultAccentHex }}
+                              aria-hidden
+                            />
+                            <span className="font-medium">{t.name}</span>
+                            <span className="text-muted-foreground">— {t.tagline}</span>
+                          </span>
+                          <span
+                            className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
+                              t.status === 'shipped'
+                                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                                : t.status === 'beta'
+                                  ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                  : 'border-slate-400/30 bg-slate-500/10 text-slate-300'
+                            }`}
+                          >
+                            {t.status}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
 
               {b.clientNotes.length > 0 && (
                 <details className="mt-3 text-xs text-muted-foreground">
@@ -132,9 +206,10 @@ export default function BlueprintsPage() {
                 <CopyButton text={b.localDevCommand} label="Copy dev command" size="sm" variant="ghost" />
               </div>
             </Card>
+            </StaggerItem>
           );
         })}
-      </div>
+      </Stagger>
 
       <SectionCard
         title="How blueprints become products"
@@ -164,8 +239,7 @@ export default function BlueprintsPage() {
 
 function StampDialog({
   blueprint,
-  onClose,
-}: {
+  onClose}: {
   blueprint: BlueprintDefinition | null;
   onClose: () => void;
 }) {
@@ -187,8 +261,8 @@ function StampDialog({
 
   return (
     <Dialog open={!!blueprint} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(90vh,720px)] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>Stamp a new {blueprint.name} product</DialogTitle>
           <DialogDescription>
             The Goldspire CLI copies the {blueprint.name} reference app, rewrites the package name, and
@@ -196,7 +270,7 @@ function StampDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <StudioDialogBody className="space-y-4 px-6">
           <div className="space-y-1.5">
             <Label htmlFor="tenant-slug">Tenant slug</Label>
             <Input
@@ -223,20 +297,25 @@ function StampDialog({
               <Badge variant="outline" className="text-[10px]">v1</Badge>
             </div>
             <pre className="overflow-x-auto rounded bg-background px-3 py-2 text-xs font-mono">{command}</pre>
-            <div className="mt-2 flex justify-end">
-              <CopyButton text={command} label="Copy command" size="sm" />
-            </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            This stamps a <strong>new app type</strong> (copies the reference blueprint folder, registers a new
-            package). To onboard a <strong>client</strong> using an existing blueprint, use{' '}
+        </StudioDialogBody>
+        <StudioDialogFooter>
+          <p className="mb-3 text-xs text-muted-foreground">
+            This stamps a <strong>new app type</strong>. To onboard a <strong>client</strong> on an existing
+            blueprint, use{' '}
             <a href="/onboard" className="text-primary underline-offset-2 hover:underline">
               /onboard
             </a>{' '}
-            instead — it works fully in-browser with no daemon required.
+            instead.
           </p>
-        </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              Close
+            </Button>
+            <CopyButton text={command} label="Copy command" size="sm" />
+          </div>
+        </StudioDialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -251,8 +330,7 @@ function CopyButton({
   text,
   label,
   size = 'default',
-  variant = 'secondary',
-}: {
+  variant = 'secondary'}: {
   text: string;
   label: string;
   size?: 'default' | 'sm' | 'lg';

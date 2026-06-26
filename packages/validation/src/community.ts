@@ -10,7 +10,7 @@ export const spaceInput = z.object({
   description: z.string().max(2000).optional(),
   visibility: spaceVisibility.default('public'),
   priceCents: z.number().int().min(0).optional(),
-  currency: z.string().length(3).default('USD'),
+  currency: z.string().length(3).default('EUR'),
 });
 
 export const postInput = z.object({

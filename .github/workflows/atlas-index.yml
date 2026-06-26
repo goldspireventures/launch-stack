@@ -1,0 +1,60 @@
+name: Atlas knowledge index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'packages/api/**'
+      - 'packages/commercial/**'
+      - 'packages/access/**'
+      - 'packages/knowledge/**'
+      - 'packages/db/**'
+      - 'apps/**/src/app.config.ts'
+      - 'README.md'
+      - 'DEMO.md'
+      - 'TESTING.md'
+  workflow_dispatch:
+
+concurrency:
+  group: atlas-index-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reindex:
+    name: Rebuild knowledge index
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: goldspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/goldspire
+      AI_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - run: pnpm atlas:reindex

@@ -8,6 +8,23 @@ import {
   type TierId,
 } from './catalog';
 import type { StudioDealPlanInput } from './schemas';
+import { formatMinorUnits } from './format-currency';
+
+/**
+ * A precomputed template modifier passed in by the caller (resolved from
+ * `@goldspire/blueprints`'s template registry). Kept duck-typed here so the
+ * commercial package stays dependency-free of blueprints.
+ *
+ * The template multiplier is applied **on top of** the chosen blueprint's
+ * effort multiplier — e.g. social_matching baseline 1.00 × dating template
+ * 1.00 = 1.00, but social_matching 1.00 × mentorship 1.15 = 1.15.
+ */
+export interface QuoteTemplateModifier {
+  id: string;
+  label: string;
+  effortMultiplier: number;
+  reason: string;
+}
 
 export interface QuoteRequest {
   tierId: TierId;
@@ -19,6 +36,12 @@ export interface QuoteRequest {
   blueprintKinds: BlueprintQuoteKind[];
   /** Add-on ids (see QUOTE_ADDONS). */
   addOnIds: string[];
+  /**
+   * Optional product template selected within one of the blueprints. When
+   * provided, applies a multiplicative modifier on top of the blueprint
+   * baseline and shows up as its own line item in the breakdown.
+   */
+  template?: QuoteTemplateModifier | null;
   /** Optional risk override (default: tier default). */
   clientRisk?: StudioDealPlanInput['clientRisk'];
   /** Optional subcontracting override (default: tier default). */
@@ -105,7 +128,8 @@ export function computeQuote(req: QuoteRequest): QuoteResult {
 
   const blueprintMul = combineBlueprintMultipliers(blueprintKinds);
   const { multiplier: addOnMul, addOns } = combineAddOnMultiplier(req.addOnIds);
-  const effortMultiplier = blueprintMul * addOnMul;
+  const templateMul = req.template?.effortMultiplier ?? 1;
+  const effortMultiplier = blueprintMul * templateMul * addOnMul;
 
   const lineItems: QuoteLineItem[] = [
     {
@@ -131,6 +155,16 @@ export function computeQuote(req: QuoteRequest): QuoteResult {
         note: blueprintKinds.length > 1 && !isAnchor ? `${mod.reason} (half weight as secondary blueprint)` : mod.reason,
       };
     }),
+    ...(req.template
+      ? [
+          {
+            key: `template:${req.template.id}`,
+            label: `Template · ${req.template.label}`,
+            multiplier: req.template.effortMultiplier,
+            note: req.template.reason,
+          },
+        ]
+      : []),
     ...addOns.map((a) => ({
       key: `addon:${a.id}`,
       label: `Add-on · ${a.label}`,
@@ -185,14 +219,9 @@ export function tierHeadlinePrice(tierId: TierId): {
     return { label: tier.priceLabelOverride, hasFloor: false };
   }
   const minor = tier.defaults.totalFeeMinorUnits;
-  const major = Math.round(minor / 100);
   // Growth tier shows a floor (+) to signal scoping; Solo is exact.
   const hasFloor = tier.id !== 'solo';
-  const formatted = new Intl.NumberFormat('en-IE', {
-    style: 'currency',
-    currency: tier.defaults.currency,
-    maximumFractionDigits: 0,
-  }).format(major);
+  const formatted = formatMinorUnits(minor, tier.defaults.currency);
   return { label: `${formatted}${hasFloor ? '+' : ''}`, hasFloor };
 }
 

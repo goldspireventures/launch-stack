@@ -18,7 +18,23 @@ jobs:
   verify:
     name: Lint, Typecheck, Test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: goldspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/goldspire
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,19 +52,45 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Migrate database
+        run: pnpm db:migrate
+
+      - name: Seed database
+        run: pnpm db:seed
+
+      - name: Build Atlas knowledge index
+        run: pnpm atlas:reindex
+        env:
+          AI_PROVIDER: mock
+
+      - name: Access policy unit tests
+        run: pnpm --filter @goldspire/access test
+
+      - name: RLS isolation check
+        run: pnpm test:rls
+
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Lint
         run: pnpm lint
 
-      - name: Test
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Unit tests
         run: pnpm test
+
+      - name: Commercial package tests
+        run: pnpm --filter @goldspire/commercial test
+
+      - name: Studio business audits
+        run: pnpm audit:studio-business && pnpm audit:commercial-sync
 
   build:
     name: Build all packages and apps
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     needs: verify
     steps:
       - uses: actions/checkout@v4
@@ -66,9 +108,82 @@ jobs:
 
       - name: Build
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/goldspire
+          NEXT_PUBLIC_APP_URL: http://localhost:4000
           AUTH_PROVIDER: mock
           PAYMENT_PROVIDER: mock
           AI_PROVIDER: mock
         run: pnpm build
+
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: build
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: goldspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/goldspire
+      AUTH_PROVIDER: mock
+      PAYMENT_PROVIDER: mock
+      AI_PROVIDER: mock
+      E2E_MOCK_STUDIO_AUTH: '1'
+      E2E_MARKETING_URL: http://127.0.0.1:3010
+      E2E_CONSOLE_URL: http://127.0.0.1:3001
+      E2E_ATLAS_URL: http://127.0.0.1:3016
+      E2E_HEARTLINE_URL: http://127.0.0.1:3000
+      E2E_PORTAL_URL: http://127.0.0.1:3005
+      E2E_NOVA_CARE_URL: http://127.0.0.1:3015
+      E2E_BAZAAR_URL: http://127.0.0.1:3011
+      E2E_SIGNAL_URL: http://127.0.0.1:3012
+      E2E_LUMEN_URL: http://127.0.0.1:3013
+      E2E_ACME_URL: http://127.0.0.1:3014
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - run: pnpm atlas:reindex
+
+      - name: Install Playwright browsers
+        run: pnpm test:e2e:install
+
+      - name: Start stack for E2E
+        run: node scripts/e2e-ci-stack.mjs
+
+      - name: Run Playwright (platform gate)
+        run: pnpm test:e2e:platform
+        env:
+          CI: true
+
+      - name: Run Playwright (Atlas)
+        run: pnpm --filter @goldspire/e2e test -- --project=atlas
+        env:
+          CI: true
+
+      - name: Run Playwright (catalog demos)
+        run: pnpm --filter @goldspire/e2e test -- --project=demos --project=heartline
+        env:
+          CI: true

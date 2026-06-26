@@ -7,7 +7,7 @@ export const businessInput = z.object({
   slug,
   description: z.string().max(2000).optional(),
   timezone: z.string().default('UTC'),
-  currency: z.string().length(3).default('USD'),
+  currency: z.string().length(3).default('EUR'),
   addressLine1: z.string().max(200).optional(),
   city: z.string().max(120).optional(),
   countryCode: z.string().length(2).optional(),

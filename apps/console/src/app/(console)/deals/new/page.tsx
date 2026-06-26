@@ -7,12 +7,12 @@ import {
   BLUEPRINT_MODIFIERS,
   buildCommercialPlan,
   computeQuote,
+  getDealPresetBySlug,
   getTier,
   listAddOns,
   listTiers,
   type BlueprintQuoteKind,
-  type TierId,
-} from '@goldspire/commercial';
+  type TierId} from '@goldspire/commercial';
 import {
   Badge,
   Button,
@@ -23,10 +23,9 @@ import {
   FormField,
   Input,
   LoadingState,
-  PageHeader,
   Textarea,
-  cn,
-} from '@goldspire/ui';
+  cn} from '@goldspire/ui';
+import { StudioPageHeader } from '@/components/studio-page-header';
 import { trpc } from '@/lib/trpc';
 import { Calculator, Check, Sparkles } from 'lucide-react';
 
@@ -51,11 +50,10 @@ const BLUEPRINT_OPTIONS: { kind: BlueprintQuoteKind; label: string }[] = (
 
 function formatMinor(minor: number, currency: string): string {
   const major = minor / 100;
-  return new Intl.NumberFormat('en-IE', {
+  return new Intl.NumberFormat('de-DE', {
     style: 'currency',
     currency,
-    maximumFractionDigits: 0,
-  }).format(major);
+    maximumFractionDigits: 0}).format(major);
 }
 
 export default function NewStudioDealPage() {
@@ -72,8 +70,13 @@ function NewStudioDealForm() {
   const utils = trpc.useUtils();
 
   const tierParam = (searchParams.get('tier') as TierId | null) ?? null;
-  const initialTier: TierId = tierParam && listTiers().some((t) => t.id === tierParam) ? tierParam : 'solo';
-  const isCalculator = searchParams.get('calculator') === '1' || !tierParam;
+  const presetSlug = searchParams.get('preset');
+  const preset = presetSlug ? getDealPresetBySlug(presetSlug) : undefined;
+  const initialTier: TierId =
+    preset?.tierId ??
+    (tierParam && listTiers().some((t) => t.id === tierParam) ? tierParam : 'solo');
+  const isCalculator =
+    searchParams.get('calculator') === '1' || (!tierParam && !preset);
 
   const [tierId, setTierId] = useState<TierId>(initialTier);
   const [title, setTitle] = useState('');
@@ -81,17 +84,34 @@ function NewStudioDealForm() {
   const [notes, setNotes] = useState('');
   const [blueprintKinds, setBlueprintKinds] = useState<BlueprintQuoteKind[]>(['social_matching']);
   const [addOnIds, setAddOnIds] = useState<string[]>([]);
-  const [clientRisk, setClientRisk] = useState<Risk>(getTier(initialTier).defaults.clientRisk);
-  const [subcontracting, setSubcontracting] = useState<Sub>(getTier(initialTier).defaults.subcontracting);
+  const [clientRisk, setClientRisk] = useState<Risk>(
+    preset?.planInput.clientRisk ?? getTier(initialTier).defaults.clientRisk,
+  );
+  const [subcontracting, setSubcontracting] = useState<Sub>(
+    preset?.planInput.subcontracting ?? getTier(initialTier).defaults.subcontracting,
+  );
+  const [intakeTemplateId, setIntakeTemplateId] = useState<'none' | 'social_matching_v1'>(
+    preset?.intakeTemplateId ?? 'none',
+  );
 
   useEffect(() => {
+    if (preset) {
+      setTierId(preset.tierId);
+      setBlueprintKinds([...preset.blueprintKinds]);
+      setClientRisk(preset.planInput.clientRisk);
+      setSubcontracting(preset.planInput.subcontracting);
+      setIntakeTemplateId(preset.intakeTemplateId);
+      setTitle((prev) => (prev ? prev : preset.label));
+      setNotes((prev) => (prev ? prev : preset.notesHint));
+      return;
+    }
     if (!tierParam) return;
     const tier = getTier(tierParam);
     setTierId(tierParam);
     setClientRisk(tier.defaults.clientRisk);
     setSubcontracting(tier.defaults.subcontracting);
     setTitle((prev) => (prev ? prev : `New ${tier.name} engagement`));
-  }, [tierParam]);
+  }, [tierParam, preset]);
 
   const quote = useMemo(
     () =>
@@ -100,8 +120,7 @@ function NewStudioDealForm() {
         blueprintKinds,
         addOnIds,
         clientRisk,
-        subcontracting,
-      }),
+        subcontracting}),
     [tierId, blueprintKinds, addOnIds, clientRisk, subcontracting],
   );
 
@@ -111,8 +130,7 @@ function NewStudioDealForm() {
     onSuccess: (row) => {
       void utils.studioDeals.list.invalidate();
       router.push(`/deals/${row.id}`);
-    },
-  });
+    }});
 
   function toggleBlueprint(kind: BlueprintQuoteKind) {
     setBlueprintKinds((prev) =>
@@ -124,12 +142,16 @@ function NewStudioDealForm() {
     setAddOnIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  const lockedPlanInput = preset?.planInput ?? quote.planInput;
+
   function handleSave() {
     createMut.mutate({
       title: title.trim(),
       clientName: clientName.trim(),
       notes: notes.trim() || undefined,
-      ...quote.planInput,
+      intakeTemplateId: preset?.intakeTemplateId ?? intakeTemplateId,
+      dealPresetSlug: preset?.slug ?? null,
+      ...lockedPlanInput,
     });
   }
 
@@ -142,12 +164,14 @@ function NewStudioDealForm() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={isCalculator ? 'Quote calculator' : 'New deal'}
+      <StudioPageHeader
+        title={isCalculator ? 'Quote calculator' : preset ? preset.label : 'New deal'}
         description={
           isCalculator
             ? 'Pick a tier, choose blueprints + add-ons, and see the price + timeline update live. Save to file the deal.'
-            : `Pre-filled from the ${tier.name} plan. Adjust scope below; the quote updates as you change inputs.`
+            : preset
+              ? `${preset.description} Economics are locked to this SKU — factory runbook will match automatically.`
+              : `Pre-filled from the ${tier.name} plan. Adjust scope below; the quote updates as you change inputs.`
         }
         eyebrow="Deal Desk"
         actions={
@@ -332,13 +356,17 @@ function NewStudioDealForm() {
                   {formatMinor(quote.totalFeeMinorUnits, quote.planInput.currency)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  baseline {formatMinor(tier.defaults.totalFeeMinorUnits, tier.defaults.currency)} × {quote.effortMultiplier.toFixed(2)}
+                  {preset
+                    ? `Started from ${preset.label} — scope changes update the live quote below`
+                    : `baseline ${formatMinor(tier.defaults.totalFeeMinorUnits, tier.defaults.currency)} × ${quote.effortMultiplier.toFixed(2)}`}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Calendar</p>
-                  <p className="font-medium">{quote.weeksMin}–{quote.weeksMax} wks</p>
+                  <p className="font-medium">
+                    {quote.weeksMin}–{quote.weeksMax} wks
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Implied burn</p>

@@ -21,6 +21,9 @@ try {
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   reactStrictMode: true,
+  experimental: {
+    instrumentationHook: true,
+  },
   transpilePackages: [
     '@goldspire/api',
     '@goldspire/ui',

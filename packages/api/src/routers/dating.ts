@@ -1,14 +1,33 @@
-import { and, asc, desc, eq, gt, inArray, lt, not, notInArray, or, sql } from 'drizzle-orm';
-import { schema } from '@goldspire/db';
+import { and, asc, desc, eq, gt, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { newId, schema } from '@goldspire/db';
 import { datingSchemas } from '@goldspire/validation';
 import { trackEvent } from '@goldspire/analytics';
 import { createNotification } from '@goldspire/notifications';
 import { getOrCreateThread } from '@goldspire/chat';
-import { hasEntitlement } from '@goldspire/payments';
+import { grantEntitlement, hasEntitlement } from '@goldspire/payments';
 import { logAudit } from '@goldspire/audit';
 import { ANALYTICS_EVENTS, ENTITLEMENT_KEYS } from '@goldspire/config';
+import { env } from '@goldspire/config/env';
+import { isEnabled } from '@goldspire/feature-flags';
 import { ForbiddenError, NotFoundError } from '@goldspire/platform';
+import { supabaseEnabled, supabaseService } from '@goldspire/platform/supabase';
 import { z } from 'zod';
+import {
+  parseDiscoveryFilters,
+  profileMatchesDiscoveryFilters,
+} from '../lib/dating-discover';
+import {
+  classifyMessageSafety,
+  datingFlagCtx,
+  flagOn,
+  computeMatchQualityScore,
+  readInviteCodes,
+  readVerification,
+  mergeUserMetadata,
+  referralCodeForUser,
+  suggestDatingBio,
+  type InviteCodeEntry,
+} from '../lib/dating-showroom';
 import { router, protectedProcedure } from '../trpc';
 
 const FREE_DAILY_LIKE_LIMIT = 25;
@@ -136,7 +155,13 @@ export const datingRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Pull users we've already swiped on; exclude them + ourselves.
+      const flagCtx = {
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        role: ctx.user.role,
+        db: ctx.db,
+      };
+
       const seen = await ctx.db
         .select({ toUserId: schema.datingSwipe.toUserId })
         .from(schema.datingSwipe)
@@ -148,7 +173,39 @@ export const datingRouter = router({
           ),
         );
       const seenIds = seen.map((s) => s.toUserId);
-      const excludeIds = [ctx.user.id, ...seenIds];
+
+      const blocks = await ctx.db
+        .select({ blockedUserId: schema.datingUserBlock.blockedUserId })
+        .from(schema.datingUserBlock)
+        .where(
+          and(
+            eq(schema.datingUserBlock.tenantId, ctx.user.tenantId),
+            eq(schema.datingUserBlock.productId, input.productId),
+            eq(schema.datingUserBlock.blockerUserId, ctx.user.id),
+          ),
+        );
+      const blockedIds = blocks.map((b) => b.blockedUserId);
+
+      const excludeIds = [ctx.user.id, ...seenIds, ...blockedIds];
+
+      const filtersOn = await isEnabled('feature.discover_filters', flagCtx);
+      const [viewerProfile] = await ctx.db
+        .select()
+        .from(schema.datingProfile)
+        .where(
+          and(
+            eq(schema.datingProfile.tenantId, ctx.user.tenantId),
+            eq(schema.datingProfile.productId, input.productId),
+            eq(schema.datingProfile.userId, ctx.user.id),
+          ),
+        )
+        .limit(1);
+
+      const discoveryFilters = filtersOn
+        ? parseDiscoveryFilters(viewerProfile?.filters as Record<string, unknown> | undefined)
+        : null;
+
+      const fetchLimit = filtersOn ? Math.min(input.limit * 4, 40) : input.limit;
 
       const rows = await ctx.db
         .select({
@@ -172,9 +229,189 @@ export const datingRouter = router({
           ),
         )
         .orderBy(desc(schema.datingProfile.qualityScore), desc(schema.datingProfile.updatedAt))
-        .limit(input.limit);
+        .limit(fetchLimit);
 
-      return rows.map((r) => ({ ...r.profile, primaryPhotoUrl: r.photo?.url ?? null }));
+      let mapped = rows.map((r) => ({ ...r.profile, primaryPhotoUrl: r.photo?.url ?? null }));
+
+      if (filtersOn && discoveryFilters && viewerProfile) {
+        mapped = mapped.filter((p) =>
+          profileMatchesDiscoveryFilters(p, {
+            filters: discoveryFilters,
+            viewerLat: viewerProfile.lat,
+            viewerLng: viewerProfile.lng,
+            viewerInterestedIn: (viewerProfile.interestedIn as string[]) ?? [],
+          }),
+        );
+      }
+
+      const rankingOn = await isEnabled('ai.match_quality_scoring', flagCtx);
+      if (rankingOn && viewerProfile) {
+        mapped.sort(
+          (a, b) =>
+            computeMatchQualityScore(viewerProfile, b) - computeMatchQualityScore(viewerProfile, a),
+        );
+      }
+
+      return mapped.slice(0, input.limit);
+    }),
+
+  rewind: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const flagCtx = {
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        role: ctx.user.role,
+        db: ctx.db,
+      };
+      const rewindOn = await isEnabled('feature.dating_rewind', flagCtx);
+      if (!rewindOn) {
+        throw new ForbiddenError('Rewind is not enabled for this tenant');
+      }
+      const entitled = await hasEntitlement({
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        key: ENTITLEMENT_KEYS.DATING_REWIND,
+      });
+      if (!entitled) {
+        throw new ForbiddenError('Rewind requires Heartline Plus or Premium');
+      }
+
+      const [last] = await ctx.db
+        .select()
+        .from(schema.datingSwipe)
+        .where(
+          and(
+            eq(schema.datingSwipe.tenantId, ctx.user.tenantId),
+            eq(schema.datingSwipe.productId, input.productId),
+            eq(schema.datingSwipe.fromUserId, ctx.user.id),
+          ),
+        )
+        .orderBy(desc(schema.datingSwipe.createdAt))
+        .limit(1);
+
+      if (!last) return { rewound: false as const, reason: 'nothing_to_rewind' as const };
+
+      await ctx.db.delete(schema.datingSwipe).where(eq(schema.datingSwipe.id, last.id));
+
+      await trackEvent({
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        productId: input.productId,
+        eventName: ANALYTICS_EVENTS.DATING_SWIPE_PASS,
+        properties: { rewind: true, action: last.action },
+      });
+
+      return {
+        rewound: true as const,
+        action: last.action,
+        toUserId: last.toUserId,
+      };
+    }),
+
+  blockUser: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        blockedUserId: z.string(),
+        reason: z.string().max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.blockedUserId === ctx.user.id) {
+        throw new ForbiddenError('Cannot block yourself');
+      }
+      const flagCtx = {
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        role: ctx.user.role,
+        db: ctx.db,
+      };
+      if (!(await isEnabled('feature.dating_block_user', flagCtx))) {
+        throw new ForbiddenError('Block is not enabled for this tenant');
+      }
+
+      await ctx.db
+        .insert(schema.datingUserBlock)
+        .values({
+          tenantId: ctx.user.tenantId,
+          productId: input.productId,
+          blockerUserId: ctx.user.id,
+          blockedUserId: input.blockedUserId,
+        })
+        .onConflictDoNothing();
+
+      await logAudit({
+        tenantId: ctx.user.tenantId,
+        actorId: ctx.user.id,
+        actorRole: ctx.user.role,
+        action: 'dating_user_blocked',
+        entityType: 'user',
+        entityId: input.blockedUserId,
+        metadata: { productId: input.productId, reason: input.reason ?? null },
+      });
+
+      return { ok: true as const };
+    }),
+
+  createPhotoUploadUrl: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        position: z.number().int().min(0).max(8),
+        contentType: z.string().max(120).default('image/jpeg'),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const flagCtx = {
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        role: ctx.user.role,
+        db: ctx.db,
+      };
+      if (!(await isEnabled('feature.dating_photo_upload', flagCtx))) {
+        throw new ForbiddenError('Photo upload is not enabled for this tenant');
+      }
+
+      const ext = input.contentType.includes('png')
+        ? 'png'
+        : input.contentType.includes('webp')
+          ? 'webp'
+          : 'jpg';
+      const storagePath = `dating/${ctx.user.tenantId}/${ctx.user.id}/${input.productId}/${input.position}-${Date.now()}.${ext}`;
+      const bucket = 'dating-photos';
+
+      if (env.STORAGE_PROVIDER === 'mock' || !supabaseEnabled()) {
+        const publicUrl = `https://picsum.photos/seed/${encodeURIComponent(storagePath)}/800/1000`;
+        return {
+          mock: true as const,
+          storagePath,
+          publicUrl,
+          uploadUrl: null,
+        };
+      }
+
+      const sb = supabaseService();
+      if (!sb) {
+        const publicUrl = `https://picsum.photos/seed/${encodeURIComponent(storagePath)}/800/1000`;
+        return { mock: true as const, storagePath, publicUrl, uploadUrl: null };
+      }
+
+      const { data, error } = await sb.storage.from(bucket).createSignedUploadUrl(storagePath, {
+        upsert: true,
+      });
+      if (error || !data) {
+        throw new Error(error?.message ?? 'failed to create upload url');
+      }
+
+      const { data: publicData } = sb.storage.from(bucket).getPublicUrl(storagePath);
+
+      return {
+        mock: false as const,
+        storagePath,
+        publicUrl: publicData.publicUrl,
+        uploadUrl: data.signedUrl,
+      };
     }),
 
   /** ─── Swipe / Match ────────────────────────────────────────────── */
@@ -290,6 +527,13 @@ export const datingRouter = router({
               .set({ threadId: thread.id })
               .where(eq(schema.datingMatch.id, match.id));
 
+            const pushOn = await isEnabled('feature.dating_push_notifications', {
+              tenantId: ctx.user.tenantId,
+              userId: ctx.user.id,
+              role: ctx.user.role,
+              db: ctx.db,
+            });
+            const channels = pushOn ? (['in_app', 'push'] as const) : (['in_app'] as const);
             await Promise.all([
               createNotification({
                 tenantId: ctx.user.tenantId,
@@ -297,7 +541,7 @@ export const datingRouter = router({
                 type: 'match',
                 title: 'New match',
                 body: 'You have a new match. Say hi!',
-                channels: ['in_app'],
+                channels: [...channels],
                 metadata: { matchId: match.id, threadId: thread.id },
               }),
               createNotification({
@@ -306,7 +550,7 @@ export const datingRouter = router({
                 type: 'match',
                 title: 'New match',
                 body: 'You have a new match. Say hi!',
-                channels: ['in_app'],
+                channels: [...channels],
                 metadata: { matchId: match.id, threadId: thread.id },
               }),
             ]);
@@ -689,9 +933,298 @@ export const datingRouter = router({
     };
   }),
 
-  // silence unused-import warning
-  __unused: protectedProcedure.query(() => {
-    void [lt, not];
-    return null;
+  /** ─── Showroom: AI, growth, programs, mobile ───────────────────── */
+
+  suggestBio: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        displayName: z.string().min(1).max(80),
+        seeking: z.string(),
+        prompts: z.array(z.object({ question: z.string(), answer: z.string() })).default([]),
+        city: z.string().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'ai.profile_assist'))) {
+        throw new ForbiddenError('AI profile assist is not enabled');
+      }
+      return suggestDatingBio(input);
+    }),
+
+  classifyMessage: protectedProcedure
+    .input(z.object({ content: z.string().min(1).max(4000) }))
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'ai.safety_classifier'))) {
+        return { safe: true, label: 'ok' as const, confidence: 1, mock: true, skipped: true as const };
+      }
+      const result = await classifyMessageSafety(input.content);
+      return { ...result, skipped: false as const };
+    }),
+
+  verificationStatus: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      const moduleOn = await flagOn(fctx, 'module.dating_verification');
+      const [row] = await ctx.db
+        .select({ metadata: schema.datingProfile.metadata })
+        .from(schema.datingProfile)
+        .where(
+          and(
+            eq(schema.datingProfile.userId, ctx.user.id),
+            eq(schema.datingProfile.productId, input.productId),
+          ),
+        )
+        .limit(1);
+      return {
+        enabled: moduleOn,
+        verification: readVerification((row?.metadata as Record<string, unknown>) ?? {}),
+      };
+    }),
+
+  submitVerification: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        note: z.string().max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'module.dating_verification'))) {
+        throw new ForbiddenError('Verification is not enabled');
+      }
+      const [row] = await ctx.db
+        .select({ id: schema.datingProfile.id, metadata: schema.datingProfile.metadata })
+        .from(schema.datingProfile)
+        .where(
+          and(
+            eq(schema.datingProfile.userId, ctx.user.id),
+            eq(schema.datingProfile.productId, input.productId),
+          ),
+        )
+        .limit(1);
+      if (!row) throw new NotFoundError('dating_profile', ctx.user.id);
+      const meta = { ...((row.metadata as Record<string, unknown>) ?? {}) };
+      meta.verification = {
+        status: 'pending',
+        submittedAt: new Date().toISOString(),
+        note: input.note ?? null,
+      };
+      await ctx.db
+        .update(schema.datingProfile)
+        .set({ metadata: meta, updatedAt: new Date() })
+        .where(eq(schema.datingProfile.id, row.id));
+      return readVerification(meta);
+    }),
+
+  inviteProgram: protectedProcedure.query(async ({ ctx }) => {
+    const fctx = datingFlagCtx(ctx.user, ctx.db);
+    const waitlistOn = await flagOn(fctx, 'feature.dating_invite_waitlist');
+    const cityOn = await flagOn(fctx, 'program.city_launch');
+    const [tenant] = await ctx.db
+      .select({ metadata: schema.tenant.metadata })
+      .from(schema.tenant)
+      .where(eq(schema.tenant.id, ctx.user.tenantId))
+      .limit(1);
+    const codes = readInviteCodes((tenant?.metadata as Record<string, unknown>) ?? {});
+    return { waitlistOn, cityOn, codes: Object.entries(codes).map(([code, v]) => ({ code, ...v })) };
   }),
+
+  redeemInviteCode: protectedProcedure
+    .input(z.object({ code: z.string().min(3).max(32) }))
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'feature.dating_invite_waitlist'))) {
+        throw new ForbiddenError('Invite program is not enabled');
+      }
+      const normalized = input.code.trim().toUpperCase();
+      const [tenant] = await ctx.db
+        .select({ id: schema.tenant.id, metadata: schema.tenant.metadata })
+        .from(schema.tenant)
+        .where(eq(schema.tenant.id, ctx.user.tenantId))
+        .limit(1);
+      if (!tenant) throw new NotFoundError('tenant', ctx.user.tenantId);
+      const meta = { ...((tenant.metadata as Record<string, unknown>) ?? {}) };
+      const codes = readInviteCodes(meta);
+      const entry = codes[normalized];
+      if (!entry || entry.uses >= entry.maxUses) {
+        return { ok: false as const, reason: 'invalid_or_exhausted' as const };
+      }
+      (codes as Record<string, InviteCodeEntry>)[normalized] = { ...entry, uses: entry.uses + 1 };
+      meta.heartlineInviteCodes = codes;
+      await ctx.db
+        .update(schema.tenant)
+        .set({ metadata: meta, updatedAt: new Date() })
+        .where(eq(schema.tenant.id, tenant.id));
+      await mergeUserMetadata(ctx.db, ctx.user.id, {
+        inviteRedeemed: normalized,
+        inviteAt: new Date().toISOString(),
+      });
+      return { ok: true as const, code: normalized, label: entry.label };
+    }),
+
+  joinWaitlist: protectedProcedure
+    .input(z.object({ city: z.string().max(120).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'program.city_launch'))) {
+        throw new ForbiddenError('City launch is not enabled');
+      }
+      await mergeUserMetadata(ctx.db, ctx.user.id, {
+        waitlist: true,
+        waitlistCity: input.city ?? null,
+        waitlistAt: new Date().toISOString(),
+      });
+      return { ok: true as const };
+    }),
+
+  referralInfo: protectedProcedure.query(async ({ ctx }) => {
+    const fctx = datingFlagCtx(ctx.user, ctx.db);
+    const enabled = await flagOn(fctx, 'module.referrals');
+    return {
+      enabled,
+      code: referralCodeForUser(ctx.user.id),
+      referralsCount: 0,
+    };
+  }),
+
+  applyReferralCode: protectedProcedure
+    .input(z.object({ code: z.string().min(4).max(32) }))
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'module.referrals'))) {
+        throw new ForbiddenError('Referrals are not enabled');
+      }
+      const normalized = input.code.trim().toUpperCase();
+      await mergeUserMetadata(ctx.db, ctx.user.id, {
+        referredBy: normalized,
+        referredAt: new Date().toISOString(),
+      });
+      return { ok: true as const, code: normalized };
+    }),
+
+  registerPushToken: protectedProcedure
+    .input(z.object({ token: z.string().min(8).max(512), platform: z.enum(['ios', 'android', 'web']) }))
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'feature.dating_push_notifications'))) {
+        throw new ForbiddenError('Push is not enabled');
+      }
+      await mergeUserMetadata(ctx.db, ctx.user.id, {
+        pushToken: input.token,
+        pushPlatform: input.platform,
+      });
+      return { ok: true as const };
+    }),
+
+  purchaseMobilePlan: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        tier: z.enum(['plus', 'premium']),
+        billingCycle: z.enum(['monthly', 'yearly']).default('monthly'),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const fctx = datingFlagCtx(ctx.user, ctx.db);
+      if (!(await flagOn(fctx, 'feature.dating_revenuecat'))) {
+        throw new ForbiddenError('In-app purchases are not enabled');
+      }
+      const [product] = await ctx.db
+        .select()
+        .from(schema.product)
+        .where(
+          and(eq(schema.product.id, input.productId), eq(schema.product.tenantId, ctx.user.tenantId)),
+        )
+        .limit(1);
+      if (!product) throw new NotFoundError('product', input.productId);
+      const now = new Date();
+      const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const trialEnds = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const planLabel =
+        input.tier === 'premium'
+          ? input.billingCycle === 'yearly'
+            ? 'heartline_premium_yearly'
+            : 'heartline_premium_monthly'
+          : input.billingCycle === 'yearly'
+            ? 'heartline_plus_yearly'
+            : 'heartline_plus_monthly';
+      const [sub] = await ctx.db
+        .insert(schema.subscription)
+        .values({
+          tenantId: ctx.user.tenantId,
+          userId: ctx.user.id,
+          productId: product.id,
+          provider: 'revenuecat',
+          providerSubscriptionId: `rc_mock_${newId()}`,
+          priceId: input.billingCycle,
+          plan: planLabel,
+          status: 'trialing',
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          trialEndsAt: trialEnds,
+          metadata: { revenueCatMock: true, tier: input.tier },
+        })
+        .returning();
+      if (!sub) throw new Error('failed to create subscription');
+      const keys =
+        input.tier === 'premium'
+          ? [
+              ENTITLEMENT_KEYS.DATING_UNLIMITED_LIKES,
+              ENTITLEMENT_KEYS.DATING_SEE_WHO_LIKED_YOU,
+              ENTITLEMENT_KEYS.DATING_REWIND,
+              ENTITLEMENT_KEYS.DATING_HIDE_ADS,
+              ENTITLEMENT_KEYS.DATING_BOOST,
+              ENTITLEMENT_KEYS.DATING_TRAVEL_MODE,
+              ENTITLEMENT_KEYS.DATING_PRIORITY_LIKES,
+            ]
+          : [
+              ENTITLEMENT_KEYS.DATING_UNLIMITED_LIKES,
+              ENTITLEMENT_KEYS.DATING_SEE_WHO_LIKED_YOU,
+              ENTITLEMENT_KEYS.DATING_REWIND,
+              ENTITLEMENT_KEYS.DATING_HIDE_ADS,
+              ENTITLEMENT_KEYS.DATING_BOOST,
+            ];
+      for (const key of keys) {
+        await grantEntitlement({
+          tenantId: ctx.user.tenantId,
+          userId: ctx.user.id,
+          key,
+          value: true,
+          source: 'trial',
+          subscriptionId: sub.id,
+        });
+      }
+      return { ok: true as const, subscriptionId: sub.id, tier: input.tier };
+    }),
+
+  superLikeQuota: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const used = await ctx.db
+        .select({ id: schema.datingSwipe.id })
+        .from(schema.datingSwipe)
+        .where(
+          and(
+            eq(schema.datingSwipe.tenantId, ctx.user.tenantId),
+            eq(schema.datingSwipe.productId, input.productId),
+            eq(schema.datingSwipe.fromUserId, ctx.user.id),
+            eq(schema.datingSwipe.action, 'super_like'),
+            gt(schema.datingSwipe.createdAt, since),
+          ),
+        );
+      const unlimited = await hasEntitlement({
+        tenantId: ctx.user.tenantId,
+        userId: ctx.user.id,
+        key: ENTITLEMENT_KEYS.DATING_UNLIMITED_LIKES,
+      });
+      const limit = unlimited ? 99 : 1;
+      return { used: used.length, limit, remaining: Math.max(0, limit - used.length) };
+    }),
+
 });

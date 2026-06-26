@@ -25,6 +25,26 @@ import { env, resolveDatabaseUrls } from '@goldspire/config/env';
 // which existsSync can't open. fileURLToPath gives us a real native path.
 const DRIZZLE_DIR = fileURLToPath(new URL('../drizzle/', import.meta.url));
 const POLICIES_DIR = fileURLToPath(new URL('../policies/', import.meta.url));
+const JOURNAL_PATH = join(DRIZZLE_DIR, 'meta', '_journal.json');
+
+function verifyDrizzleJournal(): void {
+  if (!existsSync(JOURNAL_PATH)) {
+    throw new Error(`Missing Drizzle journal: ${JOURNAL_PATH}`);
+  }
+  const journal = JSON.parse(readFileSync(JOURNAL_PATH, 'utf8')) as {
+    entries?: { tag: string }[];
+  };
+  const missing: string[] = [];
+  for (const e of journal.entries ?? []) {
+    if (!existsSync(join(DRIZZLE_DIR, `${e.tag}.sql`))) missing.push(e.tag);
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Journal entries missing SQL files: ${missing.join(', ')}. ` +
+        'Add packages/db/drizzle/<tag>.sql before running migrate.',
+    );
+  }
+}
 
 function hostOf(url: string): string {
   try {
@@ -35,6 +55,7 @@ function hostOf(url: string): string {
 }
 
 async function main() {
+  verifyDrizzleJournal();
   const { migration: url, rationale } = resolveDatabaseUrls();
   console.log('▸ migration target:', hostOf(url));
   console.log('  rationale       :', rationale);

@@ -188,6 +188,10 @@ export const subscription = pgTable(
     providerCustomerId: text('provider_customer_id'),
     priceId: text('price_id'),
     plan: varchar('plan', { length: 60 }).notNull(),
+    /** Stripe unit_amount mirrored on webhook — normalised to monthly at read time. */
+    amountMinorUnits: integer('amount_minor_units'),
+    currency: varchar('currency', { length: 3 }).default('eur').notNull(),
+    billingInterval: varchar('billing_interval', { length: 16 }),
     status: subscriptionStatusEnum('status').notNull().default('active'),
     currentPeriodStart: timestamp('current_period_start', { withTimezone: true }),
     currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),

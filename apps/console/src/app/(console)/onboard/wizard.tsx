@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -12,9 +13,17 @@ import {
   PartyPopper,
   Sparkles,
 } from 'lucide-react';
-import { listBlueprints, type BlueprintDefinition } from '@goldspire/blueprints';
+import {
+  getTemplate,
+  listBlueprints,
+  listTemplatesByBlueprint,
+  type BlueprintDefinition,
+  type ProductTemplate,
+} from '@goldspire/blueprints';
 import { env } from '@goldspire/config/env';
+import { inferStampProductFromDeal } from '@goldspire/commercial';
 import { useToast } from '@goldspire/ui';
+import { StudioFlowCallout } from '@/components/studio/studio-primitives';
 import { trpc } from '@/lib/trpc';
 
 /**
@@ -34,6 +43,8 @@ const STEPS: Step[] = ['blueprint', 'identity', 'owner', 'brand', 'review'];
 
 interface WizardState {
   blueprint: BlueprintDefinition['kind'] | null;
+  /** Optional product template id within the chosen blueprint (e.g. `social_matching/dating`). */
+  templateId: string | null;
   name: string;
   slug: string;
   plan: 'trial' | 'starter' | 'growth' | 'enterprise';
@@ -45,6 +56,7 @@ interface WizardState {
 
 const INITIAL: WizardState = {
   blueprint: null,
+  templateId: null,
   name: '',
   slug: '',
   plan: 'trial',
@@ -60,17 +72,85 @@ export interface OnboardWizardProps {
 }
 
 export function OnboardWizard({ personaId = null }: OnboardWizardProps = {}) {
+  const search = useSearchParams();
+  const studioDealId =
+    search?.get('dealId')?.length === 26 ? (search.get('dealId') as string) : null;
   const [step, setStep] = React.useState<Step>('blueprint');
   const [state, setState] = React.useState<WizardState>(INITIAL);
   const [stamped, setStamped] = React.useState<StampResult | null>(null);
+  const dealQ = trpc.studioDeals.byId.useQuery(
+    { id: studioDealId ?? '' },
+    { enabled: Boolean(studioDealId) },
+  );
 
   function patch(p: Partial<WizardState>) {
     setState((s) => ({ ...s, ...p }));
   }
 
+  // Deep-link support: ?blueprint=<kind>&template=<id> pre-fills the first two
+  // steps so the operator clicks straight into Identity from /catalog/templates.
+  // Runs once on mount; ignores subsequent search-params changes.
+  const appliedDeepLink = React.useRef(false);
+  React.useEffect(() => {
+    if (appliedDeepLink.current) return;
+    const blueprintParam = search?.get('blueprint') ?? null;
+    const templateParam = search?.get('template') ?? null;
+    if (!blueprintParam && !templateParam) {
+      appliedDeepLink.current = true;
+      return;
+    }
+    const template = templateParam ? getTemplate(templateParam) : null;
+    const resolvedBlueprint =
+      template?.blueprint ?? (blueprintParam as BlueprintDefinition['kind'] | null);
+    if (resolvedBlueprint) {
+      patch({
+        blueprint: resolvedBlueprint,
+        templateId: template?.id ?? state.templateId,
+        tagline: state.tagline || template?.brand.defaultTagline || '',
+        primaryHex:
+          state.primaryHex === '#7c3aed' && template?.brand.defaultPrimaryHex
+            ? template.brand.defaultPrimaryHex
+            : state.primaryHex,
+      });
+    }
+    appliedDeepLink.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const appliedDealPrefill = React.useRef(false);
+  React.useEffect(() => {
+    if (!studioDealId || !dealQ.data || appliedDealPrefill.current) return;
+    appliedDealPrefill.current = true;
+    const slug = dealQ.data.clientName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 24);
+    const stamp = inferStampProductFromDeal({
+      intakeTemplateId: dealQ.data.intakeTemplateId,
+      totalFeeMinorUnits: dealQ.data.totalFeeMinorUnits,
+      weeksMin: dealQ.data.weeksMin,
+      weeksMax: dealQ.data.weeksMax,
+    });
+    patch({
+      name: dealQ.data.clientName,
+      slug: slug.length >= 3 ? slug : 'client',
+      ownerName: dealQ.data.clientName,
+      ownerEmail: dealQ.data.clientContactEmail ?? '',
+      blueprint: stamp?.blueprint ?? 'social_matching',
+      templateId: stamp?.templateId ?? 'social_matching/dating',
+    });
+    if (studioDealId) setStep('identity');
+  }, [studioDealId, dealQ.data]);
+
   const idx = STEPS.indexOf(step);
 
   return (
+    <div className="space-y-4">
+      <StudioFlowCallout variant="muted" focusLine="Before you stamp">
+        Walk Blueprint → Identity → Owner → Brand → Review. Preview on the last step — stamping writes tenant, owner,
+        products, and flags. For T1 deals use Launch wizard first so the tenant links to the deal.
+      </StudioFlowCallout>
     <div className="overflow-hidden rounded-xl border border-border bg-card/40">
       <StepBar current={step} />
       <div className="px-6 py-8 sm:px-10 sm:py-10">
@@ -84,13 +164,36 @@ export function OnboardWizard({ personaId = null }: OnboardWizardProps = {}) {
           >
             {step === 'blueprint' && (
               <BlueprintStep
-                value={state.blueprint}
-                onPick={(kind, bp) => {
-                  // Pre-fill plan / tagline from blueprint defaults.
+                blueprint={state.blueprint}
+                templateId={state.templateId}
+                onPickBlueprint={(kind, bp) => {
+                  // When the chosen blueprint exposes shipped templates, default
+                  // to the first shipped one — the operator can switch in the
+                  // template strip below.
+                  const shipped = listTemplatesByBlueprint(kind).filter((t) => t.status === 'shipped');
+                  const defaultTemplate = shipped[0] ?? null;
                   patch({
                     blueprint: kind,
-                    tagline: state.tagline || bp.tagline,
+                    templateId: defaultTemplate?.id ?? null,
+                    tagline:
+                      state.tagline ||
+                      defaultTemplate?.brand.defaultTagline ||
+                      bp.tagline,
+                    primaryHex:
+                      state.primaryHex === '#7c3aed' && defaultTemplate?.brand.defaultPrimaryHex
+                        ? defaultTemplate.brand.defaultPrimaryHex
+                        : state.primaryHex,
                     plan: state.plan ?? 'trial',
+                  });
+                }}
+                onPickTemplate={(t) => {
+                  patch({
+                    templateId: t.id,
+                    tagline: state.tagline || t.brand.defaultTagline,
+                    primaryHex:
+                      state.primaryHex === '#7c3aed'
+                        ? t.brand.defaultPrimaryHex
+                        : state.primaryHex,
                   });
                 }}
               />
@@ -105,9 +208,18 @@ export function OnboardWizard({ personaId = null }: OnboardWizardProps = {}) {
               <BrandStep state={state} patch={patch} />
             )}
             {step === 'review' && (
-              <ReviewStep state={state} onStamped={(r) => { setStamped(r); setStep('done'); }} />
+              <ReviewStep
+                state={state}
+                studioDealId={studioDealId}
+                onStamped={(r) => {
+                  setStamped(r);
+                  setStep('done');
+                }}
+              />
             )}
-            {step === 'done' && stamped && <DoneStep result={stamped} personaId={personaId} />}
+            {step === 'done' && stamped && (
+              <DoneStep result={stamped} personaId={personaId} studioDealId={studioDealId} />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -119,6 +231,7 @@ export function OnboardWizard({ personaId = null }: OnboardWizardProps = {}) {
           onNext={() => idx < STEPS.length - 1 && setStep(STEPS[idx + 1]!)}
         />
       )}
+    </div>
     </div>
   );
 }
@@ -220,33 +333,39 @@ function canAdvanceFrom(s: WizardState, step: Step): boolean {
 /* ─── Step 1 — Blueprint ──────────────────────────────────────────────── */
 
 function BlueprintStep({
-  value,
-  onPick,
+  blueprint,
+  templateId,
+  onPickBlueprint,
+  onPickTemplate,
 }: {
-  value: WizardState['blueprint'];
-  onPick: (kind: BlueprintDefinition['kind'], bp: BlueprintDefinition) => void;
+  blueprint: WizardState['blueprint'];
+  templateId: WizardState['templateId'];
+  onPickBlueprint: (kind: BlueprintDefinition['kind'], bp: BlueprintDefinition) => void;
+  onPickTemplate: (template: ProductTemplate) => void;
 }) {
   const blueprints = listBlueprints();
+  const templates = blueprint ? listTemplatesByBlueprint(blueprint) : [];
+  const shippedTemplates = templates.filter((t) => t.status === 'shipped' || t.status === 'beta');
   return (
     <div className="space-y-4">
       <header>
         <h2 className="text-lg font-semibold">Pick a blueprint.</h2>
         <p className="text-sm text-muted-foreground">
-          Blueprints are pre-validated app shells. They define nav, default products,
-          paid entitlements, AI surfaces, and engagement scope. You can extend or
-          swap things after stamping.
+          Blueprints are pre-validated app shells. Pick the technical foundation,
+          then (if the blueprint has more than one) pick the product template —
+          the polished shape we'd stamp the tenant into.
         </p>
       </header>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {blueprints.map((bp) => {
-          const selected = value === bp.kind;
+          const selected = blueprint === bp.kind;
           return (
             <motion.button
               key={bp.kind}
               type="button"
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => onPick(bp.kind, bp)}
+              onClick={() => onPickBlueprint(bp.kind, bp)}
               className={`relative flex flex-col gap-3 rounded-lg border bg-card/60 p-4 text-left transition-colors hover:bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 ${
                 selected ? 'border-primary/60 ring-2 ring-primary/40' : 'border-border'
               }`}
@@ -278,6 +397,66 @@ function BlueprintStep({
           );
         })}
       </div>
+
+      {blueprint && templates.length > 0 && (
+        <div className="rounded-lg border border-border bg-card/30 p-4">
+          <div className="mb-2.5 flex items-center justify-between">
+            <p className="text-sm font-medium">Product template</p>
+            <p className="text-[11px] text-muted-foreground">
+              The shaped product this tenant runs on
+            </p>
+          </div>
+          {shippedTemplates.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No shipped templates for this blueprint yet — we'll stamp from blueprint defaults.
+            </p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {shippedTemplates.map((t) => {
+                const selected = templateId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => onPickTemplate(t)}
+                    className={`flex items-start gap-3 rounded-md border bg-background/40 p-3 text-left transition-colors hover:bg-background ${
+                      selected ? 'border-primary/60 ring-2 ring-primary/30' : 'border-border'
+                    }`}
+                  >
+                    <div
+                      className="mt-0.5 h-7 w-7 shrink-0 rounded-md"
+                      style={{ background: t.brand.defaultAccentHex }}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-sm font-medium">{t.name}</p>
+                        {t.status === 'beta' && (
+                          <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1 py-0.5 text-[9px] uppercase tracking-wide text-amber-300">
+                            Beta
+                          </span>
+                        )}
+                        {selected && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+                      </div>
+                      <p className="line-clamp-2 text-[11px] text-muted-foreground">{t.tagline}</p>
+                      <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground/80">
+                        {t.pricing.typicalWeeks.min}–{t.pricing.typicalWeeks.max}w · ×
+                        {t.pricing.effortMultiplier.toFixed(2)}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {templates.some((t) => t.status === 'planned') && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {templates.filter((t) => t.status === 'planned').length} more template(s) declared but not yet
+              built — visible in <a href="/catalog/templates" className="text-primary underline-offset-2 hover:underline">/catalog/templates</a>.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -463,6 +642,7 @@ function BrandStep({
 
 interface StampResult {
   tenant: { id: string; slug: string; name: string; plan: string };
+  template: { id: string; name: string } | null;
   owner: { id: string; email: string; name: string | null };
   products: { id: string; name: string }[];
   flagOverridesCount: number;
@@ -470,9 +650,11 @@ interface StampResult {
 
 function ReviewStep({
   state,
+  studioDealId,
   onStamped,
 }: {
   state: WizardState;
+  studioDealId: string | null;
   onStamped: (r: StampResult) => void;
 }) {
   const { toast } = useToast();
@@ -482,6 +664,7 @@ function ReviewStep({
       slug: state.slug,
       plan: state.plan,
       blueprint: state.blueprint!,
+      templateId: state.templateId ?? undefined,
       ownerName: state.ownerName,
       ownerEmail: state.ownerEmail,
       tagline: state.tagline || undefined,
@@ -505,10 +688,12 @@ function ReviewStep({
       slug: state.slug,
       plan: state.plan,
       blueprint: state.blueprint!,
+      templateId: state.templateId ?? undefined,
       ownerName: state.ownerName,
       ownerEmail: state.ownerEmail,
       tagline: state.tagline || undefined,
       primaryHex: state.primaryHex,
+      studioDealId: studioDealId ?? undefined,
     });
   }
 
@@ -536,6 +721,7 @@ function ReviewStep({
             ['Slug', state.slug + (preview.data.slugAvailable ? ' ✓' : ' (unavailable)')],
             ['Plan', state.plan],
             ['Blueprint', preview.data.blueprint.name],
+            ['Template', preview.data.template ? preview.data.template.name : '— (blueprint defaults)'],
           ]} />
           <ReviewCard title="Owner" rows={[
             ['Name', state.ownerName],
@@ -602,22 +788,12 @@ function ReviewCard({ title, rows }: { title: string; rows: ReadonlyArray<readon
 
 function DoneStep({
   result,
-  personaId,
+  studioDealId,
 }: {
   result: StampResult;
   personaId: string | null;
+  studioDealId: string | null;
 }) {
-  // Cookies are origin-scoped (Console :3001 vs Admin :3002), so the
-  // server-side parent has read goldspire_persona out of HttpOnly cookies
-  // and forwarded it as a prop. We pass it on the deep-link query string;
-  // Admin's /api/active-tenant route sets the persona cookie on its own
-  // origin too.
-  const params = new URLSearchParams({
-    slug: result.tenant.slug,
-    next: '/dashboard',
-  });
-  if (personaId) params.set('persona', personaId);
-  const adminDeepLink = `${env.NEXT_PUBLIC_ADMIN_URL}/api/active-tenant?${params.toString()}`;
   return (
     <div className="space-y-6 text-center">
       <motion.div
@@ -642,16 +818,24 @@ function DoneStep({
       </div>
       <div className="flex flex-wrap justify-center gap-2 pt-2">
         <a
-          href={adminDeepLink}
+          href={`/tenants/${result.tenant.id}`}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          Open in Admin <ArrowRight className="h-3.5 w-3.5" />
+          Tenant overview <ArrowRight className="h-3.5 w-3.5" />
         </a>
+        {studioDealId ? (
+          <a
+            href={`/engagements/${studioDealId}`}
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card/60 px-4 py-2 text-sm font-medium hover:bg-card"
+          >
+            Engagement workspace <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
         <a
           href={`/tenants/${result.tenant.id}`}
           className="inline-flex items-center gap-2 rounded-md border border-border bg-card/60 px-4 py-2 text-sm font-medium hover:bg-card"
         >
-          View in Console
+          Tenant overview
         </a>
         <a
           href="/onboard"

@@ -35,6 +35,12 @@ Goldspire is a **single TypeScript monorepo** with three layers:
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+## Studio Console (operator app)
+
+The internal operator UI lives in `apps/console`. Product rules and IA contracts are in
+`packages/commercial` (`console-ia.ts`, `lead-lifecycle.ts`, `portal-scopes.ts`). See
+[Studio Console engineer guide](../platform/studio-console.md).
+
 ## Multi-tenancy
 
 We chose **row-level `tenant_id` + Postgres RLS**.

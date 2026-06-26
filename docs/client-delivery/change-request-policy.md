@@ -3,6 +3,8 @@
 The scariest part of any client engagement isn't the build — it's the drift. This is how we
 keep scope honest without being a jerk about it.
 
+**Alignment:** Template and clone engagements use a **three-layer scope model** (Identity, Configuration, Invention) on the marketing site and in proposals — see [`docs/product/template-scope-and-tiers.md`](../product/template-scope-and-tiers.md). If a request is **Invention** (new flow, new entity, new integration, new surface) and was not in the signed proposal, it belongs in **Bill** (change order) or a tier upgrade — not "free" by default.
+
 ## The 3-bucket rule
 
 When a change request lands (Slack, email, call, whatever), it goes in one of three buckets:

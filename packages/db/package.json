@@ -20,13 +20,19 @@
     "studio": "drizzle-kit studio",
     "seed": "tsx ./scripts/seed.ts",
     "fixup:heartline": "tsx ./scripts/fixup-heartline.ts",
+    "fixup:heartline-walkthrough": "tsx ./scripts/fixup-heartline-walkthrough.ts",
     "fixup:moderation-demo": "tsx ./scripts/fixup-moderation-demo.ts",
+    "fixup:deal-progress": "tsx ./scripts/fixup-deal-progress.ts",
+    "fixup:templates": "tsx ./scripts/fixup-templates.ts",
     "reset": "tsx ./scripts/reset.ts",
+    "test:rls": "tsx ./scripts/test-rls.ts",
     "clean": "rimraf .turbo dist"
   },
   "dependencies": {
+    "@goldspire/blueprints": "workspace:*",
     "@goldspire/commercial": "workspace:*",
     "@goldspire/config": "workspace:*",
+    "@goldspire/feature-flags": "workspace:*",
     "drizzle-orm": "^0.36.0",
     "postgres": "^3.4.4",
     "ulid": "^2.3.0"

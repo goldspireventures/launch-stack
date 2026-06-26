@@ -1,20 +1,31 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '@goldspire/api';
 import {
   Badge,
   Button,
   Card,
   CardContent,
-  DataTable,
   EmptyState,
   FormField,
   Input,
   LoadingState,
-  PageHeader,
   StatusBadge,
+  cn,
 } from '@goldspire/ui';
+import { StudioPageHeader } from '@/components/studio-page-header';
+import {
+  StudioDetailDrawer,
+  StudioDetailPanel,
+  StudioListDetailGrid,
+} from '@/components/studio-list-detail';
+import { useMediaLg } from '@/hooks/use-media-lg';
 import { trpc } from '@/lib/trpc';
+
+type AuditRow = inferRouterOutputs<AppRouter>['audit']['listAll'][number];
 
 interface Filters {
   q: string;
@@ -36,18 +47,17 @@ const EMPTY: Filters = {
   to: '',
 };
 
-/**
- * Cross-tenant audit feed for the Studio Console. Studio-only — the tRPC
- * router (`audit.listAll`) is gated by `studioProcedure`, so non-studio roles
- * see a FORBIDDEN here even if they bypass the layout role check.
- *
- * Filter dropdowns are populated from `audit.filterOptionsAll`, scoped to the
- * selected tenant when one is picked (so picking "Heartline" shows only the
- * actions Heartline has logged).
- */
 export default function ConsoleAuditPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isLg = useMediaLg();
+  const eventFromUrl = searchParams.get('event');
+  const openedFromUrlRef = useRef<string | null>(null);
+
   const [filters, setFilters] = useState<Filters>(EMPTY);
   const [committed, setCommitted] = useState<Filters>(EMPTY);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const tenantsQ = trpc.tenants.list.useQuery();
   const optsQ = trpc.audit.filterOptionsAll.useQuery(
@@ -68,7 +78,7 @@ export default function ConsoleAuditPage() {
       d.setHours(23, 59, 59, 999);
       clean.to = d.toISOString();
     }
-    clean.limit = 500;
+    clean.limit = 100;
     return clean;
   }, [committed]);
 
@@ -76,15 +86,47 @@ export default function ConsoleAuditPage() {
 
   const tenants = tenantsQ.data ?? [];
   const rows = q.data ?? [];
-  const hasFilters = Object.entries(committed).some(
-    ([k, v]) => k !== 'limit' && Boolean(v),
+  const selected = rows.find((r) => r.id === selectedId) ?? null;
+
+  const hasFilters = Object.entries(committed).some(([k, v]) => k !== 'limit' && Boolean(v));
+
+  const selectEvent = useCallback(
+    (row: AuditRow) => {
+      openedFromUrlRef.current = row.id;
+      setSelectedId(row.id);
+      const p = new URLSearchParams(searchParams.toString());
+      p.set('event', row.id);
+      router.replace(`${pathname}?${p.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
   );
+
+  const closeDetail = useCallback(() => {
+    setSelectedId(null);
+    openedFromUrlRef.current = null;
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete('event');
+    const qs = p.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!eventFromUrl || rows.length === 0) return;
+    if (openedFromUrlRef.current === eventFromUrl) return;
+    const match = rows.find((r) => r.id === eventFromUrl);
+    if (match) {
+      openedFromUrlRef.current = eventFromUrl;
+      setSelectedId(eventFromUrl);
+    }
+  }, [eventFromUrl, rows]);
+
+  const detailBody = selected ? <AuditEventDetail row={selected} tenants={tenants} /> : null;
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <StudioPageHeader
         title="Cross-tenant audit"
-        description="Every meaningful change across every tenant. Append-only."
+        description="Every meaningful change across every tenant. Select a row for metadata."
       />
 
       <Card>
@@ -195,6 +237,7 @@ export default function ConsoleAuditPage() {
                   onClick={() => {
                     setFilters(EMPTY);
                     setCommitted(EMPTY);
+                    closeDetail();
                   }}
                 >
                   Clear
@@ -220,56 +263,132 @@ export default function ConsoleAuditPage() {
           description={hasFilters ? 'Try widening the filter or clearing it.' : 'Nothing has been logged yet.'}
         />
       ) : (
-        <Card>
-          <CardContent className="px-0 py-0">
-            <DataTable
-              rows={rows}
-              columns={[
-                {
-                  key: 'action',
-                  header: 'Action',
-                  cell: (r) => <code className="text-xs">{r.action}</code>,
-                },
-                { key: 'entityType', header: 'Entity' },
-                {
-                  key: 'entityId',
-                  header: 'Entity id',
-                  cell: (r) =>
-                    r.entityId ? (
-                      <code className="text-[11px] text-muted-foreground">{r.entityId}</code>
-                    ) : (
-                      '—'
-                    ),
-                },
-                {
-                  key: 'tenantId',
-                  header: 'Tenant',
-                  cell: (r) => {
-                    const t = tenants.find((x) => x.id === r.tenantId);
-                    return t?.name ?? <span className="text-muted-foreground">{r.tenantId ?? '—'}</span>;
-                  },
-                },
-                {
-                  key: 'actorRole',
-                  header: 'Actor',
-                  cell: (r) => (
-                    r.actorRole ? <StatusBadge status={r.actorRole.toLowerCase()} /> : <span className="text-muted-foreground">system</span>
-                  ),
-                },
-                {
-                  key: 'createdAt',
-                  header: 'When',
-                  cell: (r) => (
-                    <span title={new Date(r.createdAt).toISOString()}>
-                      {new Date(r.createdAt).toLocaleString()}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          </CardContent>
-        </Card>
+        <StudioListDetailGrid
+          panel={
+            selected ? (
+              <StudioDetailPanel
+                title={selected.action}
+                subtitle={new Date(selected.createdAt).toLocaleString()}
+                onClose={closeDetail}
+              >
+                {detailBody}
+              </StudioDetailPanel>
+            ) : null
+          }
+        >
+          <Card>
+            <CardContent className="overflow-x-auto p-0 sm:px-6 sm:pb-6">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground">
+                    <th className="px-4 py-2 font-medium sm:px-0">When</th>
+                    <th className="py-2 pr-3 font-medium">Action</th>
+                    <th className="hidden py-2 pr-3 font-medium md:table-cell">Tenant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const active = selectedId === r.id;
+                    const tenant = tenants.find((t) => t.id === r.tenantId);
+                    return (
+                      <tr
+                        key={r.id}
+                        className={cn(
+                          'cursor-pointer border-b border-border/40 hover:bg-muted/30',
+                          active && 'bg-primary/5',
+                        )}
+                        onClick={() => selectEvent(r)}
+                      >
+                        <td className="px-4 py-2 text-xs text-muted-foreground sm:px-0">
+                          {new Date(r.createdAt).toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="max-w-[240px] py-2 pr-3">
+                          <code className="text-xs">{r.action}</code>
+                        </td>
+                        <td className="hidden max-w-[140px] truncate py-2 pr-3 text-xs md:table-cell">
+                          {tenant?.name ?? r.tenantId ?? '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </StudioListDetailGrid>
       )}
+
+      {selected && !isLg ? (
+        <StudioDetailDrawer
+          open
+          title={selected.action}
+          subtitle={new Date(selected.createdAt).toLocaleString()}
+          onClose={closeDetail}
+        >
+          {detailBody}
+        </StudioDetailDrawer>
+      ) : null}
     </div>
+  );
+}
+
+function AuditEventDetail({
+  row,
+  tenants,
+}: {
+  row: AuditRow;
+  tenants: { id: string; name: string }[];
+}) {
+  const tenant = tenants.find((t) => t.id === row.tenantId);
+  const meta =
+    row.metadata && typeof row.metadata === 'object'
+      ? JSON.stringify(row.metadata, null, 2)
+      : row.metadata
+        ? String(row.metadata)
+        : null;
+
+  return (
+    <dl className="space-y-3 text-xs">
+      <div>
+        <dt className="text-muted-foreground">Entity</dt>
+        <dd>
+          {row.entityType}
+          {row.entityId ? (
+            <>
+              {' '}
+              <code className="rounded bg-muted px-1">{row.entityId}</code>
+            </>
+          ) : null}
+        </dd>
+      </div>
+      <div>
+        <dt className="text-muted-foreground">Tenant</dt>
+        <dd>{tenant?.name ?? row.tenantId ?? '—'}</dd>
+      </div>
+      <div>
+        <dt className="text-muted-foreground">Actor</dt>
+        <dd>
+          {row.actorRole ? <StatusBadge status={row.actorRole.toLowerCase()} /> : 'system'}
+          {row.actorId ? (
+            <code className="ml-1 rounded bg-muted px-1 text-[10px]">{row.actorId}</code>
+          ) : null}
+        </dd>
+      </div>
+      {meta ? (
+        <div>
+          <dt className="mb-1 text-muted-foreground">Metadata</dt>
+          <dd>
+            <pre className="max-h-48 overflow-auto rounded-md border bg-muted/30 p-2 text-[10px] leading-relaxed">
+              {meta}
+            </pre>
+          </dd>
+        </div>
+      ) : null}
+    </dl>
   );
 }

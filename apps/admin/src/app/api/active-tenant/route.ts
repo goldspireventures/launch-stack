@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { PERSONA_COOKIE, getPersonaById } from '@goldspire/config';
+import { logger } from '@goldspire/logger/next';
 import { ACTIVE_TENANT_COOKIE } from '@/lib/active-tenant';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -60,6 +61,10 @@ export async function POST(req: Request) {
   const store = await cookies();
   setActiveTenantCookie(store, slug);
   maybeSetPersonaCookie(store, body.persona);
+  logger.info(
+    { slug, next: safeNextPath(body.next), hadPersonaParam: Boolean(body.persona) },
+    'active_tenant.cookie_set',
+  );
   return NextResponse.json({ ok: true, slug, next: safeNextPath(body.next) });
 }
 
@@ -82,6 +87,7 @@ export async function GET(req: Request) {
   const store = await cookies();
   setActiveTenantCookie(store, slug);
   maybeSetPersonaCookie(store, persona);
+  logger.info({ slug, next, hadPersonaParam: Boolean(persona) }, 'active_tenant.cookie_set');
   return NextResponse.redirect(new URL(next, url));
 }
 

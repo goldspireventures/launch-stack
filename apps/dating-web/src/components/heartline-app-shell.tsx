@@ -1,40 +1,80 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Heart, MessageCircle, Sparkles, User } from 'lucide-react';
+import { Flame, Gift, Heart, MapPin, MessageCircle, ShieldCheck, Sparkles, User } from 'lucide-react';
 import type { PersonaDefinition } from '@goldspire/config';
-import { AppShell, Sidebar, Topbar, NotificationBell, UserMenu, cn } from '@goldspire/ui';
+import { AppShell, Sidebar, Topbar, NotificationBell, UserMenu, PageTransition, cn } from '@goldspire/ui';
 import { appConfig } from '@/app.config';
-import { useFlag } from '@/lib/use-flag';
+import { useFlag, useModule } from '@/lib/use-flag';
 import { useUserPlan } from '@/lib/use-user-plan';
 
-const NAV: { label: string; href: string; icon: React.ReactNode }[] = [
-  { label: 'Discover', href: '/discover', icon: <Flame className="h-4 w-4" /> },
-  { label: 'Likes', href: '/likes', icon: <Sparkles className="h-4 w-4" /> },
-  { label: 'Matches', href: '/matches', icon: <Heart className="h-4 w-4" /> },
-  { label: 'Messages', href: '/messages', icon: <MessageCircle className="h-4 w-4" /> },
-  { label: 'Profile', href: '/profile', icon: <User className="h-4 w-4" /> },
-];
+function useNavItems() {
+  const cityLaunch = useFlag('program.city_launch', false);
+  const inviteWaitlist = useFlag('feature.dating_invite_waitlist', false);
+  const referrals = useModule('module.referrals', false);
+  const verification = useModule('module.dating_verification', false);
 
-function TopNav({ className }: { className?: string }) {
+  return React.useMemo(
+    () =>
+      [
+        { label: 'Discover', href: '/discover', icon: <Flame className="h-4 w-4" /> },
+        { label: 'Likes', href: '/likes', icon: <Sparkles className="h-4 w-4" /> },
+        { label: 'Matches', href: '/matches', icon: <Heart className="h-4 w-4" /> },
+        { label: 'Messages', href: '/messages', icon: <MessageCircle className="h-4 w-4" /> },
+        {
+          label: 'Invite',
+          href: '/growth/invite',
+          icon: <MapPin className="h-4 w-4" />,
+          show: cityLaunch || inviteWaitlist,
+        },
+        {
+          label: 'Referrals',
+          href: '/growth/referrals',
+          icon: <Gift className="h-4 w-4" />,
+          show: referrals,
+        },
+        {
+          label: 'Verify',
+          href: '/verify',
+          icon: <ShieldCheck className="h-4 w-4" />,
+          show: verification,
+        },
+        { label: 'Profile', href: '/profile', icon: <User className="h-4 w-4" /> },
+      ] as { label: string; href: string; icon: React.ReactNode; show?: boolean }[],
+    [cityLaunch, inviteWaitlist, referrals, verification],
+  );
+}
+
+/**
+ * Horizontal nav for small screens only. From `md` up the sidebar owns IA
+ * so we never duplicate Discover / Matches / etc. in the top bar.
+ */
+function TopNav({ className, items }: { className?: string; items: ReturnType<typeof useNavItems> }) {
   const pathname = usePathname();
+  const nav = items.filter((item) => item.show !== false);
   return (
-    <nav className={cn('flex items-center gap-1 md:gap-4', className)}>
-      {NAV.map((item) => {
+    <nav
+      className={cn(
+        'flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
+      {nav.map((item) => {
         const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors md:px-3',
+              'flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:text-sm',
               active
                 ? 'bg-primary/15 text-primary'
                 : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
-            <span className="md:hidden">{item.icon}</span>
+            {item.icon}
             <span>{item.label}</span>
           </Link>
         );
@@ -50,7 +90,9 @@ export function HeartlineAppShell({
   persona: PersonaDefinition | null;
   children: React.ReactNode;
 }) {
-  const sections = [{ items: NAV }];
+  const navItems = useNavItems();
+  const nav = navItems.filter((item) => item.show !== false);
+  const sections = [{ items: nav }];
   const { tier } = useUserPlan();
   // Tenant-scoped flag toggled in Admin /feature-flags. Default to the
   // catalog default (true) so first-paint matches the eventual state.
@@ -95,23 +137,14 @@ export function HeartlineAppShell({
         <Topbar
           search={<span className="hidden lg:block" aria-hidden />}
           title={
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-6">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-3">
               <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold md:hidden">
                 <span className="grid h-7 w-7 place-items-center rounded-md bg-primary/15 text-primary">
                   <Heart className="h-4 w-4 fill-current" />
                 </span>
                 <span className="truncate">{appConfig.brand.name}</span>
               </Link>
-              <Link href="/" className="hidden shrink-0 flex-col gap-0 md:flex">
-                <span className="flex items-center gap-2 font-semibold leading-none">
-                  <span className="grid h-7 w-7 place-items-center rounded-md bg-primary/15 text-primary">
-                    <Heart className="h-4 w-4 fill-current" />
-                  </span>
-                  {appConfig.brand.name}
-                </span>
-                <span className="pl-9 text-[11px] font-normal text-muted-foreground">{appConfig.brand.tagline}</span>
-              </Link>
-              <TopNav className="hidden min-w-0 overflow-x-auto md:flex" />
+              <TopNav className="flex md:hidden" items={navItems} />
             </div>
           }
           right={
@@ -127,13 +160,13 @@ export function HeartlineAppShell({
                   Premium
                 </span>
               )}
-              <UserMenu persona={persona} />
+              <UserMenu persona={persona} presentation="consumer" />
             </>
           }
         />
       }
     >
-      {children}
+      <PageTransition className="min-h-0">{children}</PageTransition>
     </AppShell>
   );
 }

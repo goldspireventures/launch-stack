@@ -24,7 +24,7 @@ export const adminNav = [
     label: 'Operations',
     items: [
       { label: 'Feature Flags', href: '/feature-flags', icon: 'flag' },
-      { label: 'Reports', href: '/reports', icon: 'shield-alert' },
+      { label: 'Moderation', href: '/moderation', icon: 'shield-alert' },
       { label: 'Messages', href: '/messages', icon: 'message-square' },
       { label: 'Analytics', href: '/analytics', icon: 'bar-chart-3' },
       { label: 'Audit log', href: '/audit', icon: 'history' },

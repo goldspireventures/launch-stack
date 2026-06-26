@@ -15,6 +15,10 @@ function getBaseUrl() {
 }
 
 export function TRPCProvider({ children, tenantSlug }: { children: React.ReactNode; tenantSlug: string }) {
+  /** `useState` init runs once; httpBatchLink must read latest slug (e.g. after Console → Open Admin). */
+  const tenantSlugRef = React.useRef(tenantSlug);
+  tenantSlugRef.current = tenantSlug;
+
   const [queryClient] = React.useState(
     () =>
       new QueryClient({
@@ -29,7 +33,7 @@ export function TRPCProvider({ children, tenantSlug }: { children: React.ReactNo
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
-          headers: () => ({ 'x-goldspire-tenant': tenantSlug }),
+          headers: () => ({ 'x-goldspire-tenant': tenantSlugRef.current }),
         }),
       ],
     }),

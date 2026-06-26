@@ -11,7 +11,7 @@ export const listingInput = z.object({
   description: z.string().max(8000),
   category: z.string().max(60),
   priceCents: z.number().int().min(0),
-  currency: z.string().length(3).default('USD'),
+  currency: z.string().length(3).default('EUR'),
   imageUrls: z.array(z.string().url()).max(12).default([]),
   status: listingStatus.default('draft'),
 });

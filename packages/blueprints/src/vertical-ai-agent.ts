@@ -13,7 +13,7 @@ export const verticalAiAgentBlueprint: BlueprintDefinition = {
   defaultTenantSlug: 'lumen',
   defaultPort: 3013,
   localDevCommand: 'pnpm --filter @goldspire/ai-agent-web dev',
-  demoUrl: 'http://localhost:3013',
+  demoUrl: 'http://localhost:4013',
   badgeAccent: '#C9A227',
   badgeLabel: 'AI Agent',
   industryAliases: ['ai', 'agent', 'automation', 'llm'],

@@ -14,7 +14,11 @@
     "./posthog": "./src/posthog.ts",
     "./sentry": "./src/sentry.ts",
     "./errors": "./src/errors.ts",
-    "./logger": "./src/logger.ts"
+    "./logger": "./src/logger.ts",
+    "./rate-limit": "./src/rate-limit.ts",
+    "./cache": "./src/cache.ts",
+    "./production-guard": "./src/production-guard.ts",
+    "./security-headers": "./src/security-headers.ts"
   },
   "scripts": {
     "lint": "echo 'no lint configured'",

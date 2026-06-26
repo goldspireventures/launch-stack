@@ -1,4 +1,5 @@
 import '../../global.css';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,7 +7,6 @@ import { TRPCProvider } from '@/lib/trpc';
 import { appConfig } from '@/app.config';
 import type { ComponentType, ReactNode } from 'react';
 
-/** Drizzle's optional peer pulls `@types/react@19` while Expo targets React 18; avoid cross-version `ComponentProps`. */
 const StackNavigator = Stack as unknown as ComponentType<{
   children?: ReactNode;
   screenOptions?: {
@@ -18,6 +18,7 @@ const StackNavigator = Stack as unknown as ComponentType<{
 
 export default function RootLayout() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <TRPCProvider>
         <StatusBar style="light" />
@@ -28,11 +29,12 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: appConfig.theme.backgroundHex },
           }}
         >
-          <Stack.Screen name="index" options={{ title: appConfig.brand.name }} />
-          <Stack.Screen name="matches" options={{ title: 'Matches' }} />
-          <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ title: 'Sign in', presentation: 'modal' }} />
+          <Stack.Screen name="onboarding" options={{ title: 'Setup', headerShown: true }} />
         </StackNavigator>
       </TRPCProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

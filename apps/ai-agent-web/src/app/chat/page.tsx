@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   EmptyState,
+  FadeIn,
   Input,
   LoadingState,
   PageHeader,
@@ -45,7 +46,7 @@ export default function ChatPage() {
   if (products.isLoading || sessions.isLoading) return <LoadingState />;
 
   return (
-    <div className="mx-auto grid h-[calc(100vh-32px)] max-w-6xl gap-4 px-6 py-8 lg:grid-cols-[260px_1fr]">
+    <FadeIn className="mx-auto grid h-[calc(100vh-32px)] max-w-6xl gap-4 px-6 py-8 lg:grid-cols-[260px_1fr]">
       <Card className="flex h-full flex-col">
         <CardContent className="space-y-2 p-4">
           <Button
@@ -130,6 +131,6 @@ export default function ChatPage() {
           </>
         )}
       </Card>
-    </div>
+    </FadeIn>
   );
 }

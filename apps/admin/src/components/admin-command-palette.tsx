@@ -13,6 +13,7 @@ import {
   Package,
   Settings,
   Users,
+  type LucideIcon,
 } from 'lucide-react';
 import { CommandPalette, type CommandItem, useToast } from '@goldspire/ui';
 import { listPersonasByGroup } from '@goldspire/config';
@@ -46,13 +47,13 @@ export function AdminCommandPalette({ canSwitchTenants = false }: AdminCommandPa
   const items: CommandItem[] = React.useMemo(() => {
     const out: CommandItem[] = [];
 
-    const pages: Array<[string, string, React.ComponentType<{ className?: string }>]> = [
+    const pages: Array<[string, string, LucideIcon]> = [
       ['Dashboard', '/dashboard', LayoutDashboard],
       ['Users', '/users', Users],
       ['Products', '/products', Package],
       ['Subscriptions', '/subscriptions', LineChart],
       ['Feature flags', '/feature-flags', Flag],
-      ['Reports', '/reports', BarChart3],
+      ['Moderation queue', '/moderation', BarChart3],
       ['Analytics', '/analytics', LineChart],
       ['Messages', '/messages', MessageSquare],
       ['Notifications', '/notifications', Bell],

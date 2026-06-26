@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Bell, Check, Lock, MessageCircle } from 'lucide-react';
 import { getBlueprintByKind } from '@goldspire/blueprints';
 import { cn } from '../utils/cn';
+import { formatMinorUnits } from '../utils/format-money';
 import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Card, CardContent, Input, Label, Switch } from './primitives';
 
 /* ─── FormField ───────────────────────────────────────────────────────── */
@@ -49,7 +50,7 @@ export interface PricingCardProps {
 export function PricingCard({
   name,
   priceCents,
-  currency = 'USD',
+  currency = 'EUR',
   cadence = 'mo',
   description,
   features,
@@ -57,12 +58,7 @@ export function PricingCard({
   cta,
   className,
 }: PricingCardProps) {
-  const formatted = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: priceCents % 100 === 0 ? 0 : 2,
-  }).format(priceCents / 100);
+  const formatted = formatMinorUnits(priceCents, currency);
 
   return (
     <Card

@@ -70,12 +70,21 @@ export interface MetricCardProps {
   delta?: { value: string; trend: 'up' | 'down' | 'flat' };
   icon?: LucideIcon;
   href?: string;
+  /** Makes the card a button (use instead of href for in-page actions). */
+  onClick?: () => void;
   className?: string;
 }
 
-export function MetricCard({ label, value, delta, icon: Icon, href, className }: MetricCardProps) {
+export function MetricCard({ label, value, delta, icon: Icon, href, onClick, className }: MetricCardProps) {
   const inner = (
-    <Card className={cn('transition-colors hover:bg-muted/40', className)}>
+    <Card
+      className={cn(
+        'transition-colors',
+        (href || onClick) && 'hover:bg-muted/40',
+        onClick && 'cursor-pointer',
+        className,
+      )}
+    >
       <CardContent className="flex items-start justify-between p-6">
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">{label}</p>
@@ -101,13 +110,21 @@ export function MetricCard({ label, value, delta, icon: Icon, href, className }:
       </CardContent>
     </Card>
   );
-  return href ? (
-    <a href={href} className="block focus:outline-none">
-      {inner}
-    </a>
-  ) : (
-    inner
-  );
+  if (href) {
+    return (
+      <a href={href} className="block focus:outline-none">
+        {inner}
+      </a>
+    );
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className="block w-full text-left focus:outline-none">
+        {inner}
+      </button>
+    );
+  }
+  return inner;
 }
 
 /* ─── DataTable (lightweight, no external deps) ───────────────────────── */

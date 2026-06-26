@@ -1,0 +1,70 @@
+@import '@goldspire/ui/styles.css';
+
+/*
+ * Marketing-site theme tokens.
+ *
+ * We override the studio's amber/violet defaults with a calmer palette
+ * that reads as a design-led studio rather than a SaaS console. Dark
+ * mode is the canonical look (matches the studio brand); a light scheme
+ * is also wired so prospects can flip it.
+ */
+
+:root,
+.dark {
+  --background: 0 0% 5%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 24 96% 60%;
+  --primary-foreground: 0 0% 5%;
+  --secondary: 0 0% 13%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 24 96% 60%;
+  --accent-foreground: 0 0% 5%;
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 24 96% 60%;
+}
+
+/* Subtle radial glow used behind the homepage hero + section accents. */
+.hero-glow {
+  background:
+    radial-gradient(ellipse at top, hsl(24 96% 60% / 0.18), transparent 55%),
+    radial-gradient(ellipse 60% 60% at 80% 30%, hsl(280 80% 50% / 0.10), transparent 65%),
+    radial-gradient(ellipse 80% 50% at 20% 70%, hsl(200 80% 50% / 0.08), transparent 60%);
+}
+
+/* Body grid backdrop. */
+.grid-backdrop {
+  background-image:
+    linear-gradient(to right, hsl(0 0% 100% / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(0 0% 100% / 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+/* Marquee for the social-proof / template strip. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 38s linear infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

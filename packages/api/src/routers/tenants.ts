@@ -5,7 +5,14 @@ import { logAudit } from '@goldspire/audit';
 import { trackEvent } from '@goldspire/analytics';
 import { ANALYTICS_EVENTS } from '@goldspire/config';
 import { z } from 'zod';
-import { router, studioProcedure, protectedProcedure, tenantAdminProcedure } from '../trpc';
+import {
+  router,
+  studioProcedure,
+  studioTenantsManageProcedure,
+  protectedProcedure,
+  tenantAdminProcedure,
+} from '../trpc';
+import { tenantScopeId } from '../lib/tenant-scope';
 import { NotFoundError } from '@goldspire/platform';
 
 export const tenantsRouter = router({
@@ -23,12 +30,13 @@ export const tenantsRouter = router({
   }),
 
   current: protectedProcedure.query(async ({ ctx }) => {
+    const scopeId = tenantScopeId(ctx);
     const [t] = await ctx.db
       .select()
       .from(schema.tenant)
-      .where(eq(schema.tenant.id, ctx.user.tenantId))
+      .where(eq(schema.tenant.id, scopeId))
       .limit(1);
-    if (!t) throw new NotFoundError('tenant', ctx.user.tenantId);
+    if (!t) throw new NotFoundError('tenant', scopeId);
     return t;
   }),
 
@@ -62,7 +70,7 @@ export const tenantsRouter = router({
     return row;
   }),
 
-  update: studioProcedure.input(tenantSchemas.updateTenant).mutation(async ({ ctx, input }) => {
+  update: studioTenantsManageProcedure.input(tenantSchemas.updateTenant).mutation(async ({ ctx, input }) => {
     const { id, ...patch } = input;
     const [row] = await ctx.db
       .update(schema.tenant)

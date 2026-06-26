@@ -6,8 +6,23 @@ import { ANALYTICS_EVENTS } from '@goldspire/config';
 import { z } from 'zod';
 import { router, protectedProcedure, tenantAdminProcedure } from '../trpc';
 import { NotFoundError } from '@goldspire/platform';
+import { tenantScopeId } from '../lib/tenant-scope';
+import { assertCtxSupportMutation } from '../lib/assert-support-scope';
 
 export const bookingRouter = router({
+  /**
+   * All bookable locations for the caller's tenant (no product filter).
+   * Prefer this over `businesses` + `products.list[0]` — Nova Care seeds
+   * multiple products but only one business (linked to a single product).
+   */
+  tenantBusinesses: protectedProcedure.query(({ ctx }) =>
+    ctx.db
+      .select()
+      .from(schema.business)
+      .where(eq(schema.business.tenantId, ctx.user.tenantId))
+      .orderBy(desc(schema.business.createdAt)),
+  ),
+
   businesses: protectedProcedure
     .input(z.object({ productId: z.string() }))
     .query(({ ctx, input }) =>
@@ -63,9 +78,10 @@ export const bookingRouter = router({
     }),
 
   createService: tenantAdminProcedure.input(bookingSchemas.serviceInput).mutation(async ({ ctx, input }) => {
+    assertCtxSupportMutation(ctx);
     const [row] = await ctx.db
       .insert(schema.service)
-      .values({ ...input, tenantId: ctx.user.tenantId })
+      .values({ ...input, tenantId: tenantScopeId(ctx) })
       .returning();
     return row;
   }),

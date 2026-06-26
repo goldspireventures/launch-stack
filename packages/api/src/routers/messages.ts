@@ -14,6 +14,8 @@ import { ANALYTICS_EVENTS } from '@goldspire/config';
 import { logAudit } from '@goldspire/audit';
 import { NotFoundError } from '@goldspire/platform';
 import { router, protectedProcedure, tenantAdminProcedure } from '../trpc';
+import { tenantScopeId } from '../lib/tenant-scope';
+import { assertCtxSupportMutation } from '../lib/assert-support-scope';
 
 const moderationListInput = z
   .object({
@@ -245,6 +247,7 @@ export const messagesRouter = router({
   moderationQueue: tenantAdminProcedure.input(moderationListInput).query(async ({ ctx, input }) => {
     const scope = input?.scope ?? 'flagged';
     const limit = input?.limit ?? 50;
+    const scopeTenantId = tenantScopeId(ctx);
 
     const stateFilter =
       scope === 'flagged'
@@ -256,7 +259,7 @@ export const messagesRouter = router({
     const rows = await ctx.db
       .select()
       .from(schema.message)
-      .where(and(eq(schema.message.tenantId, ctx.user.tenantId), stateFilter))
+      .where(and(eq(schema.message.tenantId, scopeTenantId), stateFilter))
       .orderBy(
         desc(sql`coalesce(${schema.message.flaggedAt}, ${schema.message.deletedAt})`),
         desc(schema.message.createdAt),
@@ -290,7 +293,7 @@ export const messagesRouter = router({
           hidden: sql<number>`count(*) filter (where ${schema.message.deletedAt} is not null)`,
         })
         .from(schema.message)
-        .where(eq(schema.message.tenantId, ctx.user.tenantId)),
+        .where(eq(schema.message.tenantId, scopeTenantId)),
     ]);
 
     const senderById = new Map(senders.map((s) => [s.id, s]));
@@ -329,7 +332,9 @@ export const messagesRouter = router({
   flag: tenantAdminProcedure
     .input(moderationIdInput.extend({ reason: z.string().min(1).max(280) }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await loadModeratableMessage(ctx.db, ctx.user.tenantId, input.messageId);
+      assertCtxSupportMutation(ctx);
+      const scopeTenantId = tenantScopeId(ctx);
+      const existing = await loadModeratableMessage(ctx.db, scopeTenantId, input.messageId);
       const [row] = await ctx.db
         .update(schema.message)
         .set({
@@ -338,11 +343,11 @@ export const messagesRouter = router({
           flagReason: input.reason,
         })
         .where(
-          and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, ctx.user.tenantId)),
+          and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, scopeTenantId)),
         )
         .returning();
       await logAudit({
-        tenantId: ctx.user.tenantId,
+        tenantId: scopeTenantId,
         actorId: ctx.user.id,
         actorRole: ctx.user.role,
         action: 'message_flagged',
@@ -354,16 +359,18 @@ export const messagesRouter = router({
     }),
 
   unflag: tenantAdminProcedure.input(moderationIdInput).mutation(async ({ ctx, input }) => {
-    const existing = await loadModeratableMessage(ctx.db, ctx.user.tenantId, input.messageId);
+    assertCtxSupportMutation(ctx);
+    const scopeTenantId = tenantScopeId(ctx);
+    const existing = await loadModeratableMessage(ctx.db, scopeTenantId, input.messageId);
     const [row] = await ctx.db
       .update(schema.message)
       .set({ flaggedAt: null, flaggedById: null, flagReason: null })
       .where(
-        and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, ctx.user.tenantId)),
+        and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, scopeTenantId)),
       )
       .returning();
     await logAudit({
-      tenantId: ctx.user.tenantId,
+      tenantId: scopeTenantId,
       actorId: ctx.user.id,
       actorRole: ctx.user.role,
       action: 'message_unflagged',
@@ -377,7 +384,9 @@ export const messagesRouter = router({
   hide: tenantAdminProcedure
     .input(moderationIdInput.extend({ reason: z.string().min(1).max(280).optional() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await loadModeratableMessage(ctx.db, ctx.user.tenantId, input.messageId);
+      assertCtxSupportMutation(ctx);
+      const scopeTenantId = tenantScopeId(ctx);
+      const existing = await loadModeratableMessage(ctx.db, scopeTenantId, input.messageId);
       const [row] = await ctx.db
         .update(schema.message)
         .set({
@@ -386,11 +395,11 @@ export const messagesRouter = router({
           ...(input.reason ? { flagReason: input.reason } : {}),
         })
         .where(
-          and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, ctx.user.tenantId)),
+          and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, scopeTenantId)),
         )
         .returning();
       await logAudit({
-        tenantId: ctx.user.tenantId,
+        tenantId: scopeTenantId,
         actorId: ctx.user.id,
         actorRole: ctx.user.role,
         action: 'message_hidden',
@@ -406,16 +415,18 @@ export const messagesRouter = router({
     }),
 
   unhide: tenantAdminProcedure.input(moderationIdInput).mutation(async ({ ctx, input }) => {
-    const existing = await loadModeratableMessage(ctx.db, ctx.user.tenantId, input.messageId);
+    assertCtxSupportMutation(ctx);
+    const scopeTenantId = tenantScopeId(ctx);
+    const existing = await loadModeratableMessage(ctx.db, scopeTenantId, input.messageId);
     const [row] = await ctx.db
       .update(schema.message)
       .set({ deletedAt: null, hiddenById: null })
       .where(
-        and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, ctx.user.tenantId)),
+        and(eq(schema.message.id, existing.id), eq(schema.message.tenantId, scopeTenantId)),
       )
       .returning();
     await logAudit({
-      tenantId: ctx.user.tenantId,
+      tenantId: scopeTenantId,
       actorId: ctx.user.id,
       actorRole: ctx.user.role,
       action: 'message_unhidden',
@@ -434,17 +445,19 @@ export const messagesRouter = router({
   suspendSender: tenantAdminProcedure
     .input(moderationIdInput.extend({ reason: z.string().min(1).max(280) }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await loadModeratableMessage(ctx.db, ctx.user.tenantId, input.messageId);
+      assertCtxSupportMutation(ctx);
+      const scopeTenantId = tenantScopeId(ctx);
+      const existing = await loadModeratableMessage(ctx.db, scopeTenantId, input.messageId);
       const [updated] = await ctx.db
         .update(schema.user)
         .set({ status: 'suspended', updatedAt: new Date() })
         .where(
-          and(eq(schema.user.id, existing.senderId), eq(schema.user.tenantId, ctx.user.tenantId)),
+          and(eq(schema.user.id, existing.senderId), eq(schema.user.tenantId, scopeTenantId)),
         )
         .returning();
       if (!updated) throw new NotFoundError('user', existing.senderId);
       await logAudit({
-        tenantId: ctx.user.tenantId,
+        tenantId: scopeTenantId,
         actorId: ctx.user.id,
         actorRole: ctx.user.role,
         action: 'user_suspended',
@@ -463,16 +476,18 @@ export const messagesRouter = router({
   reactivateUser: tenantAdminProcedure
     .input(z.object({ userId: z.string().length(26) }))
     .mutation(async ({ ctx, input }) => {
+      assertCtxSupportMutation(ctx);
+      const scopeTenantId = tenantScopeId(ctx);
       const [updated] = await ctx.db
         .update(schema.user)
         .set({ status: 'active', updatedAt: new Date() })
         .where(
-          and(eq(schema.user.id, input.userId), eq(schema.user.tenantId, ctx.user.tenantId)),
+          and(eq(schema.user.id, input.userId), eq(schema.user.tenantId, scopeTenantId)),
         )
         .returning();
       if (!updated) throw new NotFoundError('user', input.userId);
       await logAudit({
-        tenantId: ctx.user.tenantId,
+        tenantId: scopeTenantId,
         actorId: ctx.user.id,
         actorRole: ctx.user.role,
         action: 'user_reactivated',

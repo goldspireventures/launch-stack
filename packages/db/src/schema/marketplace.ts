@@ -30,7 +30,7 @@ export const listing = pgTable(
     description: text('description').notNull(),
     category: varchar('category', { length: 60 }).notNull(),
     priceCents: integer('price_cents').notNull(),
-    currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+    currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     imageUrls: jsonb('image_urls').$type<string[]>().default([]).notNull(),
     status: listingStatusEnum('status').notNull().default('draft'),
     /** Stock count for inventory-tracked listings. Null = unlimited / service. */
@@ -70,7 +70,7 @@ export const order = pgTable(
     subtotalCents: integer('subtotal_cents').notNull(),
     feeCents: integer('fee_cents').notNull().default(0),
     totalCents: integer('total_cents').notNull(),
-    currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+    currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     status: orderStatusEnum('status').notNull().default('pending'),
     providerPaymentId: text('provider_payment_id'),
     fulfilledAt: timestamp('fulfilled_at', { withTimezone: true }),

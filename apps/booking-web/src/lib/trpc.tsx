@@ -11,7 +11,7 @@ export const trpc = createTRPCReact<AppRouter>();
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
-  return `http://localhost:${process.env.PORT ?? 3010}`;
+  return `http://localhost:${process.env.PORT ?? 3015}`;
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
-          headers: () => ({ 'x-goldspire-tenant': 'nova' }),
+          headers: () => ({ 'x-goldspire-tenant': 'nova-care' }),
         }),
       ],
     }),

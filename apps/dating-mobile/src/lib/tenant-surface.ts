@@ -28,3 +28,9 @@ export function useTenantLimit(key: string, defaultValue: number): number {
   const v = q.data.limits[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : defaultValue;
 }
+
+export function useTenantModule(key: string, defaultValue = false): boolean {
+  const q = useTenantPublicSurface();
+  if (!q.data?.modules) return defaultValue;
+  return q.data.modules[key] ?? defaultValue;
+}

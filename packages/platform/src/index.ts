@@ -6,3 +6,7 @@ export * from './posthog';
 export * from './sentry';
 export * from './errors';
 export * from './logger';
+export * from './rate-limit';
+export * from './cache';
+export * from './production-guard';
+export * from './security-headers';

@@ -6,6 +6,7 @@ import { ArrowRight, Briefcase, Building2, Sparkles, Users } from 'lucide-react'
 import {
   PERSONAS,
   listPersonasByGroup,
+  listPersonasByTenantSlug,
   type PersonaDefinition,
   type PersonaId,
 } from '@goldspire/config';
@@ -21,7 +22,7 @@ const GROUP_META = {
   tenant: {
     icon: Building2,
     title: 'Client operators',
-    description: 'Owners and admins of products built on Goldspire.',
+    description: 'Owners and admins — grouped by tenant product.',
     accent: 'from-sky-500/40 to-cyan-500/30',
   },
   customer: {
@@ -87,17 +88,38 @@ export function PersonaPicker({ only, defaultNext, onPick }: PersonaPickerProps)
                 <p className="text-sm text-muted-foreground">{meta.description}</p>
               </div>
             </header>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((p, idx) => (
-                <PersonaCard
-                  key={p.id}
-                  persona={p}
-                  busy={busyId === p.id}
-                  index={idx}
-                  onPick={handlePick}
-                />
-              ))}
-            </div>
+            {group === 'tenant' ? (
+              <div className="space-y-6">
+                {listPersonasByTenantSlug().map((tenantGroup) => (
+                  <div key={tenantGroup.slug}>
+                    <h3 className="mb-3 text-sm font-medium text-muted-foreground">{tenantGroup.label}</h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {tenantGroup.personas.map((p, idx) => (
+                        <PersonaCard
+                          key={p.id}
+                          persona={p}
+                          busy={busyId === p.id}
+                          index={idx}
+                          onPick={handlePick}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((p, idx) => (
+                  <PersonaCard
+                    key={p.id}
+                    persona={p}
+                    busy={busyId === p.id}
+                    index={idx}
+                    onPick={handlePick}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         );
       })}

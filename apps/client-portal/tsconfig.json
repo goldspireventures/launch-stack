@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "jsx": "preserve",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@goldspire/api": ["../../packages/api/src/index.ts"],
+      "@goldspire/api/*": ["../../packages/api/src/*"],
+      "@goldspire/ui": ["../../packages/ui/src/index.ts"],
+      "@goldspire/ui/*": ["../../packages/ui/src/*"],
+      "@goldspire/config": ["../../packages/config/src/index.ts"],
+      "@goldspire/config/*": ["../../packages/config/src/*"],
+      "@goldspire/db": ["../../packages/db/src/index.ts"],
+      "@goldspire/platform": ["../../packages/platform/src/index.ts"],
+      "@goldspire/logger": ["../../packages/logger/src/index.ts"],
+      "@goldspire/logger/trpc": ["../../packages/logger/src/trpc.ts"],
+      "@goldspire/logger/next": ["../../packages/logger/src/next.ts"],
+      "next/server": ["./node_modules/next/server"]
+    }
+  },
+  "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

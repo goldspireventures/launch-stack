@@ -3,6 +3,8 @@
 Use this as a starting point when scoping a new client engagement. The goal is to give the
 client one printable page that locks in what we'll ship.
 
+**Product / tier framing:** Goldspire scopes template-led work in **three layers** (Identity, Configuration, Invention) so a clone stays a complete branded product without hiding invention in the price. Read [`docs/product/template-scope-and-tiers.md`](../product/template-scope-and-tiers.md) and mirror the language your tier promises.
+
 ---
 
 ## Project name
@@ -19,7 +21,9 @@ client one printable page that locks in what we'll ship.
 
 ## In scope (v1, 3–6 weeks)
 
-- [ ] Brand & visual design (logo, palette, type) — _client provides_ or _we deliver flat $X_
+- **Finish line (default): Launch ready** — production URL live, core flows verified, and handover complete.
+
+- [ ] Brand & visual design (logo, palette, type) — _client provides_ or _we deliver flat €X_
 - [ ] Onboarding & auth
 - [ ] [Core blueprint feature 1]
 - [ ] [Core blueprint feature 2]
@@ -52,16 +56,16 @@ client one printable page that locks in what we'll ship.
 
 ## Pricing
 
-- One-time build: **$<X,XXX>**
-- Required monthly hosting & maintenance retainer: **$<XXX>/mo** (12-month minimum)
-- Out-of-scope work after launch: $200/hour, billed in 30-min increments
+- One-time build: **€<X.XXX>**
+- Required monthly hosting & maintenance retainer: **€<XXX>/mo** (12-month minimum)
+- Out-of-scope work after launch: €200/hour, billed in 30-min increments
 
 ## Acceptance criteria
 
 The MVP is considered delivered when:
 
 1. All checkboxes above are complete on `main`.
-2. Production URL is live with at least 5 manual end-to-end test users.
+2. Production URL is live and core flows pass manual end-to-end checks.
 3. We've completed a 1-hour handover session.
 4. Source code is in the client's GitHub org (read access for them, write retained by us
    during the retainer).

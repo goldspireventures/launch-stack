@@ -1,60 +1,46 @@
-# Studio package structure
+# Studio pricing and package structure
 
-Three tiers. No à la carte v1. We add complexity only when the studio is mature enough to
-charge for it.
+**Source of truth in code** (edit these; docs follow):
 
-## 1. Prototype — $4,000 — 2 weeks
+| Concern | Package / file |
+|---------|----------------|
+| **EUR floors & shipped clone template ids** (single import for numbers) | `packages/commercial/src/pricing-constants.ts` |
+| **Reference blueprint demos** (Bazaar, Signal, etc. vs Tier 1 deliverable) | `packages/commercial/src/reference-blueprint-demos.ts` |
+| **Golden paths** (smoke routes, demo registry) | `packages/blueprints/src/golden-paths.ts` + `docs/deployment/golden-paths.md` |
+| **Catalog demo URLs** (env keys per app) | `packages/config/src/catalog-demo-urls.ts` |
+| Public **€ “from”** tiers on `/pricing` (clone / template / blueprint) | `packages/commercial/src/marketing-offerings.ts` → `PUBLIC_ENGAGEMENT_TIERS` (imports `pricing-constants`) |
+| Deal Desk **solo / growth / enterprise** defaults (weeks, fee, milestones) | `packages/commercial/src/catalog.ts` → `TIER_CATALOG` + `computeQuote` (Solo baseline €28k from `pricing-constants`) |
+| Tier 1 deal presets (dating arms + booking) | `packages/commercial/src/deal-presets.ts` + `dating-delivery-skus.ts` |
+| Scope layers + clone guardrails (proposals, Console, marketing) | `packages/commercial/src/studio-service-catalog.ts` |
+| Marketing copy blocks (/, `/pricing`, `/how-we-work`, contact) | `packages/commercial/src/marketing-site-narrative.ts` |
+## Public engagement tiers (marketing)
 
-For founders who need to **prove an idea**. Not production-ready. No payments. No team.
+Three **paths by amount of invention**, not three arbitrary SKUs:
 
-- 1 blueprint
-- ≤ 4 pages
-- Mock auth + mock payments
-- Up to 3 brand colors + logo
-- Vercel deploy on `<slug>.goldspire.studio`
-- Loom walkthrough
-- No retainer required
-- No support after the 2 weeks
+1. **Clone a template** — lowest invention: brand + configure a **shipped** template; fixed surfaces and integration budget; invention → change order or higher tier.
+2. **New template, existing foundation** — meaningful invention on a blueprint we already run; exclusive window then optional catalog.
+3. **New blueprint** — ground-up foundation; blueprint IP stays with the studio unless contracted otherwise.
 
-## 2. Production MVP — $12,000 — 4–6 weeks
+Public marketing shows **three full-build paths** (clone / template / blueprint) on `/pricing`, plus a **“Smaller starts”** band (paid discovery sprint + free brief) from `PUBLIC_PRICING_ENTRY_SECTION_V0` in `studio-service-catalog.ts`. Older internal docs listed a USD “prototype” ladder — **retired** (see **Deprecated** below).
 
-The real thing. What 80% of studio clients buy.
+## Finish lines (what “done” means)
 
-- 1 blueprint, fully customized
-- Supabase Auth + Stripe + Resend live
-- Admin dashboard
-- Mobile-responsive (Expo build is a +$3,000 v1.5 addon)
-- ~6 pages + onboarding
-- Custom branding (logo, palette, 2 illustrations)
-- Custom domain + email + SSL
-- 1 launch round of QA + bug fixes
-- 30-day post-launch warranty
-- Requires Standard retainer ($750/mo, 12mo) to keep the lights on
+Goldspire sells packages to named finish lines, not open-ended “MVP” language:
 
-## 3. Custom Build — from $25,000 — 8+ weeks
+- **Launch ready (default)**: production URL live, core flows verified, handover complete.
+- **Store ready (mobile SKUs only)**: internal/testing builds and submission drafts when agreed (store approvals are external).
+- **Operate (optional)**: maintenance retainer + included hours; new product scope beyond included hours is a change order.
 
-For more ambitious products. Anything that needs:
+This keeps pricing consistent even when the studio reuses templates: the buyer purchases the finish line outcome and the bounded scope, not the studio’s internal effort.
 
-- 2+ blueprints in the same product (e.g. social matching + payments + community)
-- Mobile native build (Expo for iOS + Android, App Store + Play Store)
-- AI features beyond mocked-out interfaces
-- Custom integrations (calendar APIs, telephony, calendar, etc.)
-- Bespoke design system
+## Deal Desk tiers (internal quoting)
 
-Quoted per project after a 60-min scoping call.
+Solo / Growth / Enterprise in `catalog.ts` drive milestone splits and calculator defaults. They align with public tiers via `dealDeskTierId` on each `PUBLIC_ENGAGEMENT_TIERS` row.
 
-## Add-ons
+## Deprecated: old USD “prototype / production MVP” ladder
 
-| Add-on                                 | Price                   |
-|----------------------------------------|-------------------------|
-| Native mobile (Expo, iOS + Android)    | + $3,000 (Production)   |
-| AI features turned on + tuned          | + $2,000                |
-| Custom illustrations / brand system    | + $1,500                |
-| SOC2 readiness kickstart               | + $5,000                |
-| Migration from existing product        | from $4,000             |
+Historically this file described \$4k / \$12k / \$25k packages. That ladder is **retired** in favour of the EUR engagement model above. Do not resurrect old numbers without updating `marketing-offerings`, seeds, and Console.
 
-## Discounts
+## Add-ons and retainers
 
-- Pay full price upfront → 10% off the build fee (retainer is still due monthly).
-- Founders we like in early stage → 15% off (case by case, no advertising this).
-- Studio's own products → free, obviously.
+Product-specific add-ons (e.g. native mobile, extra blueprints) live in the **quote engine** (`quote.ts`, `catalog.ts` add-ons). Post–go-live support is a separate **retainer** SKU — see `STUDIO_REVENUE_SKUS_V0` in `studio-service-catalog.ts` and [`../client-delivery/maintenance-retainer.md`](../client-delivery/maintenance-retainer.md).

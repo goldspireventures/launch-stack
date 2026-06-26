@@ -6,7 +6,12 @@ const handler = (req: Request) =>
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: () => createTRPCContext({ headers: req.headers, tenantHint: 'nova' }),
+    createContext: () =>
+      createTRPCContext({
+        headers: req.headers,
+        tenantHint: 'nova-care',
+        ignorePersonaTenantMismatch: true,
+      }),
   });
 
 export { handler as GET, handler as POST };

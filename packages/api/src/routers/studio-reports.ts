@@ -1,22 +1,14 @@
 import { asc, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { schema } from '@goldspire/db';
-import { router, studioProcedure } from '../trpc';
-
-function planToMonthlyMinor(plan: string): number {
-  /** Placeholder MRR until Stripe amounts are mirrored on `subscription`. */
-  const map: Record<string, number> = {
-    heartline_plus_monthly: 1499,
-    heartline_plus_annual: Math.round(12999 / 12),
-  };
-  return map[plan] ?? 4999;
-}
+import { planToMonthlyMinorUnits } from '@goldspire/commercial';
+import { router, studioProcedure, studioBillingProcedure } from '../trpc';
 
 export const studioReportsRouter = router({
   /**
-   * Aggregated monthly recurring revenue (minor units, USD) per tenant from
+   * Aggregated monthly recurring revenue (minor units, EUR) per tenant from
    * active / trialing subscriptions using plan-key heuristics.
    */
-  mrrByTenant: studioProcedure.query(async ({ ctx }) => {
+  mrrByTenant: studioBillingProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db
       .select({
         tenantId: schema.subscription.tenantId,
@@ -31,9 +23,9 @@ export const studioReportsRouter = router({
     const acc = new Map<string, { tenantId: string; tenantName: string; mrrMinorUnits: number; currency: string }>();
     for (const r of rows) {
       const prev = acc.get(r.tenantId);
-      const add = planToMonthlyMinor(r.plan);
+      const add = planToMonthlyMinorUnits(r.plan);
       if (prev) prev.mrrMinorUnits += add;
-      else acc.set(r.tenantId, { tenantId: r.tenantId, tenantName: r.tenantName, mrrMinorUnits: add, currency: 'USD' });
+      else acc.set(r.tenantId, { tenantId: r.tenantId, tenantName: r.tenantName, mrrMinorUnits: add, currency: 'EUR' });
     }
     return [...acc.values()].sort((a, b) => b.mrrMinorUnits - a.mrrMinorUnits);
   }),
@@ -48,7 +40,7 @@ export const studioReportsRouter = router({
    * generated date series + LATERAL count, keeping it constant-rows-out
    * regardless of user table size.
    */
-  activeUsersSeries: studioProcedure.query(async ({ ctx }) => {
+  activeUsersSeries: studioBillingProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.execute(sql`
       WITH series AS (
         SELECT (CURRENT_DATE - (29 - g)) AS day

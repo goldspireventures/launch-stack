@@ -93,6 +93,16 @@ export default function OnboardingPage() {
   }, [me.data?.name]);
 
   const age = ageFromIsoDate(birthdate);
+  const filledPromptCount = promptRows.filter((r) => r.answer.trim().length > 0).length;
+  const photoCount = photoSlots.map((u) => u.trim()).filter(Boolean).length;
+  const finishBlockedReason =
+    !productId
+      ? 'Product not loaded'
+      : filledPromptCount < 2
+        ? 'Add at least 2 prompts'
+        : photoCount < 1
+          ? 'Add at least 1 photo'
+          : null;
 
   async function finish() {
     if (!productId) return;
@@ -144,6 +154,21 @@ export default function OnboardingPage() {
   }
 
   if (product.isLoading || me.isLoading) return <LoadingState />;
+
+  if (product.isError || (!product.isLoading && !productId)) {
+    return (
+      <main className="mx-auto max-w-lg px-4 py-12 text-center">
+        <h1 className="text-lg font-semibold">Could not load Heartline</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Product configuration is unavailable. Ensure the API is running and{' '}
+          <code className="rounded bg-muted px-1">{appConfig.productSlug}</code> exists in the catalog.
+        </p>
+        <Button asChild className="mt-6" variant="outline">
+          <Link href="/">Back home</Link>
+        </Button>
+      </main>
+    );
+  }
 
   const progress = ((step + 1) / STEP_COUNT) * 100;
 
@@ -282,7 +307,8 @@ export default function OnboardingPage() {
               <CardContent className="space-y-5 p-6">
                 <h2 className="text-lg font-semibold">Photos</h2>
                 <p className="text-sm text-muted-foreground">
-                  Demo avatars from DiceBear — replace URLs with your own if you like.
+                  Demo avatars from DiceBear — replace URLs with your own if you like. At least one photo is required
+                  to finish ({photoCount}/1).
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {photoSlots.map((url, i) => (
@@ -323,7 +349,7 @@ export default function OnboardingPage() {
                   <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>
                     Back
                   </Button>
-                  <Button className="flex-1" onClick={() => setStep(4)}>
+                  <Button className="flex-1" disabled={photoCount < 1} onClick={() => setStep(4)}>
                     Continue
                   </Button>
                 </div>
@@ -335,7 +361,9 @@ export default function OnboardingPage() {
             <Card>
               <CardContent className="space-y-5 p-6">
                 <h2 className="text-lg font-semibold">Prompts</h2>
-                <p className="text-sm text-muted-foreground">Answer at least two — they show on your profile.</p>
+                <p className="text-sm text-muted-foreground">
+                  Answer at least two — they show on your profile ({filledPromptCount}/2 answered).
+                </p>
                 {promptRows.map((row, i) => (
                   <div key={i} className="space-y-2 rounded-lg border bg-muted/20 p-3">
                     <Label className="text-xs uppercase tracking-wider text-muted-foreground">Prompt {i + 1}</Label>
@@ -370,7 +398,7 @@ export default function OnboardingPage() {
                   <Button variant="outline" className="flex-1" onClick={() => setStep(3)}>
                     Back
                   </Button>
-                  <Button className="flex-1" onClick={() => setStep(5)}>
+                  <Button className="flex-1" disabled={filledPromptCount < 2} onClick={() => setStep(5)}>
                     Continue
                   </Button>
                 </div>
@@ -461,10 +489,21 @@ export default function OnboardingPage() {
                   <Button variant="outline" className="flex-1" onClick={() => setStep(4)}>
                     Back
                   </Button>
-                  <Button className="flex-1" disabled={submitting || !productId} onClick={() => void finish()}>
+                  <Button
+                    className="flex-1"
+                    disabled={submitting || Boolean(finishBlockedReason)}
+                    onClick={() => void finish()}
+                  >
                     {submitting ? 'Saving…' : 'Finish'}
                   </Button>
                 </div>
+                {finishBlockedReason ? (
+                  <p className="text-center text-xs text-amber-600 dark:text-amber-400">{finishBlockedReason}</p>
+                ) : (
+                  <p className="text-center text-xs text-muted-foreground">
+                    {filledPromptCount}/2 prompts · {photoCount}/1 photo minimum
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

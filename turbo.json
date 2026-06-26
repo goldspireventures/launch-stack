@@ -13,6 +13,7 @@
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
+    "STUDIO_DEAL_DEV_RESET_ENABLED",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
     "RESEND_API_KEY",
     "INNGEST_EVENT_KEY",
@@ -47,7 +48,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": []
     },
     "clean": {
       "cache": false

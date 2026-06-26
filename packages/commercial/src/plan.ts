@@ -19,6 +19,29 @@ export type CommercialPlanSnapshot = {
   subcontractingNote: string;
 };
 
+/**
+ * Per-milestone workflow state kept on a studio_deal row. The plan snapshot
+ * itself stays immutable; this map lives alongside and tracks progress.
+ * Keys are milestone keys (kickoff, mvp_staging, golive…). Missing keys are
+ * treated as `{ status: 'pending' }`.
+ */
+export const MILESTONE_STATUSES = ['pending', 'in_progress', 'done', 'skipped'] as const;
+export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number];
+
+export interface MilestoneStateEntry {
+  status: MilestoneStatus;
+  /** ISO date the milestone was marked done/skipped. */
+  completedAt?: string;
+  /** User id of the studio operator who recorded the completion. */
+  completedById?: string;
+  /** ISO date the milestone is targeted for. */
+  dueAt?: string;
+  /** Free-form notes specific to this milestone (separate from the deal-wide notes). */
+  notes?: string;
+}
+
+export type MilestoneState = Record<string, MilestoneStateEntry>;
+
 function allocateMinorUnits(total: number, bpsWeights: readonly number[]): number[] {
   const sumBps = bpsWeights.reduce((a, b) => a + b, 0);
   if (sumBps !== 10000) {

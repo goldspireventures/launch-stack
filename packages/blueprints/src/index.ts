@@ -1,6 +1,8 @@
 import type { BlueprintKind } from './types';
 
 export * from './types';
+export * from './templates/index';
+export * from './golden-paths';
 export { socialMatchingBlueprint } from './social-matching';
 export { multiStaffBookingBlueprint } from './multi-staff-booking';
 export { communityBlueprint } from './community';

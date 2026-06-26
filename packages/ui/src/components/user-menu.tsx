@@ -21,9 +21,19 @@ export interface UserMenuProps {
   loginHref?: string;
   /** Override the sign-out endpoint. Default: /api/persona (DELETE). */
   signOutPath?: string;
+  /**
+   * `consumer` — end-user shells (e.g. Heartline): hide internal role/tenant
+   * jargon in the chip; keep full detail discoverable in the popover footer.
+   */
+  presentation?: 'default' | 'consumer';
 }
 
-export function UserMenu({ persona, loginHref = '/login', signOutPath = '/api/persona' }: UserMenuProps) {
+export function UserMenu({
+  persona,
+  loginHref = '/login',
+  signOutPath = '/api/persona',
+  presentation = 'default',
+}: UserMenuProps) {
   const [open, setOpen] = useState(false);
 
   if (!persona) {
@@ -56,7 +66,7 @@ export function UserMenu({ persona, loginHref = '/login', signOutPath = '/api/pe
           <span className="hidden sm:inline-flex flex-col items-start leading-tight">
             <span className="text-xs font-medium">{persona.name}</span>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {persona.role.replace('_', ' ').toLowerCase()}
+              {chipSubtitle(persona, presentation)}
             </span>
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
@@ -81,14 +91,20 @@ export function UserMenu({ persona, loginHref = '/login', signOutPath = '/api/pe
                   </div>
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">{persona.bio}</p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="rounded border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {persona.role}
-                  </span>
-                  <span className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    {persona.tenantSlug}
-                  </span>
-                </div>
+                {presentation === 'consumer' ? (
+                  <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                    Demo sign-in — switch anytime to preview other personas.
+                  </p>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="rounded border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {persona.role}
+                    </span>
+                    <span className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {persona.tenantSlug}
+                    </span>
+                  </div>
+                )}
                 <div className="mt-3 grid gap-1 border-t border-border pt-3">
                   <a
                     href={loginHref}
@@ -113,6 +129,14 @@ export function UserMenu({ persona, loginHref = '/login', signOutPath = '/api/pe
       </AnimatePresence>
     </Popover.Root>
   );
+}
+
+function chipSubtitle(persona: PersonaDefinition, presentation: 'default' | 'consumer'): string {
+  if (presentation === 'consumer') {
+    if (persona.group === 'customer') return 'Member';
+    return 'Demo preview';
+  }
+  return persona.role.replace(/_/g, ' ').toLowerCase();
 }
 
 function Avatar({ persona, size = 'sm' }: { persona: PersonaDefinition; size?: 'sm' | 'lg' }) {

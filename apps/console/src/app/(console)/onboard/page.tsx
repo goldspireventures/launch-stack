@@ -11,7 +11,7 @@ export default async function OnboardPage() {
   const store = await cookies();
   const personaId = store.get(PERSONA_COOKIE)?.value ?? null;
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-6 py-10">
+    <div className="space-y-6 py-2">
       <FadeIn>
         <header className="space-y-1.5 text-center">
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">

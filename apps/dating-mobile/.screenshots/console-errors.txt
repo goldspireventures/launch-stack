@@ -1,0 +1,63 @@
+Cannot manually set color scheme, as dark mode is type 'media'. Please use StyleSheet.setFlag('darkMode', 'class')
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,users.me,products.bySlug?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%222%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,users.me,products.bySlug?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%222%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,users.me,products.bySlug?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%222%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,users.me,products.bySlug?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%222%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Cannot manually set color scheme, as dark mode is type 'media'. Please use StyleSheet.setFlag('darkMode', 'class')
+
+Access to fetch at 'http://localhost:3000/api/trpc/products.bySlug,featureFlags.publicSurfaceForCurrentTenant?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/products.bySlug,featureFlags.publicSurfaceForCurrentTenant?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/products.bySlug,featureFlags.publicSurfaceForCurrentTenant?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/products.bySlug,featureFlags.publicSurfaceForCurrentTenant?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%221%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Cannot manually set color scheme, as dark mode is type 'media'. Please use StyleSheet.setFlag('darkMode', 'class')
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,products.bySlug?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,products.bySlug?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Cannot manually set color scheme, as dark mode is type 'media'. Please use StyleSheet.setFlag('darkMode', 'class')
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,products.bySlug,dating.currentSubscription?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%222%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,products.bySlug,dating.currentSubscription?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%222%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,products.bySlug,dating.currentSubscription?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%222%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED
+
+Access to fetch at 'http://localhost:3000/api/trpc/featureFlags.publicSurfaceForCurrentTenant,products.bySlug,dating.currentSubscription?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%2C%221%22%3A%7B%22json%22%3A%7B%22slug%22%3A%22heartline-dating%22%7D%7D%2C%222%22%3A%7B%22json%22%3Anull%2C%22meta%22%3A%7B%22values%22%3A%5B%22undefined%22%5D%2C%22v%22%3A1%7D%7D%7D' from origin 'http://localhost:8090' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+
+Failed to load resource: net::ERR_FAILED

@@ -30,8 +30,8 @@ import { trpc } from '@/lib/trpc';
 
 const STUDIO_URL =
   typeof process !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_STUDIO_URL ?? process.env.STUDIO_URL ?? 'http://localhost:3001')
-    : 'http://localhost:3001';
+    ? (process.env.NEXT_PUBLIC_STUDIO_URL ?? process.env.STUDIO_URL ?? 'http://localhost:4001')
+    : 'http://localhost:4001';
 
 type DomainRow = { host: string; status: 'pending' | 'verified' };
 
@@ -52,9 +52,10 @@ export default function SettingsPage() {
 
   const mockMonthlySpend = useMemo(() => {
     const plan = tenant.data?.plan ?? 'studio';
-    if (plan === 'enterprise') return '$4,800';
-    if (plan === 'studio') return '$299';
-    return '$0';
+    const fmt = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+    if (plan === 'enterprise') return fmt.format(4800);
+    if (plan === 'studio') return fmt.format(299);
+    return fmt.format(0);
   }, [tenant.data?.plan]);
 
   const [name, setName] = useState('');

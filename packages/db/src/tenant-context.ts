@@ -44,3 +44,18 @@ export async function withStudioContext<T>(
     return fn(tx as unknown as Database);
   });
 }
+
+/**
+ * Server-only studio scope without an end-user id (portal links, Stripe webhooks).
+ * Sets the studio role so RLS matches `studio_deal` policies; `app.user_id` is empty.
+ */
+export async function withSystemStudioContext<T>(
+  db: Database,
+  fn: (tx: Database) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.role', 'STUDIO_OWNER', true)`);
+    await tx.execute(sql`select set_config('app.user_id', '', true)`);
+    return fn(tx as unknown as Database);
+  });
+}

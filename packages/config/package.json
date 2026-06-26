@@ -8,10 +8,17 @@
   "exports": {
     ".": "./src/index.ts",
     "./env": "./src/env.ts",
+    "./mock-e2e": "./src/mock-e2e.ts",
+    "./client-portal-urls": "./src/client-portal-urls.ts",
     "./brand": "./src/brand.ts",
     "./roles": "./src/roles.ts",
     "./entitlements": "./src/entitlements.ts",
-    "./events": "./src/events.ts"
+    "./events": "./src/events.ts",
+    "./studio-sales-demo": "./src/studio-sales-demo.ts",
+    "./studio-tier2-demo": "./src/studio-tier2-demo.ts",
+    "./catalog-demo-urls": "./src/catalog-demo-urls.ts",
+    "./dev-surfaces": "./src/dev-surfaces.ts",
+    "./studio-tenant": "./src/studio-tenant.ts"
   },
   "scripts": {
     "lint": "echo 'no lint configured'",

@@ -21,14 +21,16 @@ import {
   FadeIn,
   LoadingState,
   MetricCard,
+  PageFlowCallout,
   PageHeader,
   StatusBadge,
 } from '@goldspire/ui';
+import { SupportAccessPendingBanner } from '@/components/support-access-pending-banner';
 import { trpc } from '@/lib/trpc';
 
 function formatMoney(cents: number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(cents / 100);
   } catch {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(cents / 100);
   }
@@ -99,6 +101,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <SupportAccessPendingBanner />
       <FadeIn>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <PageHeader
@@ -114,6 +117,12 @@ export default function DashboardPage() {
           </div>
         </div>
       </FadeIn>
+
+      <PageFlowCallout variant="muted" focusLine="Tenant lens">
+        {tenant.data
+          ? `Operating as ${tenant.data.name} (${tenant.data.slug}). Switch tenant in the top bar — all metrics and lists follow that lens.`
+          : 'Use the top bar to pick a tenant. Console is sell & deliver; Admin runs one client product at a time.'}
+      </PageFlowCallout>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Total members" value={members} icon={Users} />
@@ -176,7 +185,7 @@ export default function DashboardPage() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              System checks are illustrative for the admin shell; wire real probes in production.
+              Status rows reflect layout defaults — production tenants use live health probes from Apps.
             </p>
           </CardContent>
         </Card>
@@ -237,10 +246,10 @@ export default function DashboardPage() {
               </Link>
             </Button>
             <Button variant="outline" className="h-auto justify-between py-3" asChild>
-              <Link href="/reports">
+              <Link href="/moderation">
                 <span className="flex items-center gap-2">
                   <LayoutDashboard className="h-4 w-4" />
-                  View reports
+                  View moderation queue
                 </span>
                 <ArrowRight className="h-4 w-4 opacity-50" />
               </Link>

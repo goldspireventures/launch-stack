@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, MoreVertical, Smile } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -20,6 +20,8 @@ import {
 import { trpc } from '@/lib/trpc';
 import { useDatingProduct } from '@/lib/product';
 import { pravatarUrl } from '@/lib/dating-display';
+import { useRealtimeMessages } from '@/lib/use-realtime-messages';
+import { useFlag } from '@/lib/use-flag';
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -37,6 +39,7 @@ function dayLabel(iso: string | Date): string {
 
 export default function ThreadPage() {
   const params = useParams<{ threadId: string }>();
+  const router = useRouter();
   const threadId = params?.threadId ?? '';
   const { toast } = useToast();
   const productQ = useDatingProduct();
@@ -60,6 +63,18 @@ export default function ThreadPage() {
     },
   });
   const markRead = trpc.messages.markRead.useMutation();
+  const unmatch = trpc.dating.unmatch.useMutation({
+    async onSuccess() {
+      await utils.dating.matches.invalidate();
+      router.push('/messages');
+    },
+  });
+  const reportUser = trpc.reports.create.useMutation();
+  const blockUser = trpc.dating.blockUser.useMutation();
+  const blockEnabled = useFlag('feature.dating_block_user', false);
+  const safetyOn = useFlag('ai.safety_classifier', false);
+  const classify = trpc.dating.classifyMessage.useMutation();
+  useRealtimeMessages(threadId);
 
   const [draft, setDraft] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
@@ -133,6 +148,18 @@ export default function ThreadPage() {
     setSubmitting(true);
     setDraft('');
     try {
+      if (safetyOn) {
+        const check = await classify.mutateAsync({ content: body });
+        if (!check.safe && !check.skipped) {
+          toast({
+            title: 'Message not sent',
+            description: 'Our safety check flagged this message. Rephrase and try again.',
+            tone: 'danger',
+          });
+          setDraft(body);
+          return;
+        }
+      }
       await send.mutateAsync({
         tenantId: me.data.tenantId,
         threadId,
@@ -185,27 +212,65 @@ export default function ThreadPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem
-              onClick={() =>
-                toast({
-                  title: 'Unmatch',
-                  description: 'MOCK: Unmatch flow is not wired in this demo build.',
-                  tone: 'info',
-                })
-              }
+              disabled={!match?.matchId || unmatch.isPending}
+              onClick={async () => {
+                if (!match?.matchId) return;
+                try {
+                  await unmatch.mutateAsync({ matchId: match.matchId });
+                  toast({ title: 'Unmatched', description: `You and ${peerName} are no longer connected.` });
+                } catch {
+                  toast({ title: 'Could not unmatch', description: 'Try again in a moment.', tone: 'danger' });
+                }
+              }}
             >
               Unmatch…
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() =>
-                toast({
-                  title: 'Report',
-                  description: 'MOCK: Reporting is not wired in this demo build.',
-                  tone: 'info',
-                })
-              }
+              disabled={!match?.otherUserId || reportUser.isPending}
+              onClick={async () => {
+                if (!match?.otherUserId) return;
+                try {
+                  await reportUser.mutateAsync({
+                    targetType: 'user',
+                    targetId: match.otherUserId,
+                    reason: 'safety',
+                    details: `Reported from chat thread ${threadId}`,
+                    metadata: { threadId },
+                  });
+                  toast({
+                    title: 'Report submitted',
+                    description: 'Our team will review this. You can block or unmatch anytime.',
+                  });
+                } catch {
+                  toast({ title: 'Could not submit report', description: 'Try again in a moment.', tone: 'danger' });
+                }
+              }}
             >
               Report…
             </DropdownMenuItem>
+            {blockEnabled && (
+              <DropdownMenuItem
+                disabled={!match?.otherUserId || !productId || blockUser.isPending}
+                onClick={async () => {
+                  if (!match?.otherUserId || !productId) return;
+                  try {
+                    await blockUser.mutateAsync({
+                      productId,
+                      blockedUserId: match.otherUserId,
+                    });
+                    toast({
+                      title: 'Blocked',
+                      description: `${peerName} will no longer appear in your discover feed.`,
+                    });
+                    router.push('/messages');
+                  } catch {
+                    toast({ title: 'Could not block', description: 'Try again in a moment.', tone: 'danger' });
+                  }
+                }}
+              >
+                Block…
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </header>

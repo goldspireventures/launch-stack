@@ -58,7 +58,13 @@
       "@goldspire/blueprints/*": ["./packages/blueprints/src/*"],
       "@goldspire/logger": ["./packages/logger/src/index.ts"],
       "@goldspire/logger/trpc": ["./packages/logger/src/trpc.ts"],
-      "@goldspire/logger/next": ["./packages/logger/src/next.ts"]
+      "@goldspire/logger/next": ["./packages/logger/src/next.ts"],
+      "@goldspire/access": ["./packages/access/src/index.ts"],
+      "@goldspire/access/*": ["./packages/access/src/*"],
+      "@goldspire/knowledge": ["./packages/knowledge/src/index.ts"],
+      "@goldspire/knowledge/*": ["./packages/knowledge/src/*"],
+      "@goldspire/commercial": ["./packages/commercial/src/index.ts"],
+      "@goldspire/commercial/*": ["./packages/commercial/src/*"]
     }
   },
   "exclude": ["node_modules", ".next", "dist", "build", ".turbo"]

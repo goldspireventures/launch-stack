@@ -47,9 +47,9 @@ export interface BlueprintDefinition {
   defaultSlugPrefix: string;
   /** Entitlement keys that gate premium features. */
   entitlementKeys: EntitlementKey[];
-  /** Recommended one-time prototype price in USD (cents). */
+  /** Recommended one-time prototype price in EUR (cents). */
   prototypePriceCents: number;
-  /** Recommended monthly retainer price in USD (cents). */
+  /** Recommended monthly retainer price in EUR (cents). */
   retainerPriceCents: number;
   /** Typical agency-engagement duration in weeks. */
   estimatedWeeks: { min: number; max: number };
@@ -59,6 +59,8 @@ export interface BlueprintDefinition {
   aiSurface: AISurface[];
   /** Notes for client conversations — risks, gotchas, success criteria. */
   clientNotes: string[];
+  /** When set, Console Capabilities uses this commercial pack catalog (e.g. Heartline). */
+  capabilityPackCatalog?: 'heartline';
 }
 
 export interface NavItem {

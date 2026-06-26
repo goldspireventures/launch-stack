@@ -45,3 +45,10 @@ export function useLimit(key: string, defaultValue: number): number {
   const v = q.data.limits[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : defaultValue;
 }
+
+/** Resolve a public module gate (e.g. `module.referrals`, `module.dating_verification`). */
+export function useModule(key: string, defaultValue = false): boolean {
+  const q = useTenantPublicSurface();
+  if (!q.data?.modules) return defaultValue;
+  return q.data.modules[key] ?? defaultValue;
+}

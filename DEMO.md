@@ -10,12 +10,17 @@ A guided tour of the studio from three vantage points: the studio operator (you)
 
 | App | Local URL | Who lives here | Notes |
 |---|---|---|---|
-| **Studio Console** | http://localhost:3001 | The studio (you). Studio Owner + Studio Staff roles. | Cross-tenant operations. |
-| **Admin** | http://localhost:3002 | One tenant at a time. Tenant Owners + Tenant Admins. Studio operators can drop in. | Tenant-scoped. |
-| **Heartline (web)** | http://localhost:3000 | End customers. CUSTOMER role. | The client product the studio ships. |
+| **Studio Console** | http://localhost:4001 | The studio (you). Studio Owner + Studio Staff roles. | Cross-tenant operations. |
+| **Admin** | http://localhost:4002 | One tenant at a time. Tenant Owners + Tenant Admins. Studio operators can drop in. | Tenant-scoped. |
+| **Heartline (web)** | http://localhost:4000 | End customers. CUSTOMER role. | The client product the studio ships. |
 | **Heartline (mobile)** | (Expo) | Same end customers on phones. | Reference React Native shell. |
+| **Goldspire marketing** | http://localhost:4010 | Prospects / inbound leads (no login). | Public site: templates, process, contact form → `marketing_lead`. |
+| **Client portal** | http://localhost:4005 | External clients (magic link, no login). | Deal acceptance + milestone payments (`/deal/[id]?token=…`). |
+| **Nova Care (booking)** | http://localhost:4015 | End customers + demo operators. | Multi-staff booking reference tenant (`nova-care`). |
 
-All three Next apps share `localhost` cookies, so a persona picked once is honored everywhere.
+Console, Admin, Heartline, and Goldspire marketing Next apps share `localhost` cookies where applicable, so a persona picked once is honored on studio/tenant surfaces.
+
+For an **ordered manual test checklist** (migrations, ports, marketing → leads → client portal → Nova Care), see [TESTING.md](./TESTING.md) in the repo root.
 
 ---
 
@@ -67,7 +72,7 @@ The point of "blueprints": you can stamp a new tenant from a known-good shape in
 
 This is the demo that closes deals.
 
-1. Open the Studio Console as **Studio Owner** → http://localhost:3001/login → pick **Eamon Olaniyan**.
+1. Open the Studio Console as **Studio Owner** → http://localhost:4001/login → pick **Eamon Olaniyan**.
 2. Sidebar → **Stamp tenant** (or hit Cmd/Ctrl+K → type "stamp").
 3. Wizard:
    - **Blueprint**: pick **Social Matching**.
@@ -87,7 +92,7 @@ This is the demo that closes deals.
 
 **Persona:** `studio.owner` (Eamon).
 
-1. **Overview** (http://localhost:3001/) — KPI strip across all tenants, recent activity feed, "tenants needing attention" call-out, quick-action tiles. Live data; refresh and watch counts update if you've been seeding.
+1. **Overview** (http://localhost:4001/) — KPI strip across all tenants, recent activity feed, "tenants needing attention" call-out, quick-action tiles. Live data; refresh and watch counts update if you've been seeding.
 2. **Stamp tenant** (`/onboard`) — the killer demo above.
 3. **Tenants** (`/tenants`) — the directory. Click **Open Admin →** on any row to deep-link into that tenant's Admin app with one click (no fetch dance, no manual cookie wrangling).
 4. **Apps** (`/apps`) — the deployments grid. Each tile shows the blueprint, status, dev URL.
@@ -131,7 +136,7 @@ The full-page `/select-tenant` route still exists for the first-time path.
 
 **Persona:** `heartline.customer.sarah` (free tier).
 
-1. http://localhost:3000/login → pick **Sarah Wright** → land on `/discover`.
+1. http://localhost:4000/login → pick **Sarah Wright** → land on `/discover`.
 2. **Discover** — drag the top card right (like), left (pass), up (super-like). Or use the buttons. Hit the daily limit and the upgrade prompt appears.
 3. **Likes** (`/likes`) — Sarah is free, so inbound likes are blurred. Switch to Jamie (`heartline.customer.jamie`, Plus) and the same screen shows real photos.
 4. **Matches** — staggered grid, filter chips, search, unread badges. Click a match to open the chat.
@@ -139,7 +144,7 @@ The full-page `/select-tenant` route still exists for the first-time path.
 6. **Profile** — edit your photos, prompts, preferences. Sign out reachable from here.
 7. **Premium** — pricing surface with mocked Stripe-style checkout. Try clicking "Choose Plus": modal with order summary + card form, fake processing, success state. Returns to `/discover` as a Plus member (sees real inbound likes now).
 
-> The customer experience is intentionally polished. The pitch to clients is "this is what we'd ship if you wanted a dating app." Mobile (Expo) is the same flow on a phone.
+> The customer experience is intentionally polished. The pitch to clients is "this is what we'd ship if you wanted a dating app." Mobile (Expo) shares the same tRPC API — run `pnpm --filter @goldspire/db fixup:heartline-walkthrough` after seed so discover/matches/chat are populated for Jamie & Sarah. Full steps: [TESTING.md](./TESTING.md) Part 6.
 
 ---
 
@@ -147,9 +152,9 @@ The full-page `/select-tenant` route still exists for the first-time path.
 
 Demonstrates the full feature-flag loop: catalog → tenant override → live UX in the end-user app. Open two browser windows side-by-side.
 
-**Window A — Admin (owner):** switch to persona `heartline.owner` (Alex Stone). Go to `http://localhost:3002/feature-flags`.
+**Window A — Admin (owner):** switch to persona `heartline.owner` (Alex Stone). Go to `http://localhost:4002/feature-flags`.
 
-**Window B — Heartline (customer):** switch to persona `heartline.customer.jamie` (Jamie Reyes — pinned to Plus by the seed). Go to `http://localhost:3000/discover`. You should see profile cards with **city + distance** (e.g. "12 km · Berlin") and, in the sidebar footer, a **"Go Premium"** chip (Plus users get the upsell to Premium).
+**Window B — Heartline (customer):** switch to persona `heartline.customer.jamie` (Jamie Reyes — pinned to Plus by the seed). Go to `http://localhost:4000/discover`. You should see profile cards with **city + distance** (e.g. "12 km · Berlin") and, in the sidebar footer, a **"Go Premium"** chip (Plus users get the upsell to Premium).
 
 1. In Window A, find `feature.discover_show_distance` (tagged `privacy`, default on). Toggle it **off**. The flag list shows "Catalog default: on · Effective: off".
 2. In Window B, hard-refresh `/discover`. The distance disappears from cards; only the city remains. Tenant operators just shipped a privacy improvement to every Heartline user without a code deploy.
@@ -182,6 +187,8 @@ Demonstrates a single source of truth for pricing and how the studio quotes a ne
 
 Where it lives: `packages/commercial/src/catalog.ts` (tiers + blueprint multipliers + add-ons) and `packages/commercial/src/quote.ts` (`computeQuote(...)`). Same `computeQuote` runs in Plans, the Deal Desk pre-fill, the interactive calculator, and the blueprint cards.
 
+**Public marketing € tiers** (`clone` / `template` / `blueprint`) and the **three-layer scope model** (Identity / Configuration / Invention) live in `packages/commercial/src/marketing-offerings.ts` and `studio-service-catalog.ts`; the site surfaces them on `/pricing` and `/how-we-work#how-we-scope`. Canonical write-up: `docs/product/template-scope-and-tiers.md`.
+
 ---
 
 ## Tour 6 — Moderate user messages
@@ -210,6 +217,120 @@ Where the wiring lives:
 - Server — `messages.{flag,unflag,hide,unhide,suspendSender,reactivateUser,moderationQueue}` in `packages/api/src/routers/messages.ts`.
 - Admin UI — `apps/admin/src/app/(admin)/messages/page.tsx` (tabs + per-row actions).
 - Customer-side filter — `apps/dating-web/src/app/(app)/messages/[threadId]/page.tsx` (renders the placeholder).
+
+---
+
+## Tour 7 — Drive a deal through its milestones
+
+Demonstrates the deal-detail page as a real workflow surface: status, per-milestone progress, due dates, milestone-level notes, and a deal-scoped activity feed that audit-logs every change.
+
+**Setup** (one-time, sets the Heartline retention sprint to a believable mid-engagement state):
+```sh
+pnpm --filter @goldspire/db fixup:deal-progress
+```
+Idempotent — safe to re-run; it replays the activity feed each time so the demo always lines up.
+
+**Walkthrough** as `studio.owner` (Eamon):
+
+1. Console → `/deals`. Open **Heartline retention sprint**.
+2. Top of the page: a progress strip with `1 / 5 milestones done`, a green/amber/rose progress bar, and a dot timeline. The "Next up" badge points at the in-progress milestone with its due date in human time ("in 3d").
+3. Scroll to the **Milestones** card. The first card is **Done** with a check icon and "Done 5d ago". The second is **In progress** with a due date and a milestone-specific note ("Waiting on swipe v2 paywall analytics…"). Click **Open details** to see the date picker and notes field — edit either and click **Save details**.
+4. Click **Mark done** on the in-progress milestone. Watch the progress strip update instantly (2/5 done, the dot turns green, the next-up pointer advances), and a fresh row appears in the **Activity** card at the bottom: `Moved "Staging release" → Done · just now`.
+5. To make a deliberate exception, click **Skip** on any milestone — its dot turns rose and the bar shows the skipped slice separately from the done slice. Use **Reopen** to undo.
+6. Open Admin → `/audit` in the Heartline tenant. Every milestone change is also logged with `action: studio_deal_milestone_updated` and a `before/after` metadata payload — the deal-scoped feed on the detail page is just a filtered view of the global log.
+
+Where the wiring lives:
+- Migration — `packages/db/drizzle/0005_studio_deal_milestone_state.sql` (one `jsonb` column on `studio_deal`).
+- Type — `MilestoneState` / `MilestoneStateEntry` in `packages/commercial/src/plan.ts`.
+- Server — `studioDeals.{updateMilestone, activity}` in `packages/api/src/routers/studio-deals.ts`.
+- UI — `apps/console/src/app/(console)/deals/[id]/page.tsx` (progress strip, interactive milestone cards, activity feed).
+- Demo seed — `packages/db/scripts/fixup-deal-progress.ts`.
+
+---
+
+## Tour 8 — Product templates: the missing layer between blueprints and tenants
+
+Demonstrates the **product-template** concept introduced in Sprint 0. A blueprint is the technical foundation (e.g. `social_matching`); a product template is one polished shape of that blueprint (e.g. `social_matching/dating` — what Heartline is). Tenants are stamped from templates. This is the layer that lets the studio sell *recognisable product shapes* (Dating, Mentorship…) without selling raw blueprints.
+
+**Setup** (one-time, back-fills existing tenants with their canonical template tag — Heartline → `social_matching/dating`):
+```sh
+pnpm --filter @goldspire/db fixup:templates
+```
+Non-destructive and idempotent. Leaves tenants whose blueprint has no shipped template untagged; you can always re-run after declaring new templates.
+
+**Walkthrough** as `studio.owner` (Eamon):
+
+1. Console → **Templates** in the sidebar (`/catalog/templates`). You'll see two cards: **Dating** (shipped, 2 tenants live) and **Mentorship** (planned). The page header explains the three-tier hierarchy: blueprint → template → tenant.
+2. Click **View template** on the Dating card. Drawer shows the discovery questions sales will ask, the product tiers the stamp creates, the flag overrides applied, the hero-screen list, and the pricing hints (`×1.00` baseline · 6–10 weeks · €25,000+). The Live-tenants chips show Heartline as one of two on this template.
+3. Click **Stamp a tenant on this template**. You land on `/onboard?blueprint=social_matching&template=social_matching/dating` — wizard step 1 has the blueprint *and* template pre-selected, the tagline pre-filled with the template default, and brand colour set to the template's `#E15A82`. Walk through Identity → Owner → Brand → Review.
+4. On **Review**, the new "Template" row shows `Dating` — the products and flag overrides being stamped are pulled straight from `social_matching/dating`.
+5. Compare with **Mentorship** back on `/catalog/templates`. The card is greyed (planned status), it shows `×1.15` effort + 8–14 weeks, and the stamp button is replaced by a price hint. This is the "Tier 2 — new template inside an existing blueprint" pricing tier visible in product.
+6. Open Console → **Blueprints**. Each blueprint card now shows the templates declared under it inline — small dot + status pill (shipped / planned). Hover-link to the catalog page.
+
+Where the wiring lives:
+- Type — `ProductTemplate` in `packages/blueprints/src/templates/types.ts`.
+- Templates — `packages/blueprints/src/templates/social-matching-{dating,mentorship}.ts`.
+- Registry — `packages/blueprints/src/templates/index.ts` (`PRODUCT_TEMPLATES`, `listTemplates`, `getTemplate`, `getDefaultTemplateForBlueprint`).
+- Quote engine — `packages/commercial/src/quote.ts` (new `QuoteTemplateModifier` line item, applied multiplicatively).
+- Stamper — `packages/api/src/routers/onboarding.ts` (accepts `templateId`, validates blueprint/status, threads through preview + stamp + audit).
+- Catalog API — `packages/api/src/routers/catalog.ts` (`listTemplates`, `templateById` with live tenant counts).
+- UI — `apps/console/src/app/(console)/catalog/templates/page.tsx` (catalog + detail drawer) and template chips in `apps/console/src/app/(console)/blueprints/page.tsx`.
+- Wizard — `apps/console/src/app/(console)/onboard/wizard.tsx` (deep-link query params, template picker strip).
+- Demo seed — `packages/db/scripts/fixup-templates.ts`.
+
+---
+
+## Tour 9 — Marketing site + inbound leads (Sprint 2)
+
+Demonstrates the **goldspire.dev-style** public marketing app and the path from discovery form to studio triage.
+
+**Prereqs:** Apply migrations (includes `marketing_lead` / RLS). Same database env as the rest of the monorepo — `goldspire-web` serves tRPC via `apps/goldspire-web/src/app/api/trpc/[trpc]/route.ts` (no separate API server for this app).
+
+**Run the marketing app:**
+
+```sh
+pnpm --filter @goldspire/goldspire-web dev
+```
+
+Open **http://localhost:4010**. Browse `/`, `/templates`, `/templates/[id]`, `/how-we-work`, `/case-studies`, `/contact`.
+
+**Inbound flow:**
+
+1. On **/contact**, submit the discovery form (legitimate fields; leave honeypot empty).
+2. Open the **Studio Console** as `studio.owner` → **Leads** in the sidebar (`/leads`) or Cmd/Ctrl+K → **Marketing leads**.
+3. The new row appears with status **new**. Open it → update status (e.g. **qualified**) or **Convert to deal** to create a Deal Desk row with a Solo-tier plan snapshot.
+
+Where it lives:
+
+- Schema — `packages/db/src/schema/marketing.ts` (`marketing_lead`, status enum).
+- API — `packages/api/src/routers/marketing.ts` (`submitDiscovery` for anonymous callers under studio context; `listLeads` / `updateLead` / `convertToDeal` for studio).
+- Site — `apps/goldspire-web/` (Next 15, port **3010**).
+- Console — `apps/console/src/app/(console)/leads/page.tsx`.
+
+---
+
+## Tour 10 — Client portal + Nova Care (Sprint 2)
+
+**Client portal (dedicated app):** Studio operators still issue links from Console → Deal detail → **Issue portal link**. URLs now target **`http://localhost:4005/deal/<id>?token=…`** (see `NEXT_PUBLIC_CLIENT_PORTAL_URL`). Legacy **`http://localhost:4001/portal/deal/...`** bookmarks redirect to the same place.
+
+```sh
+pnpm --filter @goldspire/client-portal dev
+```
+
+**Nova Care (`booking-web`):** Run on **port 3015** so it does not collide with marketing on 3010. The app pins the `nova-care` tenant for mock auth.
+
+```sh
+pnpm --filter @goldspire/booking-web dev
+```
+
+Open **http://localhost:4015** — browse home, `/services`, `/book`, `/bookings`. Creating a booking writes real rows scoped to the Nova Care tenant.
+
+Where it lives:
+
+- Client portal — `apps/client-portal/` (`/deal/[id]`, tRPC `portalDeals.*`).
+- Portal URL helper — `packages/config/src/client-portal-urls.ts` (`getClientPortalOrigin`).
+- API return URLs — `packages/api/src/routers/portal-deals.ts`, `studioDeals.createPortalLink` / `createPaymentCheckout`.
+- Nova Care UI — `apps/booking-web/` (shared chrome in `src/components/nova-site-header.tsx`).
 
 ---
 

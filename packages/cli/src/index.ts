@@ -3,10 +3,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import { getBlueprintByKind, listBlueprints } from '@goldspire/blueprints';
+import { CLONE_RUNBOOKS } from '@goldspire/commercial';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+
+type MobileScaffoldMode = 'none' | 'companion' | 'native';
 
 export async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
@@ -16,6 +19,8 @@ export async function main() {
     case 'list':
     case 'blueprints':
       return runList();
+    case 'runbook':
+      return runRunbook(rest);
     case '-h':
     case '--help':
     case 'help':
@@ -34,7 +39,9 @@ ${pc.bold('goldspire')} — scaffold a new client product from a blueprint
 
 ${pc.bold('Usage')}
   goldspire new <name> --blueprint=<kind> [--tenant=<slug>] [--port=<n>] [--name=<display>]
+  goldspire new <name>-mobile --blueprint=social_matching --tenant=<slug> --with-mobile=companion|native
   goldspire list
+  goldspire runbook [tier1-dating|tier1-dating-as-is|tier1-dating-companion|tier1-dating-native|tier1-booking]
 
 ${pc.bold('Available blueprints')}`);
   for (const b of listBlueprints()) {
@@ -43,6 +50,7 @@ ${pc.bold('Available blueprints')}`);
   console.log(`
 ${pc.bold('Example')}
   goldspire new sparrow-dating --blueprint=social_matching --tenant=sparrow --port=3050 --name="Sparrow"
+  goldspire new sparrow-mobile --blueprint=social_matching --tenant=sparrow --with-mobile=companion
 `);
 }
 
@@ -54,12 +62,47 @@ function runList() {
   }
 }
 
+const RUNBOOK_SLUGS: Record<string, string> = {
+  'tier1-dating': 'tier1_dating_clone',
+  'tier1-dating-as-is': 'tier1_dating_as_is',
+  'tier1-dating-companion': 'tier1_dating_companion',
+  'tier1-dating-native': 'tier1_dating_native',
+  'tier1-booking': 'tier1_booking_clone',
+};
+
+function runRunbook(args: string[]) {
+  const which = args[0] ?? 'tier1-dating';
+  const presetId = RUNBOOK_SLUGS[which];
+  const runbook = presetId ? CLONE_RUNBOOKS.find((r) => r.presetId === presetId) : undefined;
+  if (!runbook) {
+    console.error(
+      pc.red(
+        `Unknown runbook: ${which}. Try: ${Object.keys(RUNBOOK_SLUGS).join(' | ')}`,
+      ),
+    );
+    process.exit(1);
+  }
+  console.log(pc.bold(runbook.title));
+  console.log();
+  for (const [i, step] of runbook.steps.entries()) {
+    console.log(`${pc.cyan(`${i + 1}.`)} ${step.label}`);
+    console.log(`   ${pc.dim(step.hint)}`);
+    if (step.commandTemplate) {
+      console.log(`   ${pc.gray('CLI:')} ${step.commandTemplate}`);
+    }
+    console.log();
+  }
+}
+
 async function runNew(args: string[]) {
   const name = args.find((a) => !a.startsWith('--'));
   const blueprintArg = parseFlag(args, 'blueprint');
   const tenant = parseFlag(args, 'tenant');
   const portStr = parseFlag(args, 'port');
   const productDisplayName = parseFlag(args, 'name');
+  const withMobileRaw = parseFlag(args, 'with-mobile');
+  const withMobile: MobileScaffoldMode =
+    withMobileRaw === 'companion' || withMobileRaw === 'native' ? withMobileRaw : 'none';
 
   if (!name) throw new Error('Missing <name>. Run `goldspire new my-app --blueprint=...`.');
   if (!blueprintArg) throw new Error('Missing --blueprint. Run `goldspire list` to see options.');
@@ -70,7 +113,11 @@ async function runNew(args: string[]) {
       `Unknown blueprint "${blueprintArg}". Run \`goldspire list\` to see options.`,
     );
   }
-  const referenceApp = blueprint.referenceAppFolder;
+
+  const mobileRequested = withMobile !== 'none';
+  const referenceApp = mobileRequested
+    ? (blueprint.referenceMobileFolder ?? 'dating-mobile')
+    : blueprint.referenceAppFolder;
   const refTenant = blueprint.defaultTenantSlug;
   const port = portStr ? Number(portStr) : blueprint.defaultPort + 50;
   const tenantSlug = tenant ?? slugify(name);
@@ -88,14 +135,20 @@ async function runNew(args: string[]) {
   console.log(pc.gray(`▸ copying ${referenceApp} → ${name}`));
   await copyDir(sourceDir, targetDir);
 
-  // Replace identifiers throughout the new app.
   const replacements: [RegExp, string][] = [
     [new RegExp(`@goldspire/${referenceApp}`, 'g'), `@goldspire/${name}`],
     [new RegExp(`'x-goldspire-tenant': '${refTenant}'`, 'g'), `'x-goldspire-tenant': '${tenantSlug}'`],
     [new RegExp(`tenantHint: '${refTenant}'`, 'g'), `tenantHint: '${tenantSlug}'`],
-    [new RegExp(`port ${blueprint.defaultPort}`, 'g'), `port ${port}`],
-    [new RegExp(String(blueprint.defaultPort), 'g'), String(port)],
+    [new RegExp(`deepLinkScheme: '${refTenant}'`, 'g'), `deepLinkScheme: '${tenantSlug}'`],
+    [new RegExp(`scheme: '${refTenant}'`, 'g'), `scheme: '${tenantSlug}'`],
   ];
+
+  if (!mobileRequested) {
+    replacements.push(
+      [new RegExp(`port ${blueprint.defaultPort}`, 'g'), `port ${port}`],
+      [new RegExp(String(blueprint.defaultPort), 'g'), String(port)],
+    );
+  }
 
   await walkAndReplace(targetDir, replacements);
 
@@ -104,12 +157,17 @@ async function runNew(args: string[]) {
   if (productDisplayName) {
     console.log(pc.dim(`  Product display name: ${productDisplayName}`));
   }
+  if (mobileRequested) {
+    console.log(pc.dim(`  Mobile scope: ${withMobile} (see dating delivery SKU in Deal Desk)`));
+    console.log(`  4. pnpm --filter @goldspire/${name} dev   ${pc.dim('# Expo dev client')}`);
+  } else {
+    console.log(`  4. pnpm --filter @goldspire/${name} dev   ${pc.dim(`# http://localhost:${port}`)}`);
+  }
   console.log();
   console.log('Next steps:');
   console.log(`  1. pnpm install`);
   console.log(`  2. Add a row to the seed for tenant ${pc.cyan(tenantSlug)} (see packages/db/scripts/seed.ts)`);
   console.log(`  3. pnpm db:seed`);
-  console.log(`  4. pnpm --filter @goldspire/${name} dev   ${pc.dim(`# http://localhost:${port}`)}`);
 }
 
 function parseFlag(args: string[], name: string): string | undefined {
@@ -176,7 +234,6 @@ async function walkAndReplace(dir: string, replacements: [RegExp, string][]) {
     if (entry.isDirectory()) {
       await walkAndReplace(full, replacements);
     } else if (entry.isFile()) {
-      // Only rewrite text files
       if (/\.(ts|tsx|js|jsx|mjs|cjs|json|md|css)$/.test(entry.name)) {
         const original = await fs.readFile(full, 'utf-8');
         let next = original;

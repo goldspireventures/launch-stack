@@ -13,7 +13,7 @@ export const b2bSaasShellBlueprint: BlueprintDefinition = {
   defaultTenantSlug: 'acme',
   defaultPort: 3014,
   localDevCommand: 'pnpm --filter @goldspire/b2b-saas-web dev',
-  demoUrl: 'http://localhost:3014',
+  demoUrl: 'http://localhost:4014',
   badgeAccent: '#0EA5E9',
   badgeLabel: 'B2B SaaS',
   industryAliases: ['saas', 'b2b', 'software', 'enterprise'],

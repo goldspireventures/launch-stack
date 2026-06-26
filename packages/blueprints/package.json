@@ -7,6 +7,9 @@
   "types": "./src/index.ts",
   "exports": { ".": "./src/index.ts" },
   "scripts": { "typecheck": "tsc --noEmit", "clean": "rimraf .turbo dist" },
-  "dependencies": { "@goldspire/config": "workspace:*", "zod": "^3.23.8" },
+  "dependencies": {
+    "@goldspire/config": "workspace:*",
+    "zod": "^3.23.8"
+  },
   "devDependencies": { "typescript": "^5.6.2", "rimraf": "^6.0.1" }
 }

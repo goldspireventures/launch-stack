@@ -15,11 +15,16 @@ import { useDatingProduct } from '@/lib/product';
 import { useFlag } from '@/lib/use-flag';
 import { useUserPlan } from '@/lib/use-user-plan';
 import { DiscoverSwipeDeck, type SwipeMutationResult } from '@/components/discover-swipe-deck';
+import { DiscoveryFiltersPanel } from '@/components/discovery-filters-panel';
+import { IntentionalPaceBanner } from '@/components/intentional-pace-banner';
 import { UpgradePrompt } from '@/components/upgrade-prompt';
+import { datingSchemas } from '@goldspire/validation';
 
 export default function DiscoverPage() {
   const { tier } = useUserPlan();
   const showDistance = useFlag('feature.discover_show_distance', true);
+  const discoverFiltersOn = useFlag('feature.discover_filters', false);
+  const smartSortOn = useFlag('ai.match_quality_scoring', false);
   const productQ = useDatingProduct();
   const productId = productQ.data?.id;
 
@@ -42,8 +47,32 @@ export default function DiscoverPage() {
       await utils.dating.outboundLikes.invalidate();
     },
   });
+  const rewind = trpc.dating.rewind.useMutation({
+    async onSuccess() {
+      await utils.dating.discover.invalidate();
+    },
+  });
+
+  const [filters, setFilters] = React.useState(() => datingSchemas.discoveryFilters.parse({}));
+  const saveFilters = trpc.dating.upsertProfile.useMutation({
+    async onSuccess() {
+      await utils.dating.discover.invalidate();
+      await utils.dating.myProfile.invalidate();
+    },
+  });
 
   const [showPaywall, setShowPaywall] = React.useState(false);
+
+  React.useEffect(() => {
+    const raw = myProfileQ.data?.filters as Record<string, unknown> | undefined;
+    if (!raw) return;
+    const parsed = datingSchemas.discoveryFilters.safeParse({
+      minAge: raw.minAge,
+      maxAge: raw.maxAge,
+      distanceKm: raw.maxDistanceKm ?? raw.distanceKm,
+    });
+    if (parsed.success) setFilters(parsed.data);
+  }, [myProfileQ.data?.filters]);
 
   React.useEffect(() => {
     if (tier !== 'free') setShowPaywall(false);
@@ -77,8 +106,55 @@ export default function DiscoverPage() {
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Discover"
-        description="Swipe right on people you’d like to meet. Drag the card or use the buttons below."
+        description={
+          discoverFiltersOn
+            ? 'People here match your filters. Drag a card or use the buttons — right to like, left to pass.'
+            : 'Drag the top card or use the buttons — right to like, left to pass, up for super like.'
+        }
       />
+
+      <IntentionalPaceBanner />
+
+      {smartSortOn && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Feed sorted by match quality — profiles with shared interests and nearby cities rank higher.
+        </p>
+      )}
+
+      {discoverFiltersOn && productId && (
+        <DiscoveryFiltersPanel
+          value={filters}
+          onChange={setFilters}
+          saving={saveFilters.isPending}
+          onSave={() => {
+            if (!my) return;
+            void saveFilters.mutateAsync({
+              productId,
+              profile: {
+                displayName: my.displayName,
+                birthdate: String(my.birthdate).slice(0, 10),
+                gender: my.gender as 'woman',
+                interestedIn: (my.interestedIn as ('woman' | 'man')[]) ?? ['woman', 'man'],
+                seeking: my.seeking as 'long_term',
+                bio: my.bio ?? '',
+                photos:
+                  my.photos?.map((p, i) => ({
+                    url: p.url,
+                    storagePath: p.storagePath,
+                    position: i,
+                  })) ?? [],
+                prompts: (my.prompts as { question: string; answer: string }[]) ?? [],
+                city: my.city ?? undefined,
+              },
+              filters: {
+                minAge: filters.minAge,
+                maxAge: filters.maxAge,
+                maxDistanceKm: filters.distanceKm,
+              },
+            });
+          }}
+        />
+      )}
 
       {showPaywall && tier === 'free' && (
         <div className="mb-6">
@@ -110,6 +186,7 @@ export default function DiscoverPage() {
         </Card>
       ) : (
         <DiscoverSwipeDeck
+          productId={productId}
           profiles={profiles.map((p) => ({
             userId: p.userId,
             displayName: p.displayName,
@@ -130,6 +207,16 @@ export default function DiscoverPage() {
           onSwipe={handleSwipe}
           onAfterSwipe={afterSwipe}
           onDailyLimit={() => setShowPaywall(true)}
+          onRewind={
+            productId
+              ? async () => {
+                  const res = await rewind.mutateAsync({ productId });
+                  if (!res.rewound) return { ok: false, message: 'Nothing to rewind' };
+                  return { ok: true };
+                }
+              : undefined
+          }
+          rewindPending={rewind.isPending}
         />
       )}
     </div>

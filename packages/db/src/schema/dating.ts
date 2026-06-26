@@ -164,3 +164,35 @@ export type DatingProfile = typeof datingProfile.$inferSelect;
 export type DatingPhoto = typeof datingPhoto.$inferSelect;
 export type DatingSwipe = typeof datingSwipe.$inferSelect;
 export type DatingMatch = typeof datingMatch.$inferSelect;
+
+/**
+ * Block list — blocker will not see blocked user in discover; blocked user cannot message.
+ */
+export const datingUserBlock = pgTable(
+  'dating_user_block',
+  {
+    id: varchar('id', { length: 26 }).$defaultFn(newId).primaryKey(),
+    tenantId: varchar('tenant_id', { length: 26 })
+      .notNull()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    productId: varchar('product_id', { length: 26 })
+      .notNull()
+      .references(() => product.id, { onDelete: 'cascade' }),
+    blockerUserId: varchar('blocker_user_id', { length: 26 })
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    blockedUserId: varchar('blocked_user_id', { length: 26 })
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    pairUq: uniqueIndex('dating_user_block_pair_uq').on(
+      t.tenantId,
+      t.blockerUserId,
+      t.blockedUserId,
+    ),
+  }),
+);
+
+export type DatingUserBlock = typeof datingUserBlock.$inferSelect;
