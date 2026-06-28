@@ -15,11 +15,14 @@ export const PUBLIC_TIER1_DATING_COMPANION_MINOR = 2_500_000; // €25,000
 /** Dating Tier 1 — web + native launch (chat, paywall, store-ready builds on Expo). */
 export const PUBLIC_TIER1_DATING_NATIVE_MINOR = 3_500_000; // €35,000
 
-/** Tier 1 booking clone preset (slightly below dating — scheduling SKU density). */
-export const PUBLIC_TIER1_BOOKING_CLONE_MINOR = 1_850_000; // €18,500
+/** Tier 1 booking clone preset — clinic & salon scheduling. */
+export const PUBLIC_TIER1_BOOKING_CLONE_MINOR = 1_950_000; // €19,500
 
 /** Tier 2 public “from”. */
 export const PUBLIC_TIER2_TEMPLATE_FROM_MINOR = 3_800_000; // €38,000
+
+/** Tier 2 typical medium-scope anchor (Console preset + sales conversations). */
+export const PUBLIC_TIER2_TEMPLATE_MEDIUM_MINOR = 6_000_000; // €60,000
 
 /** Tier 3 public “from”. */
 export const PUBLIC_TIER3_BLUEPRINT_FROM_MINOR = 8_500_000; // €85,000

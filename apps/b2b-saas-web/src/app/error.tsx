@@ -3,5 +3,5 @@
 import { AppRouteError } from '@goldspire/ui';
 
 export default function Error(props: { error: Error & { digest?: string }; reset: () => void }) {
-  return <AppRouteError {...props} title="Acme workspace" />;
+  return <AppRouteError {...props} title="Relay" />;
 }

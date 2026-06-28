@@ -7,7 +7,7 @@ export const b2bSaasControlPlaneTemplate: ProductTemplate = {
   name: 'B2B control plane',
   tagline: 'Workspaces, seats, roles, billing — the substrate behind internal tools and light SaaS.',
   description:
-    'Workspaces, seats, roles, billing, and audit-friendly admin — the substrate behind internal tools and lightweight B2B products. Acme workspace is our catalog demo; client-shaped v1 builds are scoped as template or custom work.',
+    'Workspaces, seats, roles, billing, and audit-friendly admin — the substrate behind internal tools and lightweight B2B products. Relay is our catalog demo; client-shaped v1 builds are scoped as template or custom work.',
   status: 'beta',
   useCases: ['Internal admin / ops consoles', 'Light vertical SaaS MVPs', 'Partner portals with RBAC'],
   referenceTenantSlug: 'goldspire',

@@ -14,6 +14,8 @@ import {
 
   PUBLIC_TIER2_TEMPLATE_FROM_MINOR,
 
+  PUBLIC_TIER2_TEMPLATE_MEDIUM_MINOR,
+
   PUBLIC_TIER3_BLUEPRINT_FROM_MINOR,
   PUBLIC_DISCOVERY_SPRINT_FROM_MINOR,
   STUDIO_RETAINER_STANDARD_MONTHLY_MINOR,
@@ -59,6 +61,8 @@ export type DealPresetId =
   | 'tier1_booking_clone'
 
   | 'tier2_template'
+
+  | 'tier2_template_medium'
 
   | 'tier3_blueprint'
 
@@ -266,9 +270,9 @@ export const TIER2_TEMPLATE_PRESET: DealPresetDefinition = {
 
   slug: 'tier2-template',
 
-  label: 'Tier 2 · New template',
+  label: 'New template · from €38k',
 
-  description: 'New product shape on a blueprint we already operate — 8–14 weeks, €38k baseline.',
+  description: 'New product shape on a foundation we operate — 8–14 weeks, €38k entry point.',
 
   tierId: 'growth',
 
@@ -301,6 +305,54 @@ export const TIER2_TEMPLATE_PRESET: DealPresetDefinition = {
   notesHint:
 
     'Tier 2 template — invention in Identity/Configuration is in scope; lock new template spec in Catalog before heavy build.',
+
+};
+
+
+
+/** Tier 2 — medium scope anchor (typical €60k conversations). */
+
+export const TIER2_TEMPLATE_MEDIUM_PRESET: DealPresetDefinition = {
+
+  id: 'tier2_template_medium',
+
+  slug: 'tier2-template-medium',
+
+  label: 'New template · medium scope (€60k)',
+
+  description: 'Bespoke template with meaningful invention — 10–14 weeks, €60k anchor for Console + proposals.',
+
+  tierId: 'growth',
+
+  blueprintKinds: ['social_matching', 'multi_staff_booking', 'community', 'marketplace', 'b2b_saas_shell'],
+
+  blueprintKind: 'social_matching',
+
+  productTemplateId: DATING_PRODUCT_TEMPLATE_ID,
+
+  intakeTemplateId: 'none',
+
+  planInput: {
+
+    engagementKind: 'mvp_plus_prod_planned',
+
+    clientRisk: 'referred',
+
+    subcontracting: 'light',
+
+    weeksMin: 10,
+
+    weeksMax: 14,
+
+    totalFeeMinorUnits: PUBLIC_TIER2_TEMPLATE_MEDIUM_MINOR,
+
+    currency: 'EUR',
+
+  },
+
+  notesHint:
+
+    'Medium template scope — lock template spec + surfaces in Catalog before build; same delivery gates as baseline Tier 2.',
 
 };
 
@@ -429,6 +481,8 @@ export const DEAL_PRESETS: readonly DealPresetDefinition[] = [
 
   TIER2_TEMPLATE_PRESET,
 
+  TIER2_TEMPLATE_MEDIUM_PRESET,
+
   TIER3_BLUEPRINT_PRESET,
 
   DISCOVERY_SPRINT_PRESET,
@@ -503,6 +557,21 @@ export function inferDealPresetFromTemplateInterest(
 
 
 
+function matchesTier2MediumEconomics(deal: {
+  totalFeeMinorUnits: number;
+  weeksMin: number;
+  weeksMax: number;
+  engagementKind?: string;
+}): boolean {
+  const plan = TIER2_TEMPLATE_MEDIUM_PRESET.planInput;
+  return (
+    deal.totalFeeMinorUnits === plan.totalFeeMinorUnits &&
+    deal.weeksMin === plan.weeksMin &&
+    deal.weeksMax === plan.weeksMax &&
+    deal.engagementKind === plan.engagementKind
+  );
+}
+
 function matchesTier2TemplateEconomics(deal: {
   totalFeeMinorUnits: number;
   weeksMin: number;
@@ -555,6 +624,10 @@ export function inferDealPresetIdFromDeal(deal: {
 
     return 'tier1_booking_clone';
 
+  }
+
+  if (matchesTier2MediumEconomics(deal)) {
+    return 'tier2_template_medium';
   }
 
   if (matchesTier2TemplateEconomics(deal)) {

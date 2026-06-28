@@ -483,7 +483,7 @@ export const STUDIO_DOC_REGISTRY: readonly StudioDocEntry[] = [
   {
     path: 'docs/blueprints/b2b-saas-shell.md',
     title: 'Blueprint · B2B SaaS shell',
-    summary: 'Acme workspace control plane.',
+    summary: 'Relay workspace control plane.',
     category: 'blueprints',
     order: 4,
   },

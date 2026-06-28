@@ -1,5 +1,5 @@
 import { AppRouteLoading } from '@goldspire/ui';
 
 export default function Loading() {
-  return <AppRouteLoading label="Loading Acme workspace…" />;
+  return <AppRouteLoading label="Loading Relay…" />;
 }

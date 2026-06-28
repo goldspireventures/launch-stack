@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { CTAButton, Eyebrow } from '@/components/ui-primitives';
+import {
+  publicBlueprintCategoryLabel,
+  publicTemplateAvailabilityLabel,
+} from '@goldspire/commercial';
 import { trpc } from '@/lib/trpc';
 
 /**
@@ -44,7 +48,7 @@ export function CaseStudiesClient() {
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t.blueprint.replace(/_/g, ' ')} · {t.status}
+                {publicBlueprintCategoryLabel(t.blueprint)} · {publicTemplateAvailabilityLabel(t.status)}
               </p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{t.name}</h2>
               <p className="mt-2 text-sm font-medium text-muted-foreground">{t.tagline}</p>

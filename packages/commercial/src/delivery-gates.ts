@@ -74,7 +74,7 @@ export function buildPortalDeliverySignoffs(
   const signoffIds: DualSignoffStepId[] =
     presetId === 'tier3_blueprint'
       ? ['blueprint_discovery_locked', 'architecture_signed', 'template_spec_locked']
-      : presetId === 'tier2_template'
+      : presetId === 'tier2_template' || presetId === 'tier2_template_medium'
         ? ['template_spec_locked']
         : [];
   const out: PortalDeliverySignoff[] = [];

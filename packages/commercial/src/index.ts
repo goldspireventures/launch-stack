@@ -55,4 +55,4 @@ export * from './venture-strategy';
 export * from './apps-grid-filters';
 export * from './subscription-mrr';
 export * from './heartline-capability-packs';
-export * from './heartline-pack-surfaces';
+export * from './public-template-labels';

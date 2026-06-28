@@ -6,7 +6,7 @@ const DEMOS = [
   { name: 'Bazaar', url: process.env.E2E_BAZAAR_URL ?? 'http://localhost:4011' },
   { name: 'Signal', url: process.env.E2E_SIGNAL_URL ?? 'http://localhost:4012' },
   { name: 'Lumen', url: process.env.E2E_LUMEN_URL ?? 'http://localhost:4013' },
-  { name: 'Acme', url: process.env.E2E_ACME_URL ?? 'http://localhost:4014' },
+  { name: 'Relay', url: process.env.E2E_RELAY_URL ?? process.env.E2E_ACME_URL ?? 'http://localhost:4014' },
 ];
 
 for (const demo of DEMOS) {

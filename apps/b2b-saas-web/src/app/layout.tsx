@@ -9,7 +9,7 @@ const marketingOrigin = (process.env.NEXT_PUBLIC_GOLDSPIRE_MARKETING_URL ?? 'htt
 );
 
 export const metadata = {
-  title: 'Acme · Workspace',
+  title: 'Relay · Workspace',
   description: 'Built on the Goldspire B2B SaaS Shell blueprint.',
 };
 
@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TRPCProvider>
           <ClientErrorReporter app="b2b-saas-web" />
           <ReferenceDemoBanner
-            productName="Acme workspace"
+            productName="Relay"
             marketingUrl={`${marketingOrigin}/templates/${encodeURIComponent('b2b_saas_shell/control_plane')}`}
           />
           <PageTransition className="min-h-0">{children}</PageTransition>

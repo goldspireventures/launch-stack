@@ -14,7 +14,7 @@ export type DevSurfaceId =
   | 'bazaar'
   | 'signal'
   | 'lumen'
-  | 'acme'
+  | 'relay'
   | 'nova_care'
   | 'atlas';
 
@@ -102,10 +102,10 @@ export const DEV_SURFACES: readonly DevSurfaceDefinition[] = [
     probeRequired: false,
   },
   {
-    id: 'acme',
-    label: 'Acme B2B',
+    id: 'relay',
+    label: 'Relay B2B',
     defaultPort: 4014,
-    publicEnvKey: 'NEXT_PUBLIC_ACME_DEMO_URL',
+    publicEnvKey: 'NEXT_PUBLIC_RELAY_DEMO_URL',
     packageFilter: '@goldspire/b2b-saas-web',
     probeRequired: false,
   },

@@ -27,7 +27,7 @@ export default function BillingPage() {
         <PageHeader
           title="Billing"
           description="Subscriptions mirrored from the launch stack."
-          eyebrow="Acme workspace"
+          eyebrow="Relay"
         />
         <Card className="border-border/80">
           <CardContent className="divide-y divide-border/60 p-0">

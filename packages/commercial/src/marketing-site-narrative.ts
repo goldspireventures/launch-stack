@@ -207,7 +207,7 @@ export const PRICING_PAGE = {
   eyebrow: 'Pricing',
   title: 'Three ways to size a project',
   lead:
-    'These paths estimate how much invention the work requires — from adapting a shipped template, to shaping a new one on our foundations, to a net-new product family. They orient; your signed proposal is where deliverables and final numbers land.',
+    'These paths estimate how much invention the work requires — from adapting a shipped template (from €20k), to shaping a new product on our foundations (typically €45k–€75k for medium scope), to a net-new product family. They orient; your signed proposal is where deliverables and final numbers land.',
   pricingSectionEyebrow: 'Indicative paths',
   scopeDisclaimer:
     'Starting figures and timelines are guides. Your signed proposal defines deliverables — and final pricing follows from that.',
@@ -304,6 +304,37 @@ export const HOW_WE_WORK_PAGE = {
   closingBlurb:
     'Send the shape of what you are building. We will reply with fit, a suggested path, and a price band — straight, not scripted.',
   closingCta: 'Send a brief',
+} as const;
+
+/** End-to-end client journey — maps marketing phases to project hub + Console (public language). */
+export const CLIENT_DELIVERY_JOURNEY = {
+  anchorId: 'from-brief-to-handover',
+  eyebrow: 'End to end',
+  title: 'From brief to handover',
+  intro:
+    'Every engagement follows the same spine: we agree scope in writing, you accept and pay milestones through a private project hub, we build in staging you can review, then we cut over production and transfer what you own.',
+  steps: [
+    {
+      phase: 'Before contract',
+      client: 'Send a brief or book discovery. We reply with fit, a suggested path (adapt a template, new template, or ground-up), and a price band.',
+      studio: 'We qualify the brief, pick the right starting economics, and draft proposal boundaries before any serious build.',
+    },
+    {
+      phase: 'Contract & kickoff',
+      client: 'Sign the proposal. Receive a project hub link — accept terms, pay the first milestone, complete the kickoff checklist (and product intake when applicable).',
+      studio: 'We issue your hub link, track acceptance and payments, and provision your tenant on our stack.',
+    },
+    {
+      phase: 'Build',
+      client: 'Weekly demos on staging. Async updates between demos. Change requests outside scope → written change order before more build.',
+      studio: 'We run identity and configuration phases, hit agreed checkpoints, and keep the runbook green until UAT.',
+    },
+    {
+      phase: 'Go-live & after',
+      client: 'Production release per contract. Repos and runbooks transferred. Optional retainer agreed separately if you want ongoing care.',
+      studio: 'We complete handover, close the engagement in our systems, and archive the hub when done.',
+    },
+  ],
 } as const;
 
 export type HowWeWorkPhaseIcon = 'discovery' | 'design' | 'build' | 'goLive';

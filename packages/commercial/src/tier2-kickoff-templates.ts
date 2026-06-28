@@ -9,5 +9,5 @@ export const TIER2_KICKOFF_TEMPLATE_OPTIONS = [
 export function intakeNeedsTargetTemplateSpec(
   deliveryPresetId: string | null | undefined,
 ): boolean {
-  return deliveryPresetId === 'tier2_template' || deliveryPresetId === 'tier3_blueprint';
+  return deliveryPresetId === 'tier2_template' || deliveryPresetId === 'tier2_template_medium' || deliveryPresetId === 'tier3_blueprint';
 }

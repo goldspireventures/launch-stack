@@ -17,7 +17,8 @@ const URLS = {
   NEXT_PUBLIC_BAZAAR_DEMO_URL: 'https://goldspire-bazaar-livia-hq.vercel.app',
   NEXT_PUBLIC_SIGNAL_DEMO_URL: 'https://goldspire-signal-livia-hq.vercel.app',
   NEXT_PUBLIC_LUMEN_DEMO_URL: 'https://goldspire-lumen-livia-hq.vercel.app',
-  NEXT_PUBLIC_ACME_DEMO_URL: 'https://goldspire-acme-livia-hq.vercel.app',
+  NEXT_PUBLIC_RELAY_DEMO_URL: 'https://goldspire-acme-livia-hq.vercel.app',
+  NEXT_PUBLIC_CLIENT_PORTAL_URL: 'https://portal.goldspire.dev',
 };
 
 function token() {

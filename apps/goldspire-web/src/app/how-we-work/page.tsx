@@ -7,6 +7,7 @@ import {
   HOW_WE_WORK_PHASES,
   HOW_WE_WORK_SCOPE_MODEL,
   HOW_WE_WORK_VALUES,
+  CLIENT_DELIVERY_JOURNEY,
   PUBLIC_DELIVERY_GLOSSARY,
   type HowWeWorkPhaseIcon,
 } from '@goldspire/commercial';
@@ -57,6 +58,9 @@ export default function HowWeWorkPage() {
             <a href="#glossary" className="rounded-md border border-border/60 bg-card/30 px-3 py-1.5 hover:text-foreground">
               Glossary
             </a>
+            <a href="#from-brief-to-handover" className="rounded-md border border-border/60 bg-card/30 px-3 py-1.5 hover:text-foreground">
+              Brief to handover
+            </a>
             <a href="#phases" className="rounded-md border border-border/60 bg-card/30 px-3 py-1.5 hover:text-foreground">
               Phases
             </a>
@@ -69,6 +73,8 @@ export default function HowWeWorkPage() {
       </div>
 
       <ScopeModelSection />
+
+      <DeliveryJourneySection />
 
       <div id="glossary" className="mx-auto max-w-6xl px-6 pb-16 sm:px-8 scroll-mt-24">
         <h2 className="text-2xl font-semibold tracking-tight">{HOW_WE_WORK_PAGE.glossaryTitle}</h2>
@@ -154,6 +160,38 @@ function ValueCard({ title, body }: { title: string; body: string }) {
       <p className="text-lg font-semibold tracking-tight">{title}</p>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </div>
+  );
+}
+
+function DeliveryJourneySection() {
+  const j = CLIENT_DELIVERY_JOURNEY;
+  return (
+    <section id={j.anchorId} className="scroll-mt-24 border-b border-border/50">
+      <div className="mx-auto max-w-6xl px-6 py-16 sm:px-8">
+        <Eyebrow>{j.eyebrow}</Eyebrow>
+        <h2 className="mt-4 max-w-3xl text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{j.title}</h2>
+        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">{j.intro}</p>
+        <ol className="mt-10 space-y-4">
+          {j.steps.map((step, i) => (
+            <li key={step.phase} className="rounded-2xl border border-border/60 bg-card/30 p-6 sm:p-8">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                Step {i + 1} · {step.phase}
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">You</p>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/90">{step.client}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Studio</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.studio}</p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
   );
 }
 

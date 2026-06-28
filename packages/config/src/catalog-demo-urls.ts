@@ -9,7 +9,7 @@ export type CatalogDemoAppId =
   | 'bazaar'
   | 'signal'
   | 'lumen'
-  | 'acme_workspace';
+  | 'relay_workspace';
 
 export type CatalogDemoAppDefinition = {
   id: CatalogDemoAppId;
@@ -63,12 +63,12 @@ export const CATALOG_DEMO_APPS: readonly CatalogDemoAppDefinition[] = [
     tagline: 'Vertical AI assistant',
   },
   {
-    id: 'acme_workspace',
+    id: 'relay_workspace',
     templateId: 'b2b_saas_shell/control_plane',
-    label: 'Acme workspace',
-    envKey: 'NEXT_PUBLIC_ACME_DEMO_URL',
+    label: 'Relay',
+    envKey: 'NEXT_PUBLIC_RELAY_DEMO_URL',
     defaultLocalUrl: 'http://localhost:4014',
-    tagline: 'B2B SaaS control plane',
+    tagline: 'B2B workspace control plane',
   },
 ] as const;
 
@@ -78,7 +78,9 @@ export function resolveCatalogDemoUrl(
 ): string | null {
   const def = CATALOG_DEMO_APPS.find((a) => a.id === appId);
   if (!def) throw new Error(`Unknown catalog demo app: ${appId}`);
-  const explicit = env[def.envKey]?.trim();
+  const explicit =
+    env[def.envKey]?.trim() ||
+    (def.id === 'relay_workspace' ? env.NEXT_PUBLIC_ACME_DEMO_URL?.trim() : undefined);
   if (explicit && explicit.length > 0) return explicit.replace(/\/$/, '');
   if (env.NODE_ENV === 'production') return null;
   return def.defaultLocalUrl;

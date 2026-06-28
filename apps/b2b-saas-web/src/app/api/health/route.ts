@@ -1,5 +1,5 @@
 import { handleHttpHealth } from '@goldspire/api/http-health';
 
 export async function GET() {
-  return handleHttpHealth('acme-workspace');
+  return handleHttpHealth('relay');
 }

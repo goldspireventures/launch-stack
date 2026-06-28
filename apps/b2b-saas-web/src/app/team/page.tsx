@@ -24,7 +24,7 @@ export default function TeamPage() {
         </div>
       </header>
       <main className="mx-auto max-w-4xl space-y-6 px-6 py-10">
-        <PageHeader title="Team" description="Members in this workspace." eyebrow="Acme workspace" />
+        <PageHeader title="Team" description="Members in this workspace." eyebrow="Relay" />
         <Card className="border-border/80">
           <CardContent className="divide-y divide-border/60 p-0">
             {(users.data ?? []).map((u) => (

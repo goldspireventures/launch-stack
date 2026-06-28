@@ -44,8 +44,8 @@ const CATALOG_DEMO_APPS = [
     devFilter: '@goldspire/ai-agent-web',
   },
   {
-    label: 'Acme workspace',
-    envKey: 'NEXT_PUBLIC_ACME_DEMO_URL',
+    label: 'Relay',
+    envKey: 'NEXT_PUBLIC_RELAY_DEMO_URL',
     defaultLocalUrl: 'http://localhost:4014',
     devFilter: '@goldspire/b2b-saas-web',
   },

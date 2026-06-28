@@ -31,8 +31,8 @@ export default function AcmeDashboardPage() {
       <header className="border-b border-border/60 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/25 text-primary">A</span>
-            {tenant.data?.name ?? 'Acme'} Workspace
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/25 text-primary">R</span>
+            {tenant.data?.name ?? 'Relay'} Workspace
           </div>
           <nav className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/team" className="transition-colors hover:text-foreground">
@@ -50,8 +50,8 @@ export default function AcmeDashboardPage() {
         <main className="mx-auto max-w-6xl space-y-6 px-6 py-10">
           <SlideUp delay={0.02}>
             <PageHeader
-              title={`Welcome back to ${tenant.data?.name ?? 'Acme'}`}
-              description="Built on the Goldspire B2B SaaS Shell blueprint."
+              title={`Welcome back to ${tenant.data?.name ?? 'Relay'}`}
+              description="Multi-tenant B2B workspace — team, billing, and admin on the Goldspire control-plane foundation."
               eyebrow="Studio · Goldspire"
             />
           </SlideUp>

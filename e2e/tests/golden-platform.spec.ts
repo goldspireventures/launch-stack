@@ -27,7 +27,7 @@ const ALL_SURFACES = [
   { label: 'Bazaar', origin: () => process.env.E2E_BAZAAR_URL?.replace(/\/$/, '') ?? 'http://localhost:4011' },
   { label: 'Signal', origin: () => process.env.E2E_SIGNAL_URL?.replace(/\/$/, '') ?? 'http://localhost:4012' },
   { label: 'Lumen', origin: () => process.env.E2E_LUMEN_URL?.replace(/\/$/, '') ?? 'http://localhost:4013' },
-  { label: 'Acme', origin: () => process.env.E2E_ACME_URL?.replace(/\/$/, '') ?? 'http://localhost:4014' },
+  { label: 'Relay', origin: () => process.env.E2E_RELAY_URL?.replace(/\/$/, '') ?? process.env.E2E_ACME_URL?.replace(/\/$/, '') ?? 'http://localhost:4014' },
 ];
 
 test.describe('Golden platform — prod-shaped funnel', () => {

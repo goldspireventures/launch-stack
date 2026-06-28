@@ -81,8 +81,8 @@ export const GOLDEN_PATHS: readonly GoldenPathDefinition[] = [
   {
     id: 'b2b_saas',
     templateId: 'b2b_saas_shell/control_plane',
-    marketingName: 'Acme · B2B workspace',
-    demoAppId: 'acme_workspace',
+    marketingName: 'Relay · Workspace',
+    demoAppId: 'relay_workspace',
     tier: 'catalog_live',
     referenceTenantSlug: 'goldspire',
     referenceAppFolder: 'b2b-saas-web',

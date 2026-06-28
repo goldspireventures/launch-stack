@@ -20,7 +20,7 @@ const APPS = [
   { dir: 'marketplace-web', title: 'Bazaar' },
   { dir: 'community-web', title: 'Signal' },
   { dir: 'ai-agent-web', title: 'Lumen' },
-  { dir: 'b2b-saas-web', title: 'Acme workspace' },
+  { dir: 'b2b-saas-web', title: 'Relay' },
 ];
 
 const errorTsx = (title) => `'use client';

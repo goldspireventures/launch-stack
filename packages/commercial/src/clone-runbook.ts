@@ -340,7 +340,9 @@ export const DELIVERY_RUNBOOKS: readonly CloneRunbookDefinition[] = [
 export const CLONE_RUNBOOKS = DELIVERY_RUNBOOKS;
 
 export function getCloneRunbookForPreset(presetId: DealPresetId): CloneRunbookDefinition {
-  const rb = DELIVERY_RUNBOOKS.find((r) => r.presetId === presetId);
+  const lookup =
+    presetId === 'tier2_template_medium' ? 'tier2_template' : presetId;
+  const rb = DELIVERY_RUNBOOKS.find((r) => r.presetId === lookup);
   if (!rb) throw new Error(`No delivery runbook for preset: ${presetId}`);
   return rb;
 }

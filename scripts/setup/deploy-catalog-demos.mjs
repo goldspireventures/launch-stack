@@ -72,7 +72,7 @@ const DEMOS = [
     project: 'goldspire-acme',
     projectId: 'prj_X8BOxRwmIKtisu9yowAffpCesiwa',
     subdomain: 'acme.goldspire.dev',
-    demoEnvKey: 'NEXT_PUBLIC_ACME_DEMO_URL',
+    demoEnvKey: 'NEXT_PUBLIC_RELAY_DEMO_URL',
   },
 ];
 

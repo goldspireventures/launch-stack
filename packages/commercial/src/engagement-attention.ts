@@ -183,7 +183,9 @@ export function computeDealAttention(input: DealAttentionInput): DealAttentionIt
   }
 
   const needsTemplateSpec =
-    input.deliveryPresetId === 'tier2_template' || input.deliveryPresetId === 'tier3_blueprint';
+    input.deliveryPresetId === 'tier2_template' ||
+    input.deliveryPresetId === 'tier2_template_medium' ||
+    input.deliveryPresetId === 'tier3_blueprint';
   const templateSpecDone =
     templateSpecPassComplete(acks) || isDeliveryGateComplete('template_spec_locked', acks);
 
