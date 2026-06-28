@@ -18,7 +18,7 @@ import {
 } from '@goldspire/ui';
 import { trpc } from '@/lib/trpc';
 
-export default function AcmeDashboardPage() {
+export default function RelayDashboardPage() {
   const users = trpc.users.list.useQuery();
   const products = trpc.products.list.useQuery();
   const subs = trpc.subscriptions.list.useQuery();

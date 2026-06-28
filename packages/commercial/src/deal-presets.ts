@@ -320,7 +320,7 @@ export const TIER2_TEMPLATE_MEDIUM_PRESET: DealPresetDefinition = {
 
   label: 'New template · medium scope (€60k)',
 
-  description: 'Bespoke template with meaningful invention — 10–14 weeks, €60k anchor for Console + proposals.',
+  description: 'Bespoke template with meaningful invention — 10–14 weeks, €60k anchor.',
 
   tierId: 'growth',
 

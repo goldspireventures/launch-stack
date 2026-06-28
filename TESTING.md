@@ -26,7 +26,7 @@ Use this checklist when you change the platform, before a demo, or after pulling
 | http://localhost:4011 | `marketplace-web` | Bazaar demo |
 | http://localhost:4012 | `community-web` | Signal demo |
 | http://localhost:4013 | `ai-agent-web` | Lumen demo |
-| http://localhost:4014 | `b2b-saas-web` | Acme workspace demo |
+| http://localhost:4014 | `b2b-saas-web` | Relay workspace demo |
 | http://localhost:4015 | `booking-web` | Nova Care booking |
 
 **Automated gates:**

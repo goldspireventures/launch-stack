@@ -41,7 +41,11 @@ import { storeDealPortalUrl } from '@/lib/deal-portal-session';
 
 const PRESET_GROUPS: { title: string; filter: (p: DealPresetDefinition) => boolean }[] = [
   { title: 'Tier 1 — Clones', filter: (p) => p.id.startsWith('tier1_') },
-  { title: 'Tier 2 & 3', filter: (p) => p.id === 'tier2_template' || p.id === 'tier3_blueprint' },
+  {
+    title: 'Tier 2 & 3',
+    filter: (p) =>
+      p.id === 'tier2_template' || p.id === 'tier2_template_medium' || p.id === 'tier3_blueprint',
+  },
   {
     title: 'Discovery & retainer',
     filter: (p) => p.id === 'discovery_sprint' || p.id === 'post_go_live_retainer',

@@ -35,7 +35,7 @@ and own.
 | `marketplace-web`   | 3011 | `marketplace`            | Bazaar — listings, seller dashboard, orders |
 | `community-web`     | 3012 | `community`              | Signal — spaces, feeds, posting |
 | `ai-agent-web`      | 3013 | `vertical_ai_agent`      | Lumen — assistant sessions, chat, task list |
-| `b2b-saas-web`      | 3014 | `b2b_saas_shell`         | Acme — workspace dashboard with team + billing |
+| `b2b-saas-web`      | 3014 | `b2b_saas_shell`         | Relay — workspace dashboard with team + billing |
 
 ### Shared platform (`packages/`)
 
