@@ -6,7 +6,7 @@ import { Button } from '@goldspire/ui';
 import { StudioPageHeader } from '@/components/studio-page-header';
 import { StudioEmbedProvider } from '@/components/studio';
 import { StudioPipelineShell } from '@/components/studio/studio-pipeline-shell';
-import MarketingLeadsPage from '../leads/page';
+import { MarketingLeadsView } from '../leads/leads-view';
 
 export default function PipelinePage() {
   const searchParams = useSearchParams();
@@ -21,7 +21,7 @@ export default function PipelinePage() {
           </Button>
         </div>
         <StudioEmbedProvider>
-          <MarketingLeadsPage hideChrome />
+          <MarketingLeadsView hideChrome />
         </StudioEmbedProvider>
       </div>
     );

@@ -76,12 +76,13 @@ async function listDnsRecords() {
 
 async function ensureCname(subdomain, target = 'cname.vercel-dns.com.') {
   const records = await listDnsRecords();
+  const name = subdomain.replace(`.${APEX}`, '');
   if (!records) {
-    console.log(`  · DNS not managed on Vercel for ${APEX} — add CNAME manually:`);
-    console.log(`      ${subdomain} → cname.vercel-dns.com`);
+    console.log(`  · Add at Cloudflare (goldspire.dev uses Cloudflare NS):`);
+    console.log(`      CNAME ${name} → cname.vercel-dns.com`);
+    console.log(`      — or A ${name} → 76.76.21.21 for apex-style Vercel routing`);
     return;
   }
-  const name = subdomain.replace(`.${APEX}`, '');
   const exists = records.some(
     (r) => r.type === 'CNAME' && r.name === name && String(r.value).includes('vercel'),
   );
