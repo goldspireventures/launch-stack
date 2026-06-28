@@ -30,7 +30,7 @@ export default function StudioOverviewPage() {
                 <Link href="/pipeline">Pipeline</Link>
               </Button>
               <Button asChild variant="outline" size="sm">
-                <Link href="/build?tab=launch">Launch T1</Link>
+                <Link href="/build?tab=launch">Launch wizard</Link>
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link href="/configure?tab=charter">Charter</Link>
@@ -40,9 +40,9 @@ export default function StudioOverviewPage() {
         />
       </FadeIn>
 
-      <StudioFlowCallout variant="muted" focusLine="Studio OS">
-        Desk is your queue. Pipeline is the board. Build stamps tenants. Configure holds the charter.
-        Open an engagement workspace from any deal card for kickoff, runbook, and client mirror.
+      <StudioFlowCallout variant="muted" focusLine="How the Console fits together">
+        Desk is your queue. Pipeline tracks every deal. Build launches new engagements. Configure holds pricing
+        and charter. Open an engagement workspace from any deal for kickoff, runbook, and the client mirror.
       </StudioFlowCallout>
 
       <StudioCollapsibleSection

@@ -40,9 +40,13 @@ export interface PersonaPickerProps {
   defaultNext?: string;
   /** Called when a persona is chosen. Returns the URL to navigate to. */
   onPick?: (persona: PersonaDefinition) => Promise<string>;
+  /** Hide the dev-mode footer (production Console login). */
+  hideDevFooter?: boolean;
+  /** Hide internal role / slug chips on cards. */
+  compact?: boolean;
 }
 
-export function PersonaPicker({ only, defaultNext, onPick }: PersonaPickerProps) {
+export function PersonaPicker({ only, defaultNext, onPick, hideDevFooter, compact }: PersonaPickerProps) {
   const grouped = listPersonasByGroup();
   const [busyId, setBusyId] = useState<PersonaId | null>(null);
 
@@ -101,6 +105,7 @@ export function PersonaPicker({ only, defaultNext, onPick }: PersonaPickerProps)
                           busy={busyId === p.id}
                           index={idx}
                           onPick={handlePick}
+                          compact={compact}
                         />
                       ))}
                     </div>
@@ -116,6 +121,7 @@ export function PersonaPicker({ only, defaultNext, onPick }: PersonaPickerProps)
                     busy={busyId === p.id}
                     index={idx}
                     onPick={handlePick}
+                    compact={compact}
                   />
                 ))}
               </div>
@@ -124,10 +130,11 @@ export function PersonaPicker({ only, defaultNext, onPick }: PersonaPickerProps)
         );
       })}
 
-      <p className="pt-2 text-center text-xs text-muted-foreground">
-        Picking a persona sets a cookie used to "log in as" that user.
-        Real auth will replace this surface; the cookies remain informational only.
-      </p>
+      {!hideDevFooter ? (
+        <p className="pt-2 text-center text-xs text-muted-foreground">
+          Picking a persona sets a cookie used to sign in during local development.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -137,11 +144,13 @@ function PersonaCard({
   busy,
   index,
   onPick,
+  compact,
 }: {
   persona: PersonaDefinition;
   busy: boolean;
   index: number;
   onPick: (p: PersonaDefinition) => void;
+  compact?: boolean;
 }) {
   return (
     <motion.button
@@ -168,17 +177,19 @@ function PersonaCard({
         <p className="text-xs text-muted-foreground">{persona.email}</p>
       </div>
       <p className="text-xs leading-snug text-muted-foreground line-clamp-2">{persona.bio}</p>
-      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          {persona.role}
-        </span>
-        <span className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-          {persona.tenantSlug}
-        </span>
-        <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
-          {persona.surface.app}
-        </span>
-      </div>
+      {!compact ? (
+        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            {persona.role}
+          </span>
+          <span className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {persona.tenantSlug}
+          </span>
+          <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-primary">
+            {persona.surface.app}
+          </span>
+        </div>
+      ) : null}
     </motion.button>
   );
 }

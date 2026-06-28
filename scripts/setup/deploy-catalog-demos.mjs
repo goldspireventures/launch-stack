@@ -71,7 +71,7 @@ const DEMOS = [
     package: '@goldspire/b2b-saas-web',
     project: 'goldspire-acme',
     projectId: 'prj_X8BOxRwmIKtisu9yowAffpCesiwa',
-    subdomain: 'acme.goldspire.dev',
+    subdomain: 'relay.goldspire.dev',
     demoEnvKey: 'NEXT_PUBLIC_RELAY_DEMO_URL',
   },
 ];

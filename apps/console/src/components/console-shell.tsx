@@ -152,7 +152,7 @@ export function ConsoleShell({
 
         {!isEngagement ? (
           <footer className="border-t border-border/40 px-6 py-2 text-center text-[10px] text-muted-foreground">
-            Queue before chrome · Charter defines what we sell and where we stop
+            Queue clear · open Pipeline for new briefs or launch an engagement from Build
           </footer>
         ) : null}
       </div>

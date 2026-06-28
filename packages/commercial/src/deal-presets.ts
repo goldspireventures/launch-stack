@@ -222,9 +222,9 @@ export const TIER1_BOOKING_CLONE_PRESET: DealPresetDefinition = {
 
   slug: 'tier1-booking',
 
-  label: 'Tier 1 · Clinic & salon booking',
+  label: 'Clinic & salon booking',
 
-  description: 'Nova Care–shaped scheduling on multi_staff_booking — 5–8 weeks, €18.5k baseline.',
+  description: 'Nova Care–shaped scheduling on multi_staff_booking — 6–8 weeks, €19.5k baseline.',
 
   tierId: 'solo',
 
@@ -318,7 +318,7 @@ export const TIER2_TEMPLATE_MEDIUM_PRESET: DealPresetDefinition = {
 
   slug: 'tier2-template-medium',
 
-  label: 'New template · medium scope (€60k)',
+  label: 'New template · medium scope',
 
   description: 'Bespoke template with meaningful invention — 10–14 weeks, €60k anchor.',
 
@@ -413,7 +413,7 @@ export const TIER3_BLUEPRINT_PRESET: DealPresetDefinition = {
 
   slug: 'tier3-blueprint',
 
-  label: 'Tier 3 · New blueprint',
+  label: 'New blueprint · ground-up',
 
   description: 'Ground-up foundation — schema, flows, mental model — 14–24 weeks, €85k baseline.',
 

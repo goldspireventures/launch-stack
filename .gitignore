@@ -9,6 +9,7 @@ build/
 .next/
 out/
 .turbo/
+.audit-screenshots/
 .expo/
 .expo-shared/
 *.tsbuildinfo

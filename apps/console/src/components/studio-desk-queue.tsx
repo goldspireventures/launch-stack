@@ -49,7 +49,7 @@ export function StudioDeskQueue({
           <section className="studio-panel border-primary/20 bg-primary/5 p-6 text-center">
             <p className="text-sm font-medium text-foreground">Queue clear</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              No SLA breaches or delivery blockers. Check Pipeline for new briefs or launch a T1 clone.
+              No SLA breaches or delivery blockers. Check Pipeline for new briefs or start a launch from Build.
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <Button asChild size="sm">
@@ -172,7 +172,7 @@ export function StudioDeskQueue({
             <li>
               <Link href="/build?tab=launch" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
                 <Rocket className="h-3 w-3" />
-                T1 launch wizard
+                Launch wizard
               </Link>
             </li>
             <li>

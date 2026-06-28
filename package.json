@@ -62,6 +62,8 @@
     "probe:dev-urls": "tsx scripts/probe-dev-urls.ts",
     "audit:testing": "node scripts/audit-testing.mjs",
     "audit:testing:full": "node scripts/audit-testing.mjs --full",
+    "audit:screenshots": "pnpm --filter @goldspire/e2e exec node audit/stack-screenshots.mjs",
+    "audit:deal-walkthrough": "pnpm --filter @goldspire/e2e exec node audit/deal-walkthrough.mjs",
     "audit:commercial-sync": "tsx scripts/audit-commercial-sync.mjs",
     "audit:studio-business": "tsx scripts/audit-studio-business.mjs",
     "atlas:reindex": "pnpm --filter @goldspire/knowledge reindex",

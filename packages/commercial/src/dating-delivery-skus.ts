@@ -51,7 +51,7 @@ export const DATING_DELIVERY_SKUS: readonly DatingDeliverySku[] = [
     id: 'dating_web_launch',
     presetId: 'tier1_dating_clone',
     presetSlug: 'tier1-dating',
-    label: 'Tier 1 · Dating · Web launch',
+    label: 'Dating · Web launch (~€20k)',
     shortLabel: 'Web launch',
     description:
       'Full Heartline web loop: onboarding, swipe discover, matches, chat, likes, premium paywall, admin moderation. No native app in scope.',
@@ -76,7 +76,7 @@ export const DATING_DELIVERY_SKUS: readonly DatingDeliverySku[] = [
     id: 'dating_as_is_accelerator',
     presetId: 'tier1_dating_as_is',
     presetSlug: 'tier1-dating-as-is',
-    label: 'Tier 1 · Dating · As-is accelerator',
+    label: 'Dating · As-is accelerator',
     shortLabel: 'As-is (web)',
     description:
       'Fastest path: Identity + Configuration only on the shipped web template — palette pack, logo, and copy worksheet. No invention, no mobile.',
@@ -99,7 +99,7 @@ export const DATING_DELIVERY_SKUS: readonly DatingDeliverySku[] = [
     id: 'dating_web_companion',
     presetId: 'tier1_dating_companion',
     presetSlug: 'tier1-dating-companion',
-    label: 'Tier 1 · Dating · Web + companion mobile',
+    label: 'Dating · Web + companion mobile',
     shortLabel: 'Web + companion',
     description:
       'Full web launch plus Expo companion: list-based discover, like/pass, matches, profile — shared tRPC API. No in-app chat, likes, or paywall on mobile.',
@@ -122,7 +122,7 @@ export const DATING_DELIVERY_SKUS: readonly DatingDeliverySku[] = [
     id: 'dating_web_native_launch',
     presetId: 'tier1_dating_native',
     presetSlug: 'tier1-dating-native',
-    label: 'Tier 1 · Dating · Web + native launch',
+    label: 'Dating · Web + native launch',
     shortLabel: 'Web + native',
     description:
       'Web launch plus store-ready native: companion surfaces plus in-app chat, premium/RevenueCat, onboarding parity, and submission-ready builds. Client developer accounts required.',

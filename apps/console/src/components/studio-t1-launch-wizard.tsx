@@ -40,9 +40,9 @@ import { trpc } from '@/lib/trpc';
 import { storeDealPortalUrl } from '@/lib/deal-portal-session';
 
 const PRESET_GROUPS: { title: string; filter: (p: DealPresetDefinition) => boolean }[] = [
-  { title: 'Tier 1 — Clones', filter: (p) => p.id.startsWith('tier1_') },
+  { title: 'Clones · from ~€20k', filter: (p) => p.id.startsWith('tier1_') },
   {
-    title: 'Tier 2 & 3',
+    title: 'Templates & blueprints',
     filter: (p) =>
       p.id === 'tier2_template' || p.id === 'tier2_template_medium' || p.id === 'tier3_blueprint',
   },
@@ -59,9 +59,9 @@ function presetSupportsAutoStamp(p: DealPresetDefinition): boolean {
 type Step = 'preset' | 'deal' | 'portal' | 'stamp' | 'done';
 
 const STEPS: { id: Step; label: string }[] = [
-  { id: 'preset', label: 'SKU' },
+  { id: 'preset', label: 'Engagement' },
   { id: 'deal', label: 'Deal' },
-  { id: 'portal', label: 'Portal' },
+  { id: 'portal', label: 'Client hub' },
   { id: 'stamp', label: 'Stamp' },
   { id: 'done', label: 'Done' },
 ];
@@ -281,11 +281,11 @@ export function StudioLaunchWizard() {
             <Rocket className="h-4 w-4 text-primary" />
             <h2 className="font-display text-lg font-semibold">Launch wizard</h2>
             <Badge variant="outline" className="text-[9px] uppercase">
-              Automated path
+              Guided launch
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Any SKU tier: deal → portal → stamp (when applicable) → deploy hook → engagement workspace.
+            Pick economics, file the deal, issue the client hub, stamp the tenant when ready, then open the engagement workspace.
           </p>
         </div>
 
@@ -404,7 +404,7 @@ export function StudioLaunchWizard() {
                   onClick={() => void handleCreateDeal()}
                 >
                   {createDeal.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-                  File deal (manual)
+                  File deal only
                 </Button>
                 <Button
                   type="button"
@@ -413,7 +413,7 @@ export function StudioLaunchWizard() {
                   onClick={() => void handleAutoLaunch()}
                 >
                   {launchT1.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-                  Auto-launch (portal + stamp + deploy hook)
+                  Launch end-to-end
                   <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Button>
               </>
@@ -483,9 +483,9 @@ function PresetStep({
   return (
     <div className="space-y-6">
       <header>
-        <h3 className="text-base font-semibold">Choose engagement SKU</h3>
+        <h3 className="text-base font-semibold">Choose engagement type</h3>
         <p className="text-sm text-muted-foreground">
-          Economics and runbook lock to this preset. Discovery and retainer skip auto-stamp.
+          Price and delivery runbook lock to this choice. Discovery and retainer skip tenant stamp.
         </p>
       </header>
       {grouped.map((group) => (
@@ -553,7 +553,7 @@ function DealStep({
         </p>
       </header>
       <FormField label="Deal title" required>
-        <Input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="Acme Dating launch" />
+        <Input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="Heartline launch — Q3" />
       </FormField>
       <FormField label="Client name" required>
         <Input value={clientName} onChange={(e) => onClientName(e.target.value)} />
@@ -586,10 +586,10 @@ function PortalStep({
   return (
     <div className="mx-auto max-w-lg space-y-4">
       <header>
-        <h3 className="text-base font-semibold">Client portal</h3>
+        <h3 className="text-base font-semibold">Client project hub</h3>
         <p className="text-sm text-muted-foreground">
-          Client accepts scope, pays kickoff
-          {preset.intakeTemplateId !== 'none' ? ', completes intake' : ''} — then you stamp (or stamp now for demos).
+          The client accepts scope and pays milestones here
+          {preset.intakeTemplateId !== 'none' ? ', then completes intake' : ''}. Issue the link before or after stamping.
         </p>
       </header>
       {portalUrl ? (
