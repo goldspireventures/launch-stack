@@ -60,3 +60,7 @@ export const REFERENCE_BLUEPRINT_DEMOS_V0: readonly ReferenceBlueprintDemoV0[] =
 
 export const REFERENCE_DEMO_DISCLAIMER_V0 =
   'Catalog demos (Bazaar, Signal, Lumen, Acme workspace, and similar) illustrate what is possible on our foundations — they are not automatic deliverables when you adapt a shipped template. Heartline (dating) and Nova Care (booking) are the fixed-price starting points today. Your signed proposal names the template, surfaces, and integrations we deliver.';
+
+/** Banner copy for Tier 1 shipped templates (Heartline, Nova Care). */
+export const SHIPPED_TEMPLATE_DEMO_DISCLAIMER_V0 =
+  'This is a Goldspire Studio reference tenant with sample data for walkthroughs only. Heartline and Nova Care are our fixed-price Identity + Configuration starting points — your engagement is scoped, branded, and delivered per your signed proposal from Goldspire Ventures Ltd.';

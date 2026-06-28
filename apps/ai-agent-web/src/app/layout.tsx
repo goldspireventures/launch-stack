@@ -1,5 +1,5 @@
 import './globals.css';
-import { PageTransition, Toaster } from '@goldspire/ui';
+import { ClientErrorReporter, PageTransition, Toaster } from '@goldspire/ui';
 import { ReferenceDemoBanner } from '@goldspire/ui/components/reference-demo-banner';
 import { TRPCProvider } from '@/lib/trpc';
 
@@ -18,9 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className="antialiased">
         <TRPCProvider>
+          <ClientErrorReporter app="ai-agent-web" />
           <ReferenceDemoBanner
             productName="Lumen"
-            marketingUrl={`${marketingOrigin}/templates/vertical_ai_agent/studio_assistant`}
+            marketingUrl={`${marketingOrigin}/templates/${encodeURIComponent('vertical_ai_agent/studio_assistant')}`}
           />
           <PageTransition className="min-h-0">{children}</PageTransition>
           <Toaster />

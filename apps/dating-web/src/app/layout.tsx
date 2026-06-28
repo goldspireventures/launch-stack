@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import { Toaster, ClientErrorReporter } from '@goldspire/ui';
+import { ShippedTemplateDemoBanner } from '@goldspire/ui/components/shipped-template-demo-banner';
 import { appConfig } from '@/app.config';
 import { hexToHslChannels } from '@/lib/hexToHslChannels';
 import { TRPCProvider } from '@/lib/trpc';
 import './globals.css';
 
 const primaryChannels = hexToHslChannels(appConfig.theme.primaryHex);
+
+const marketingOrigin = (process.env.NEXT_PUBLIC_GOLDSPIRE_MARKETING_URL ?? 'http://localhost:4010').replace(
+  /\/$/,
+  '',
+);
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
         <ClientErrorReporter app="heartline" />
-        <TRPCProvider>{children}</TRPCProvider>
+        <TRPCProvider>
+          <ShippedTemplateDemoBanner
+            productName={appConfig.brand.name}
+            marketingUrl={`${marketingOrigin}/templates/${encodeURIComponent('social_matching/dating')}`}
+          />
+          {children}
+        </TRPCProvider>
         <Toaster />
       </body>
     </html>

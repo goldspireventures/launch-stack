@@ -1,5 +1,5 @@
 import './globals.css';
-import { PageTransition, Toaster } from '@goldspire/ui';
+import { ClientErrorReporter, PageTransition, Toaster } from '@goldspire/ui';
 import { ReferenceDemoBanner } from '@goldspire/ui/components/reference-demo-banner';
 import { TRPCProvider } from '@/lib/trpc';
 
@@ -18,9 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className="antialiased">
         <TRPCProvider>
+          <ClientErrorReporter app="community-web" />
           <ReferenceDemoBanner
             productName="Signal"
-            marketingUrl={`${marketingOrigin}/templates/community/membership_hub`}
+            marketingUrl={`${marketingOrigin}/templates/${encodeURIComponent('community/membership_hub')}`}
           />
           <PageTransition className="min-h-0">{children}</PageTransition>
           <Toaster />
