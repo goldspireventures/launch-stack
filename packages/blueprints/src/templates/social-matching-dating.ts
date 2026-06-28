@@ -11,9 +11,9 @@ export const socialMatchingDatingTemplate: ProductTemplate = {
   blueprint: 'social_matching',
   name: 'Dating',
   tagline:
-    'Tier 1 dating template — choose Web launch, Web + companion mobile, or Web + native launch. Heartline is the reference tenant.',
+    'Consumer dating — discover, match, and chat. Heartline is our reference demo.',
   description:
-    'Consumer dating on the social_matching blueprint. **Web launch (€20k)** — full Heartline web loop: swipe discover, matches, chat, likes, premium paywall, admin moderation. **Web + companion (€25k)** adds Expo discover / matches / profile (shared tRPC API). **Web + native launch (€35k)** adds in-app chat, premium/RevenueCat, onboarding parity, and store-ready builds (client developer accounts). **As-is accelerator (€15k)** is web-only Identity + Configuration — fastest branded path, no invention. Photo verification is not a built-in liveness pipeline — use moderation + policy until line-itemed.',
+    'Consumer dating on our social matching foundation: discover, matches, messaging, likes, premium upsell, and admin moderation. Choose web-only, web with companion mobile, or a full native launch — scope and pricing are fixed in your signed proposal. Heartline is the live reference demo you can open today. Photo verification is not included by default; moderation tooling and policy can be scoped separately.',
   status: 'shipped',
   useCases: [
     'General-market dating',

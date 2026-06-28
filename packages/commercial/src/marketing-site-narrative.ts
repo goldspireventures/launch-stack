@@ -70,7 +70,7 @@ export const HOME_HERO = {
   eyebrow: `${STUDIO_BRAND.shortName} Studio · ${STUDIO_BRAND.location}`,
   headline: 'Product design and engineering, delivered.',
   subcopy:
-    'Goldspire Studio works with founders and leadership teams who need a credible product in market — branded, instrumented, and ready for real users. We handle design, build, and launch; you keep the code and the product.',
+    'Goldspire Studio works with founders and leadership teams who need a credible product in market — branded, tested in staging, and ready for real users. We handle design, build, and launch; you keep the code and the product.',
   primaryCta: 'Start a project',
   secondaryCta: 'View templates',
   proofPoints: [
@@ -87,6 +87,12 @@ export const HOME_HERO = {
       sub: 'Same studio from direction through release — fewer handoffs, clearer ownership of the build.',
     },
   ],
+} as const;
+
+export const HOME_WHO_WE_ARE = {
+  headline: 'A product studio with fixed scope',
+  body:
+    'Goldspire Studio designs and builds web and mobile products for founders who need something credible in market — with clear proposals, staging you can review, and code you keep at handover.',
 } as const;
 
 export const HOME_EXPLORE = {
@@ -118,15 +124,15 @@ export const STUDIO_LIVE_DEMOS = {
   eyebrow: 'Live demos',
   title: 'Six product environments you can click today',
   lead:
-    'Every demo runs on the same blueprint stack we deliver for clients — branded reference tenants, not mockups in a deck. Open them before you brief us; your signed proposal still names exactly what we build for you.',
-  portalNote: 'After contract, many clients use a private project hub for documents, timeline, and milestone payments — try the sample:',
+    'Each demo runs on the same foundations we deliver for clients — branded reference environments, not slides. Open them before you brief us; your signed proposal still names exactly what we build for you.',
+  portalNote: 'After contract, many clients use a private project hub for documents, timeline, and payments — try the sample:',
 } as const;
 
 export const HOME_TEMPLATE_TEASER = {
   eyebrow: 'What we ship',
   title: 'Example product shapes',
   blurb:
-    'Templates are full-app starting points we brand and tailor for you. Reference demos (marketplace, community, AI agent, etc.) prove blueprint depth at sales time; your signed proposal names the shipped template and surfaces we deliver.',
+    'Templates are full-app starting points we brand and tailor for you. Catalog demos (marketplace, community, AI assistant, and more) show what is possible on our foundations; your signed proposal names the template and surfaces we deliver.',
   cta: 'All templates',
 } as const;
 
@@ -171,8 +177,8 @@ export const CONTACT_SUCCESS = {
   steps: [
     { when: 'Today', text: 'Your brief is in our queue.' },
     {
-      when: 'Within 4 hours (business days)',
-      text: 'First personal reply on new enquiries — we target a written response, not an auto-ack only.',
+      when: 'Within one business day',
+      text: 'First personal reply on new enquiries — we aim for a written response, not an auto-ack only.',
     },
     {
       when: 'Within 48 hours while reviewing',
@@ -201,7 +207,7 @@ export const PRICING_PAGE = {
   eyebrow: 'Pricing',
   title: 'Three ways to size a project',
   lead:
-    'These tiers estimate how much invention the work requires — from adapting a shipped template, to shaping a new one on our foundations, to a net-new blueprint. They orient; your signed proposal is where deliverables and final numbers land.',
+    'These paths estimate how much invention the work requires — from adapting a shipped template, to shaping a new one on our foundations, to a net-new product family. They orient; your signed proposal is where deliverables and final numbers land.',
   pricingSectionEyebrow: 'Indicative paths',
   scopeDisclaimer:
     'Starting figures and timelines are guides. Your signed proposal defines deliverables — and final pricing follows from that.',
@@ -210,7 +216,7 @@ export const PRICING_PAGE = {
 export const PRICING_SECTION = {
   title: 'Three paths. One studio.',
   subcopy:
-    'The numbers reflect how much we invent — clone an existing template, shape a new template on a foundation we already operate, or build a fresh blueprint. Nothing is final until you sign a proposal that lists what we are building.',
+    'The numbers reflect how much we invent — adapt an existing template, shape a new template on a foundation we already operate, or build a fresh product family. Nothing is final until you sign a proposal that lists what we are building.',
   scopeNote:
     'Timelines assume a signed scope. Heavier products or extra surfaces can sit outside the guide range until we have enough detail in writing.',
   scopeLinkLabel: 'Before you sign',
@@ -270,9 +276,9 @@ export const ENGAGEMENT_SCOPE = {
 export const HOW_WE_WORK_SCOPE_MODEL = {
   anchorId: 'how-we-scope',
   eyebrow: 'Scope',
-  title: 'How we scope template and clone work',
+  title: 'How we scope template work',
   intro:
-    'We split work into three layers so a fixed-price path still delivers a complete branded product — without hiding invention inside a “basic” price. Your proposal names surfaces, integrations, and milestones; if it is not listed, it is not included.',
+    'We split work into three layers so a fixed-price path still delivers a complete branded product — without hiding invention inside a “basic” price. Your proposal names surfaces, integrations, and delivery checkpoints; if it is not listed, it is not included.',
   layers: ENGAGEMENT_SCOPE_LAYERS_V0.map((L) => ({
     headline: L.headline,
     description: L.description,
@@ -320,7 +326,7 @@ export const HOW_WE_WORK_PHASES: readonly HowWeWorkPhase[] = [
     blurb: 'We clarify what you are building, for whom, and whether we are the right studio to deliver it.',
     bullets: [
       'Calls and async questions — audience, monetisation, geography, distribution',
-      'Honest recommendation: adapt a template, shape a new template, or net-new blueprint',
+      'Honest recommendation: adapt a template, shape a new template, or net-new product family',
       'Written proposal with scope boundaries and fixed price for agreed work',
     ],
   },
@@ -368,12 +374,12 @@ export const HOW_WE_WORK_PHASES: readonly HowWeWorkPhase[] = [
 export const HOW_WE_WORK_VALUES = [
   {
     title: 'Fixed boundaries, not open-ended drift.',
-    body: 'We price agreed scope — clone, template, or blueprint — not vague hourly buckets. Meaningful shifts become written change orders before more engineering.',
+    body: 'We price agreed scope — template adaptation, new template, or new foundation — not vague hourly buckets. Meaningful shifts become written change orders before more engineering.',
   },
   {
     title: 'You own the IP.',
     body:
-      'Monorepo, schema, deploy configuration, brand delivery — transferred on the milestone schedule in your contract to your GitHub (or equivalent) and your cloud accounts.',
+      'Source code, schema, deploy configuration, and brand delivery — transferred on the schedule in your contract to your GitHub (or equivalent) and your cloud accounts.',
   },
   {
     title: 'One studio end to end.',
@@ -431,7 +437,7 @@ export const WHAT_YOU_GET = {
     {
       id: 'handover',
       title: 'Handover',
-      body: `Monorepo and runbooks on the schedule in your contract — typically your source control and cloud accounts by ${PUBLIC_DELIVERY_GLOSSARY.goLive.short.toLowerCase()}; earlier read access only if agreed in writing.`,
+      body: `Source code and runbooks on the schedule in your contract — typically your source control and cloud accounts by ${PUBLIC_DELIVERY_GLOSSARY.goLive.short.toLowerCase()}; earlier read access only if agreed in writing.`,
     },
   ],
 } as const;
@@ -439,16 +445,16 @@ export const WHAT_YOU_GET = {
 export const TEMPLATES_PAGE = {
   heroTitle: 'Recognisable product shapes, ready to brand.',
   heroLead:
-    'Each template is a production-grade product built on one of our blueprints — customer-facing app and web surfaces you recognise from category leaders. You bring brand and direction; we lock scope on paper before serious build.',
+    'Each template is a production-grade product built on one of our foundations — customer-facing app and web surfaces you recognise from category leaders. You bring brand and direction; we lock scope on paper before serious build.',
   scopeLinkLabel: 'Before you sign',
   scopeLinkHref: PRICING_SECTION.scopeLinkHref,
   heroScopeSuffix: '— a short read on what is yours vs ours (stores, payments, repos).',
   templateDetailSidebarTitle: 'If we talk',
   templateDetailSidebarBody:
     'We keep the first conversation light — who it is for, timing, and whether this shape fits. If there is a fit, you get a written proposal; we do not expect you to decide anything material on a single call.',
-  datingDeliverySkusTitle: 'Dating delivery options (Tier 1)',
+  datingDeliverySkusTitle: 'Dating delivery options',
   datingDeliverySkusLead:
-    'Pick the arm that matches your launch — each has fixed surfaces in the proposal. Store listing can be line-itemed on top when mobile is in scope.',
+    'Pick the launch shape that matches your brief — each option has fixed surfaces in the proposal. App store listing can be added when mobile is in scope.',
 } as const;
 
 export const SITE_FOOTER = {
@@ -458,13 +464,13 @@ export const SITE_FOOTER = {
     { href: '/templates', label: 'Templates' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/how-we-work', label: 'How we work' },
-    { href: '/case-studies', label: 'Work' },
+    { href: '/case-studies', label: 'Examples' },
     { href: '/contact', label: 'Contact' },
-    { href: '/status', label: 'System status' },
+    { href: '/status', label: 'Service status' },
   ] as const,
   templateLinks: [
-    { href: '/templates/social_matching%2Fdating', label: 'Dating (Tier 1 clone)' },
-    { href: '/templates/multi_staff_booking%2Fclinic', label: 'Clinic booking (Tier 1 clone)' },
+    { href: '/templates/social_matching%2Fdating', label: 'Dating template' },
+    { href: '/templates/multi_staff_booking%2Fclinic', label: 'Clinic booking template' },
     { href: '/templates', label: 'All templates' },
   ] as const,
   legal: {

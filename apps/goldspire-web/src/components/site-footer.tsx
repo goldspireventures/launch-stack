@@ -27,7 +27,15 @@ export function SiteFooter() {
         </div>
         <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-border/40 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center">
           <p>
-            © {year} {STUDIO_BRAND.legalName} · {STUDIO_BRAND.parentLegalName}
+            © {year} {STUDIO_BRAND.legalName} ·{' '}
+            <a
+              href={STUDIO_BRAND.parentSiteUrl}
+              className="hover:text-foreground"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {STUDIO_BRAND.parentLegalName}
+            </a>
           </p>
           <p className="flex flex-wrap gap-4">
             <Link href={SITE_FOOTER.legal.privacyHref} className="hover:text-foreground">

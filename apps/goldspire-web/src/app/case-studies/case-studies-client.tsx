@@ -71,11 +71,11 @@ export function CaseStudiesClient() {
 
       <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 to-transparent p-10 sm:p-14">
         <h2 className="max-w-2xl text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
-          Want your product listed here?
+          Building something similar?
         </h2>
         <p className="mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-          Ship with us. If you&apos;re happy to be a public reference, we feature you on this page and in the template
-          catalog.
+          Send a brief with the shape you have in mind. We will reply with fit, a suggested path, and what a first
+          proposal would need to cover.
         </p>
         <div className="mt-6">
           <CTAButton href="/contact">Start a brief</CTAButton>

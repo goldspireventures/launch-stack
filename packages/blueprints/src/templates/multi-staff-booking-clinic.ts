@@ -8,9 +8,9 @@ export const multiStaffBookingClinicTemplate: ProductTemplate = {
   id: 'multi_staff_booking/clinic',
   blueprint: 'multi_staff_booking',
   name: 'Clinic & salon booking',
-  tagline: 'Multi-staff services, public booking flow, and membership SKUs — Nova Care reference shape.',
+  tagline: 'Multi-staff scheduling for clinics, salons, and studios. Nova Care is our reference demo.',
   description:
-    'Telehealth, clinic, salon, or studio scheduling on the multi-staff booking blueprint: landing + services catalog, guided book flow, staff-aware availability, and Stripe-ready product rows (visit, specialist, membership). Nova Care (`nova-care`) is the seeded reference tenant; `booking-web` is the operator-facing demo app.',
+    'Telehealth, clinic, salon, or studio scheduling: public booking flow, staff-aware availability, service catalog, and membership-ready billing hooks. Nova Care is the live reference demo — we brand and configure the same shape for your market under a fixed proposal.',
   status: 'shipped',
   useCases: [
     'Virtual-first clinics and telehealth intake',

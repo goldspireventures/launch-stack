@@ -10,7 +10,6 @@ import {
   Check,
   Clock,
   Coins,
-  Sparkles,
 } from 'lucide-react';
 import { formatTemplatePriceCents, templatePanelIcon } from '@goldspire/template-kit';
 import { TEMPLATES_PAGE, isShippedCloneTemplate, DATING_PRODUCT_TEMPLATE_ID } from '@goldspire/commercial';
@@ -139,11 +138,6 @@ export default function TemplateDetailPage() {
                   icon={Clock}
                   label="Typical build"
                   value={`${t.pricing.typicalWeeks.min}–${t.pricing.typicalWeeks.max} weeks`}
-                />
-                <Stat
-                  icon={Sparkles}
-                  label="Effort vs baseline"
-                  value={`×${t.pricing.effortMultiplier.toFixed(2)}`}
                 />
               </div>
             </div>

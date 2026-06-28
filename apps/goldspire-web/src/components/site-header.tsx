@@ -15,7 +15,7 @@ const NAV: Array<{ href: string; label: string }> = [
   { href: '/templates', label: 'Templates' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/how-we-work', label: 'How we work' },
-  { href: '/case-studies', label: 'Work' },
+  { href: '/case-studies', label: 'Examples' },
 ];
 
 export function SiteHeader() {

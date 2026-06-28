@@ -84,7 +84,7 @@ export function OfferingTierPill({ tier }: { tier: 'tier1_clone' | 'reference_de
     tier1_clone: 'border-primary/50 bg-primary/10 text-primary',
     reference_demo: 'border-border/60 bg-muted/30 text-muted-foreground',
   } as const;
-  const label = tier === 'tier1_clone' ? 'Tier 1 clone' : 'Reference demo';
+  const label = tier === 'tier1_clone' ? 'Ready to brand' : 'Catalog demo';
   return (
     <span
       className={cn(

@@ -7,7 +7,7 @@ export const verticalAiStudioAssistantTemplate: ProductTemplate = {
   name: 'Vertical AI assistant',
   tagline: 'Agent runtime with tools, evals, and chat UI — scoped to one vertical job-to-be-done.',
   description:
-    'Configurable prompts, tool registry, eval hooks, and chat/tasks UI built on `@goldspire/ai`. The `goldspire` tenant includes a Delivery Insights product as a thin reference. Full vertical packaging (data connectors, compliance) is Tier 2+ until a flagship template ships.',
+    'Chat and task UI with tool access, eval hooks, and guardrails scoped to one vertical job. Lumen is our catalog demo. Data connectors, compliance, and domain-specific workflows are scoped in your proposal.',
   status: 'beta',
   useCases: ['Support copilots', 'Sales research agents', 'Recruiting screeners', 'Ops checklist runners'],
   referenceTenantSlug: 'goldspire',

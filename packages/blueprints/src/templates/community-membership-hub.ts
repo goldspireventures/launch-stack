@@ -7,7 +7,7 @@ export const communityMembershipHubTemplate: ProductTemplate = {
   name: 'Membership hub',
   tagline: 'Paid tiers, posts, and events for creators and cohort-based programs.',
   description:
-    'Circle / Skool–adjacent community economics: memberships, event passes, and founder tiers. Live catalog demo on `pulse-club` / Signal — Tier 2 template invention or funded build for a client-shaped v1; not a Tier 1 clone SKU.',
+    'Paid memberships, posts, and events for creator-led communities and cohort programs. Signal is our catalog demo — typically a custom template build rather than a fixed-price adaptation.',
   status: 'beta',
   useCases: ['Paid communities', 'Cohort courses', 'Member-only events', 'Founders circles'],
   referenceTenantSlug: 'pulse-club',

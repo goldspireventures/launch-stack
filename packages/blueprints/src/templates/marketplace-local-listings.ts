@@ -7,7 +7,7 @@ export const marketplaceListingsTemplate: ProductTemplate = {
   name: 'Local listings marketplace',
   tagline: 'Listings, discovery, and seller economics — with cold-start warnings baked in.',
   description:
-    'Two-sided listings with featured boosts and storefront subscription SKUs. Seed tenant `bazaar` holds reference products; `marketplace-web` is the thin shell. Marketplaces fail on distribution, not CRUD — sell only when the client has supply-side leverage or budget for manual seeding.',
+    'Two-sided listings with featured boosts and seller subscription options. Bazaar is our catalog demo. Marketplaces live or die on distribution — we recommend this path when you have supply-side leverage or a clear seeding plan.',
   status: 'beta',
   useCases: ['Hyperlocal services', 'B2B parts catalogs', 'Niche collectibles', 'Regional classifieds'],
   referenceTenantSlug: 'bazaar',

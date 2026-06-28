@@ -3,13 +3,13 @@ import { STUDIO_BRAND } from '@goldspire/commercial';
 import { StudioStatusBoard, type StatusTarget } from '@/components/studio-status-board';
 
 export const metadata = {
-  title: `Status · ${STUDIO_BRAND.shortName} Studio`,
-  description: 'Live demo and marketing surface health (development/staging).',
+  title: `Service status · ${STUDIO_BRAND.shortName} Studio`,
+  description: 'Health checks for goldspire.dev and our public product demos.',
 };
 
 export default function StatusPage() {
   const env = process.env as Record<string, string | undefined>;
-  const marketingUrl = env.NEXT_PUBLIC_GOLDSPIRE_MARKETING_URL ?? 'http://localhost:4010';
+  const marketingUrl = env.NEXT_PUBLIC_GOLDSPIRE_MARKETING_URL ?? STUDIO_BRAND.siteUrl;
   const demos = listCatalogDemoUrls(env);
 
   const targets: StatusTarget[] = [
@@ -28,12 +28,14 @@ export default function StatusPage() {
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-20 sm:px-8">
-      <h1 className="text-3xl font-semibold tracking-tight">Studio status</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Service status</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Probes <code className="rounded bg-muted px-1">/api/health</code> from your browser. In local dev, start the
-        full stack with <code className="rounded bg-muted px-1">pnpm dev</code> — &quot;Not running&quot; usually means
-        that port is stopped, not a production outage. A 503 with &quot;Degraded&quot; means the app responded but the
-        database check failed.
+        Live checks against our marketing site and public demo environments. Green means the service responded;
+        amber or red means something needs attention on our side. If a demo is offline, contact{' '}
+        <a href={`mailto:${STUDIO_BRAND.email}`} className="text-primary hover:underline">
+          {STUDIO_BRAND.email}
+        </a>
+        .
       </p>
       <StudioStatusBoard targets={targets} />
     </article>

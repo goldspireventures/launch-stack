@@ -59,4 +59,4 @@ export const REFERENCE_BLUEPRINT_DEMOS_V0: readonly ReferenceBlueprintDemoV0[] =
 ] as const;
 
 export const REFERENCE_DEMO_DISCLAIMER_V0 =
-  'Reference apps (Nova, Bazaar, Signal, Lumen, etc.) show catalog-quality proof of a blueprint — not the automatic deliverable on a Tier 1 clone. Your signed proposal names the shipped template, surfaces, and integrations; invention and “match every demo detail” require a change order or a higher tier.';
+  'Catalog demos (Bazaar, Signal, Lumen, Acme workspace, and similar) illustrate what is possible on our foundations — they are not automatic deliverables when you adapt a shipped template. Heartline (dating) and Nova Care (booking) are the fixed-price starting points today. Your signed proposal names the template, surfaces, and integrations we deliver.';
