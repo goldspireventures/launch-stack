@@ -166,7 +166,7 @@ function deployDemo(demo) {
     out = `${e.stdout ?? ''}\n${e.stderr ?? ''}`;
     if (!parseDeployUrl(out)) throw e;
   }
-  const url = (parseDeployUrl(out) ?? productionUrlForDemo(demo)).replace(/\/$/, '');
+  const url = productionUrlForDemo(demo);
   console.log(`  deployed → ${url}`);
   try {
     run(['domains', 'add', demo.subdomain, '--scope', scope], {
