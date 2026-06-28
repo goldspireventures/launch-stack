@@ -40,7 +40,7 @@ async function probeHealth(baseUrl: string, sameOrigin: boolean): Promise<RowSta
     }
     return { state: 'error', status: res.status, detail: `HTTP ${res.status}` };
   } catch {
-    return { state: 'offline', status: 0, detail: 'Not reachable — is this app running in dev?' };
+    return { state: 'offline', status: 0, detail: 'Not reachable — check back later or email hello@goldspire.dev.' };
   }
 }
 

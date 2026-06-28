@@ -11,6 +11,10 @@ import { Eyebrow } from './ui-primitives';
 
 export function StudioLiveDemos() {
   const portal = salesDemoPortalUrl();
+  const demos = CATALOG_DEMO_APPS.flatMap((app) => {
+    const href = catalogDemoUrl(app.id);
+    return href ? [{ app, href }] : [];
+  });
 
   return (
     <section className="border-y border-border/50 bg-muted/10 py-16 md:py-20">
@@ -23,10 +27,17 @@ export function StudioLiveDemos() {
           {STUDIO_LIVE_DEMOS.lead}
         </p>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {CATALOG_DEMO_APPS.map((app, i) => {
-            const href = catalogDemoUrl(app.id);
-            return (
+        {demos.length === 0 ? (
+          <p className="mt-10 rounded-xl border border-border/60 bg-card/30 p-6 text-sm text-muted-foreground">
+            Live demos are being configured for production. Email{' '}
+            <a href="mailto:hello@goldspire.dev" className="font-medium text-primary hover:underline">
+              hello@goldspire.dev
+            </a>{' '}
+            and we will share links directly.
+          </p>
+        ) : (
+          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {demos.map(({ app, href }, i) => (
               <motion.a
                 key={app.id}
                 href={href}
@@ -50,22 +61,24 @@ export function StudioLiveDemos() {
                 </span>
                 <span className="mt-1 text-xs text-muted-foreground">{app.tagline}</span>
               </motion.a>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
-        <p className="mt-8 text-sm text-muted-foreground">
-          {STUDIO_LIVE_DEMOS.portalNote}{' '}
-          <Link
-            href={portal}
-            target="_blank"
-            rel="noreferrer"
-            className="font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Open sample project hub
-            <ExternalLink className="ml-0.5 inline h-3.5 w-3.5" />
-          </Link>
-        </p>
+        {portal ? (
+          <p className="mt-8 text-sm text-muted-foreground">
+            {STUDIO_LIVE_DEMOS.portalNote}{' '}
+            <Link
+              href={portal}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Open sample project hub
+              <ExternalLink className="ml-0.5 inline h-3.5 w-3.5" />
+            </Link>
+          </p>
+        ) : null}
       </div>
     </section>
   );

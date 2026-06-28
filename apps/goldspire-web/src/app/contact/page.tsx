@@ -401,7 +401,15 @@ export default function ContactPage() {
 
               {error && (
                 <div className="rounded-md border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-200">
-                  {error}
+                  <p>{error}</p>
+                  {error.includes('hello@goldspire.dev') ? (
+                    <p className="mt-2">
+                      Or email us directly:{' '}
+                      <a href="mailto:hello@goldspire.dev" className="font-medium underline">
+                        hello@goldspire.dev
+                      </a>
+                    </p>
+                  ) : null}
                 </div>
               )}
 

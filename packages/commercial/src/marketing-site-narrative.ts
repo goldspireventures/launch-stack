@@ -473,6 +473,12 @@ export const SITE_FOOTER = {
     { href: '/templates/multi_staff_booking%2Fclinic', label: 'Clinic booking template' },
     { href: '/templates', label: 'All templates' },
   ] as const,
+  portfolioLinks: [
+    { href: 'https://goldspireventures.com', label: 'Goldspire Ventures' },
+    { href: 'https://goldspireventures.com/portfolio', label: 'Portfolio' },
+    { href: 'https://join-veil.goldspireventures.com', label: 'Veil' },
+    { href: 'https://livia-hq.com', label: 'Livia' },
+  ] as const,
   legal: {
     privacyHref: '/privacy',
     termsHref: '/terms',

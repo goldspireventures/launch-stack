@@ -27,7 +27,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8">
         <Link href="/" className="group flex items-center gap-2.5">
           <Logo />
-          <span className="text-base font-semibold tracking-tight">Goldspire</span>
+          <span className="text-base font-semibold tracking-tight">Goldspire Studio</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

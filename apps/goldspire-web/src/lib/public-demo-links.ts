@@ -12,15 +12,15 @@ import {
 
 export { DATING_TEMPLATE_ID, CATALOG_DEMO_APPS };
 
-export function heartlineDemoUrl(): string {
+export function heartlineDemoUrl(): string | null {
   return resolveCatalogDemoUrl('heartline', process.env);
 }
 
-export function novaCareDemoUrl(): string {
+export function novaCareDemoUrl(): string | null {
   return resolveCatalogDemoUrl('nova_care', process.env);
 }
 
-export function catalogDemoUrl(appId: CatalogDemoAppId): string {
+export function catalogDemoUrl(appId: CatalogDemoAppId): string | null {
   return resolveCatalogDemoUrl(appId, process.env);
 }
 
@@ -30,10 +30,11 @@ export function demoUrlForTemplate(templateId: string): string | null {
   return resolveCatalogDemoUrl(app.id, process.env);
 }
 
-export function salesDemoPortalUrl(): string {
-  const origin =
-    process.env.NEXT_PUBLIC_CLIENT_PORTAL_URL?.replace(/\/$/, '') ?? 'http://localhost:4005';
-  return buildSalesDemoPortalUrl(origin);
+export function salesDemoPortalUrl(): string | null {
+  const origin = process.env.NEXT_PUBLIC_CLIENT_PORTAL_URL?.replace(/\/$/, '');
+  if (origin) return buildSalesDemoPortalUrl(origin);
+  if (process.env.NODE_ENV === 'production') return null;
+  return buildSalesDemoPortalUrl('http://localhost:4005');
 }
 
 export function discoveryCallUrl(): string | null {

@@ -82,10 +82,13 @@ export function ContactSuccessPanel({
         <p className="text-sm font-medium text-foreground">{CONTACT_SUCCESS.peekTitle}</p>
         <p className="mt-2 max-w-lg text-sm text-muted-foreground">{CONTACT_SUCCESS.peekIntro}</p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {CATALOG_DEMO_APPS.map((app) => (
-            <motion.a
-              key={app.id}
-              href={catalogDemoUrl(app.id)}
+          {CATALOG_DEMO_APPS.flatMap((app) => {
+            const href = catalogDemoUrl(app.id);
+            if (!href) return [];
+            return (
+              <motion.a
+                key={app.id}
+                href={href}
               target="_blank"
               rel="noreferrer"
               whileHover={{ y: -2 }}
@@ -98,23 +101,26 @@ export function ContactSuccessPanel({
               </span>
               <span className="mt-2 text-xs leading-relaxed text-muted-foreground">{app.tagline}</span>
             </motion.a>
-          ))}
-          <motion.a
-            href={hub}
-            target="_blank"
-            rel="noreferrer"
-            whileHover={{ y: -2 }}
-            className="group flex flex-col rounded-xl border border-primary/30 bg-primary/5 p-4 transition hover:border-primary/50"
-          >
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              {CONTACT_SUCCESS.demoHubTitle}
-            </span>
-            <span className="mt-2 flex items-center gap-1.5 text-sm font-medium text-foreground">
-              Open demo hub
-              <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-            </span>
-            <span className="mt-2 text-xs leading-relaxed text-muted-foreground">{CONTACT_SUCCESS.demoHubBlurb}</span>
-          </motion.a>
+            );
+          })}
+          {hub ? (
+            <motion.a
+              href={hub}
+              target="_blank"
+              rel="noreferrer"
+              whileHover={{ y: -2 }}
+              className="group flex flex-col rounded-xl border border-primary/30 bg-primary/5 p-4 transition hover:border-primary/50"
+            >
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                {CONTACT_SUCCESS.demoHubTitle}
+              </span>
+              <span className="mt-2 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                Open demo hub
+                <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+              </span>
+              <span className="mt-2 text-xs leading-relaxed text-muted-foreground">{CONTACT_SUCCESS.demoHubBlurb}</span>
+            </motion.a>
+          ) : null}
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           {callUrl ? (

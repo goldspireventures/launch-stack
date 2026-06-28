@@ -75,11 +75,13 @@ export const CATALOG_DEMO_APPS: readonly CatalogDemoAppDefinition[] = [
 export function resolveCatalogDemoUrl(
   appId: CatalogDemoAppId,
   env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
-): string {
+): string | null {
   const def = CATALOG_DEMO_APPS.find((a) => a.id === appId);
   if (!def) throw new Error(`Unknown catalog demo app: ${appId}`);
   const explicit = env[def.envKey]?.trim();
-  return explicit && explicit.length > 0 ? explicit.replace(/\/$/, '') : def.defaultLocalUrl;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, '');
+  if (env.NODE_ENV === 'production') return null;
+  return def.defaultLocalUrl;
 }
 
 export function getCatalogDemoForTemplate(templateId: string): CatalogDemoAppDefinition | null {
@@ -89,5 +91,8 @@ export function getCatalogDemoForTemplate(templateId: string): CatalogDemoAppDef
 export function listCatalogDemoUrls(
   env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
 ): { app: CatalogDemoAppDefinition; url: string }[] {
-  return CATALOG_DEMO_APPS.map((app) => ({ app, url: resolveCatalogDemoUrl(app.id, env) }));
+  return CATALOG_DEMO_APPS.flatMap((app) => {
+    const url = resolveCatalogDemoUrl(app.id, env);
+    return url ? [{ app, url }] : [];
+  });
 }

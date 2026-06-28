@@ -79,6 +79,14 @@ export default function TemplatesIndexPage() {
               />
             ))}
           </div>
+        ) : q.isError ? (
+          <p className="rounded-xl border border-destructive/40 bg-destructive/5 p-8 text-center text-sm text-muted-foreground">
+            The template catalog is temporarily unavailable. Email{' '}
+            <a href="mailto:hello@goldspire.dev" className="font-medium text-primary hover:underline">
+              hello@goldspire.dev
+            </a>{' '}
+            and we will reply directly.
+          </p>
         ) : filtered.length === 0 ? (
           <p className="rounded-xl border border-border/60 bg-card/30 p-8 text-center text-sm text-muted-foreground">
             No templates match the current filter.
@@ -166,7 +174,7 @@ export default function TemplatesIndexPage() {
             Don&apos;t see your shape?
           </p>
           <h3 className="mt-3 max-w-2xl text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
-            We invent new templates inside existing blueprints — or build a whole new blueprint.
+            We invent new templates on foundations we already operate — or build a whole new product family.
           </h3>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
             Either of those is a real engagement type. Pricing scales with how much we&apos;re

@@ -7,7 +7,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-32 border-t border-border/60 bg-background">
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <Link href="/" className="text-sm font-semibold tracking-tight">
               {STUDIO_BRAND.shortName}
@@ -16,6 +16,7 @@ export function SiteFooter() {
           </div>
           <Column title="Studio" links={[...SITE_FOOTER.studioLinks]} />
           <Column title="Offerings" links={[...SITE_FOOTER.templateLinks]} />
+          <Column title="Portfolio" links={[...SITE_FOOTER.portfolioLinks]} external />
           <Column
             title="Get in touch"
             links={[
@@ -54,9 +55,11 @@ export function SiteFooter() {
 function Column({
   title,
   links,
+  external,
 }: {
   title: string;
   links: Array<{ href: string; label: string; external?: boolean }>;
+  external?: boolean;
 }) {
   return (
     <div>
@@ -64,7 +67,7 @@ function Column({
       <ul className="mt-3 space-y-1.5">
         {links.map((l) => (
           <li key={l.href}>
-            {l.external ? (
+            {l.external || external ? (
               <a
                 href={l.href}
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
