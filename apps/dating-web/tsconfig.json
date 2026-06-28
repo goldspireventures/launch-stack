@@ -16,6 +16,9 @@
       "@goldspire/db": ["../../packages/db/src/index.ts"],
       "@goldspire/validation": ["../../packages/validation/src/index.ts"],
       "@goldspire/platform": ["../../packages/platform/src/index.ts"],
+      "@goldspire/platform/*": ["../../packages/platform/src/*"],
+      "@goldspire/commercial": ["../../packages/commercial/src/index.ts"],
+      "@goldspire/commercial/*": ["../../packages/commercial/src/*"]
       "@goldspire/payments": ["../../packages/payments/src/index.ts"],
       "@goldspire/logger": ["../../packages/logger/src/index.ts"],
       "@goldspire/logger/trpc": ["../../packages/logger/src/trpc.ts"],

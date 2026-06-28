@@ -47,9 +47,9 @@ for (const key of KEYS) {
   }
   try {
     execFileSync(
-      process.platform === 'win32' ? 'vercel.cmd' : 'vercel',
+      'vercel',
       ['env', 'add', key, 'production', '--value', value, '--yes', '--force', '--sensitive', '--scope', 'livia-hq'],
-      { cwd: appDir, stdio: 'pipe' },
+      { cwd: appDir, stdio: 'pipe', shell: process.platform === 'win32' },
     );
     console.log(`  ✓ ${key}`);
   } catch (e) {

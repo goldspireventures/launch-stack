@@ -6,10 +6,15 @@
     "paths": {
       "@/*": ["./src/*"],
       "@goldspire/api": ["../../packages/api/src/index.ts"],
+      "@goldspire/api/*": ["../../packages/api/src/*"],
       "@goldspire/ui": ["../../packages/ui/src/index.ts"],
       "@goldspire/ui/*": ["../../packages/ui/src/*"],
       "@goldspire/config": ["../../packages/config/src/index.ts"],
-      "@goldspire/auth": ["../../packages/auth/src/index.ts"]
+      "@goldspire/auth": ["../../packages/auth/src/index.ts"],
+      "@goldspire/platform": ["../../packages/platform/src/index.ts"],
+      "@goldspire/platform/*": ["../../packages/platform/src/*"],
+      "@goldspire/commercial": ["../../packages/commercial/src/index.ts"],
+      "@goldspire/commercial/*": ["../../packages/commercial/src/*"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],
