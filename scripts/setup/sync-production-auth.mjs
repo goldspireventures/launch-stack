@@ -108,20 +108,20 @@ for (const project of PROJECTS) {
 
 console.log('\nInviting studio owner via Supabase (if service role available)…\n');
 try {
-  const { createClient } = await import('@supabase/supabase-js');
+  const { createClient } = await import(join(root, 'node_modules/@supabase/supabase-js/dist/module/index.js'));
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (serviceKey) {
     const sb = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const consoleUrl = 'https://console.goldspire.dev';
-    const { error } = await sb.auth.admin.inviteUserByEmail('eamon@goldspire.studio', {
+    const { error } = await sb.auth.admin.inviteUserByEmail('eamon@goldspire.dev', {
       redirectTo: `${consoleUrl}/auth/callback`,
     });
     if (error && !String(error.message).includes('already')) {
       console.log(`  · invite: ${error.message}`);
     } else {
-      console.log('  ✓ eamon@goldspire.studio invited (or already registered)');
+      console.log('  ✓ eamon@goldspire.dev invited (or already registered)');
     }
   } else {
     console.log('  · skip invite — no SUPABASE_SERVICE_ROLE_KEY');

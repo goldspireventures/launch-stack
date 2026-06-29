@@ -153,7 +153,7 @@ function PortalDealContent() {
           description={summary.error?.message ?? 'Could not load this deal.'}
         />
         <Button variant="outline" asChild>
-          <a href="mailto:support@goldspire.studio">Email support</a>
+          <a href="mailto:hello@goldspire.dev">Email support</a>
         </Button>
       </div>
     );

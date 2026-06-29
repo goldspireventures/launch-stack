@@ -482,7 +482,7 @@ export default function StudioSettingsPage() {
                           autoComplete="email"
                           value={inviteEmail}
                           onChange={(e) => setInviteEmail(e.target.value)}
-                          placeholder="operator@goldspire.studio"
+                          placeholder="operator@goldspire.dev"
                           disabled={inviteMut.isPending}
                         />
                       </FormField>

@@ -14,9 +14,9 @@ export const brand = {
   tagline: 'The internal MVP factory for the Goldspire studio.',
   description:
     'A multi-tenant, blueprint-driven launch platform for shipping high-quality client products in days, not months.',
-  domain: 'goldspire.studio',
+  domain: 'goldspire.dev',
   marketingDomain: 'goldspire.dev',
-  supportEmail: 'support@goldspire.studio',
+  supportEmail: 'hello@goldspire.dev',
   salesEmail: 'hello@goldspire.dev',
 
   // Default design tokens — every tenant inherits these, then overrides via tenant.theme.

@@ -112,7 +112,7 @@ export function StudioSupabaseSignIn({ consoleUrl }: { consoleUrl: string }) {
             required
             value={email}
             onChange={(ev) => setEmail(ev.target.value)}
-            placeholder="you@goldspire.studio"
+            placeholder="you@goldspire.dev"
           />
         </div>
         {mode === 'password' ? (

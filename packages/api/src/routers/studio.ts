@@ -76,8 +76,8 @@ function defaultStudioProfile(tenantName: string): ConsoleStudioProfile {
   return {
     studioName: tenantName,
     logoUrl: '',
-    primaryContactEmail: 'ops@goldspire.studio',
-    supportEmail: 'support@goldspire.studio',
+    primaryContactEmail: 'hello@goldspire.dev',
+    supportEmail: 'hello@goldspire.dev',
     supportPhone: '',
     postalAddress: '',
     deskWebhookUrl: '',

@@ -34,10 +34,10 @@ export default function ClientPortalHomePage() {
       >
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" asChild>
-            <a href="mailto:support@goldspire.studio">Email support</a>
+            <a href="mailto:hello@goldspire.dev">Email support</a>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="https://goldspire.studio">About Goldspire</Link>
+            <Link href="https://goldspire.dev">About Goldspire Studio</Link>
           </Button>
         </div>
       </CommandPanel>

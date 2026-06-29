@@ -49,7 +49,7 @@ export const PERSONAS = [
   {
     id: 'studio.owner',
     name: 'Eamon Olaniyan',
-    email: 'eamon@goldspire.studio',
+    email: 'eamon@goldspire.dev',
     role: 'STUDIO_OWNER',
     tenantSlug: 'goldspire',
     bio: 'Founder. Sees everything across every tenant. Stamps blueprints, sets pricing, kills flags.',
@@ -59,7 +59,7 @@ export const PERSONAS = [
   {
     id: 'studio.staff',
     name: 'Maya Chen',
-    email: 'maya@goldspire.studio',
+    email: 'maya@goldspire.dev',
     role: 'STUDIO_STAFF',
     tenantSlug: 'goldspire',
     bio: 'Studio operator. Can administer any tenant; no billing power.',

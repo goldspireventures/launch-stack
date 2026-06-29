@@ -525,8 +525,8 @@ export function DealPortalDeck({
 
       <footer className="shrink-0 border-t border-border px-4 py-4 text-center text-[11px] text-muted-foreground sm:px-6">
         Questions? Reply to your studio thread or{' '}
-        <a className="underline" href="mailto:support@goldspire.studio">
-          support@goldspire.studio
+        <a className="underline" href="mailto:hello@goldspire.dev">
+          hello@goldspire.dev
         </a>
       </footer>
     </div>

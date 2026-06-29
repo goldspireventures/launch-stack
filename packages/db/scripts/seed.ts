@@ -539,8 +539,8 @@ async function seed() {
 
   await db.insert(schema.user).values(personaRows);
 
-  const studioOwnerId = userIdByEmail.get('eamon@goldspire.studio');
-  const studioStaffId = userIdByEmail.get('maya@goldspire.studio');
+  const studioOwnerId = userIdByEmail.get('eamon@goldspire.dev');
+  const studioStaffId = userIdByEmail.get('maya@goldspire.dev');
   const leadAssigneeUserIds = [studioOwnerId, studioStaffId].filter((id): id is string => Boolean(id));
   if (leadAssigneeUserIds.length > 0) {
     const [gs] = await db
@@ -552,8 +552,8 @@ async function seed() {
     meta.consoleStudioProfile = {
       studioName: 'Goldspire',
       logoUrl: '',
-      primaryContactEmail: 'ops@goldspire.studio',
-      supportEmail: 'support@goldspire.studio',
+      primaryContactEmail: 'hello@goldspire.dev',
+      supportEmail: 'hello@goldspire.dev',
       supportPhone: '',
       postalAddress: '',
       deskWebhookUrl: '',
@@ -1100,7 +1100,7 @@ async function seed() {
   await db.insert(schema.featureFlag).values(flagRows);
 
   // ─── Studio deals ───────────────────────────────────────────────────────
-  const eamonId = userIdByEmail.get('eamon@goldspire.studio'.toLowerCase())!;
+  const eamonId = userIdByEmail.get('eamon@goldspire.dev'.toLowerCase())!;
 
   const deals: (typeof schema.studioDeal.$inferInsert)[] = [
     {

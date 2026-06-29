@@ -65,6 +65,8 @@
     "audit:screenshots": "pnpm --filter @goldspire/e2e exec node audit/stack-screenshots.mjs",
     "audit:deal-walkthrough": "pnpm --filter @goldspire/e2e exec node audit/deal-walkthrough.mjs",
     "setup:sync-prod-auth": "node scripts/setup/sync-production-auth.mjs",
+    "setup:patch-studio-emails": "tsx scripts/setup/patch-studio-emails.ts",
+    "setup:production-smoke": "node scripts/setup/production-smoke.mjs",
     "setup:cleanup-walkthrough": "tsx scripts/setup/cleanup-walkthrough-deals.ts",
     "audit:commercial-sync": "tsx scripts/audit-commercial-sync.mjs",
     "audit:studio-business": "tsx scripts/audit-studio-business.mjs",
