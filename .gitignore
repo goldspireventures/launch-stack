@@ -3,9 +3,9 @@ node_modules/
 .pnpm-store/
 .yarn/
 
-# build output
+# build output (root only — do not use `build/` or Next.js routes named `build` are ignored)
 dist/
-build/
+/build/
 .next/
 out/
 .turbo/
