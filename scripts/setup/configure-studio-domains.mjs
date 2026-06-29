@@ -78,9 +78,13 @@ async function ensureCname(subdomain, target = 'cname.vercel-dns.com.') {
   const records = await listDnsRecords();
   const name = subdomain.replace(`.${APEX}`, '');
   if (!records) {
+    const useA = name === 'console' || name === 'portal';
     console.log(`  · Add at Cloudflare (goldspire.dev uses Cloudflare NS):`);
-    console.log(`      CNAME ${name} → cname.vercel-dns.com`);
-    console.log(`      — or A ${name} → 76.76.21.21 for apex-style Vercel routing`);
+    if (useA) {
+      console.log(`      A ${name} → 76.76.21.21 (proxied OK with Full strict SSL)`);
+    } else {
+      console.log(`      A ${name} → 76.76.21.21 — or CNAME ${name} → cname.vercel-dns.com`);
+    }
     return;
   }
   const exists = records.some(

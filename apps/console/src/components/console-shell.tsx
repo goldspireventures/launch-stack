@@ -25,10 +25,12 @@ export function ConsoleShell({
   children,
   persona,
   personaId,
+  useSupabaseAuth = false,
 }: {
   children: React.ReactNode;
   persona: Parameters<typeof UserMenu>[0]['persona'];
   personaId: string | null;
+  useSupabaseAuth?: boolean;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -114,7 +116,10 @@ export function ConsoleShell({
                     ⌘K
                   </kbd>
                 </button>
-                <UserMenu persona={persona} />
+                <UserMenu
+                  persona={persona}
+                  signOutPath={useSupabaseAuth ? '/api/auth/session' : '/api/persona'}
+                />
               </div>
             </div>
             {!isEngagement && pageLabel && pathname !== '/' ? (
@@ -137,7 +142,10 @@ export function ConsoleShell({
             </Link>
             <span className="truncate font-display text-sm font-medium">{pageLabel}</span>
             <div className="ml-auto">
-              <UserMenu persona={persona} />
+              <UserMenu
+                persona={persona}
+                signOutPath={useSupabaseAuth ? '/api/auth/session' : '/api/persona'}
+              />
             </div>
           </header>
         )}
@@ -152,7 +160,7 @@ export function ConsoleShell({
 
         {!isEngagement ? (
           <footer className="border-t border-border/40 px-6 py-2 text-center text-[10px] text-muted-foreground">
-            Queue clear · open Pipeline for new briefs or launch an engagement from Build
+            Enquiries → Pipeline · Launch from Build · Client hubs on portal
           </footer>
         ) : null}
       </div>

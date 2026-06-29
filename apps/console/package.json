@@ -37,6 +37,7 @@
     "react-markdown": "^10.1.0",
     "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
+    "@supabase/supabase-js": "^2.45.4",
     "superjson": "^2.2.1"
   },
   "devDependencies": {
